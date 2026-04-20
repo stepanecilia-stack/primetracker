@@ -1141,6 +1141,48 @@
             min-width: 0;
         }
     }
+
+    /* ==========================================================================
+       Mobile SVG skeletons — ensure visibility on small viewports.
+       Parent containers get explicit height so SVGs (which scale to parent
+       box via preserveAspectRatio) don't collapse to zero height inside
+       flex layouts.
+       ========================================================================== */
+    @media (max-width: 768px) {
+        .scan__right {
+            width: 100%;
+            display: block;
+            min-height: 300px;
+        }
+
+        .skeleton-svg {
+            width: 100%;
+            height: auto;
+            display: block;
+            min-height: 300px;
+        }
+
+        .compare {
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .figure {
+            width: 100%;
+            display: block;
+            flex: 0 0 auto;
+            height: auto;
+            min-height: 300px;
+        }
+
+        .figure__svg {
+            width: 100%;
+            height: 250px;
+            display: block;
+            flex: 0 0 auto;
+        }
+    }
     </style>
 </head>
 <body class="is-booting">
@@ -1242,6 +1284,8 @@
             </div>
 
             <svg class="skeleton-svg"
+                 width="100%"
+                 height="auto"
                  viewBox="0 0 520 640"
                  xmlns="http://www.w3.org/2000/svg"
                  preserveAspectRatio="xMidYMid meet">
@@ -1302,6 +1346,8 @@
                 <!-- TWIN -->
                 <div class="figure figure--twin">
                     <svg class="figure__svg" id="fig-svg-twin"
+                         width="100%"
+                         height="auto"
                          viewBox="0 0 520 640"
                          xmlns="http://www.w3.org/2000/svg"
                          preserveAspectRatio="xMidYMid meet">
@@ -1323,6 +1369,8 @@
                 <!-- YOU (FRONT) -->
                 <div class="figure figure--you-front">
                     <svg class="figure__svg" id="fig-svg-you-front"
+                         width="100%"
+                         height="auto"
                          viewBox="0 0 520 640"
                          xmlns="http://www.w3.org/2000/svg"
                          preserveAspectRatio="xMidYMid meet">
@@ -1344,6 +1392,8 @@
                 <!-- YOU (BACK) -->
                 <div class="figure figure--you-back">
                     <svg class="figure__svg" id="fig-svg-you-back"
+                         width="100%"
+                         height="auto"
                          viewBox="0 0 520 640"
                          xmlns="http://www.w3.org/2000/svg"
                          preserveAspectRatio="xMidYMid meet">
@@ -2065,6 +2115,7 @@
 
             function groupsFrom(rootId) {
                 const root = document.getElementById(rootId);
+                if (!root) return null;
                 return {
                     skull:     root.querySelector('.fig-skull'),
                     ribcage:   root.querySelector('.fig-ribcage'),
@@ -2080,9 +2131,12 @@
                 if (built) return;
                 built = true;
 
-                twinRefs     = buildSkeleton(groupsFrom('fig-twin'));
-                youFrontRefs = buildSkeleton(groupsFrom('fig-you-front'));
-                youBackRefs  = buildSkeleton(groupsFrom('fig-you-back'));
+                const twinG     = groupsFrom('fig-twin');
+                const youFrontG = groupsFrom('fig-you-front');
+                const youBackG  = groupsFrom('fig-you-back');
+                if (twinG)     twinRefs     = buildSkeleton(twinG);
+                if (youFrontG) youFrontRefs = buildSkeleton(youFrontG);
+                if (youBackG)  youBackRefs  = buildSkeleton(youBackG);
 
 
                 slider        = document.getElementById('weight-slider');
@@ -2091,11 +2145,13 @@
                 youFrontStats = document.getElementById('fig-you-front-stats');
                 youBackStats  = document.getElementById('fig-you-back-stats');
 
-                slider.addEventListener('input', () => {
-                    const w = parseFloat(slider.value);
-                    PrimeState.weight = w;
-                    applyWeight(w);
-                });
+                if (slider) {
+                    slider.addEventListener('input', () => {
+                        const w = parseFloat(slider.value);
+                        PrimeState.weight = w;
+                        applyWeight(w);
+                    });
+                }
             }
 
             /* Recomputes bones & rebuilds muscle dot positions — called once
@@ -2103,30 +2159,30 @@
                aligned to the same GROUND_Y so the feet rest on one line. */
             function applyLayouts() {
                 const twinL = alignToGround(computeLayout(184, 191), GROUND_Y);
-                applyLayout(twinL, twinRefs);
+                if (twinRefs) applyLayout(twinL, twinRefs);
 
                 const yL = alignToGround(
                     computeLayout(PrimeState.height, PrimeState.reach),
                     GROUND_Y
                 );
-                applyLayout(yL, youFrontRefs);
-                applyLayout(yL, youBackRefs);
+                if (youFrontRefs) applyLayout(yL, youFrontRefs);
+                if (youBackRefs)  applyLayout(yL, youBackRefs);
 
                 const frontMusclesG = document.querySelector('#fig-you-front .fig-muscles');
                 const backMusclesG  = document.querySelector('#fig-you-back  .fig-muscles');
-                youFrontMuscles = buildMuscles('front', yL, frontMusclesG);
-                youBackMuscles  = buildMuscles('back',  yL, backMusclesG);
+                if (frontMusclesG) youFrontMuscles = buildMuscles('front', yL, frontMusclesG);
+                if (backMusclesG)  youBackMuscles  = buildMuscles('back',  yL, backMusclesG);
 
                 const stats = Math.round(PrimeState.height) + ' · ' +
                               Math.round(PrimeState.reach)  + ' СМ';
-                youFrontStats.textContent = stats;
-                youBackStats.textContent  = stats;
+                if (youFrontStats) youFrontStats.textContent = stats;
+                if (youBackStats)  youBackStats.textContent  = stats;
             }
 
             /* Per-weight update — only KPI text and muscle dots change. */
             function applyWeight(w) {
-                weightValue.textContent = (w % 1 === 0) ? String(w) : w.toFixed(1);
-                kpiValue.textContent    = probabilityFor(w) + '%';
+                if (weightValue) weightValue.textContent = (w % 1 === 0) ? String(w) : w.toFixed(1);
+                if (kpiValue)    kpiValue.textContent    = probabilityFor(w) + '%';
                 updateMuscleDots(youFrontMuscles, w);
                 updateMuscleDots(youBackMuscles,  w);
             }
@@ -2139,7 +2195,7 @@
                     document.body.classList.add('is-booting');
                     buildOnce();
                     const w = Math.max(60, Math.min(100, PrimeState.weight || 70));
-                    slider.value = String(w);
+                    if (slider) slider.value = String(w);
                     applyLayouts();
                     applyWeight(w);
                     showScreen('diagnosis');
@@ -2187,15 +2243,20 @@
                 nodes:     document.getElementById('nodes'),
             };
 
-            const refs = buildSkeleton(groups);
-            buildRulerTicks(document.getElementById('ruler-ticks'));
+            const hasSkeleton = !!(skeletonEl && groups.skull && groups.ribcage &&
+                                   groups.spine && groups.pelvis && groups.bodyBones &&
+                                   groups.armBones && groups.nodes);
+
+            const refs = hasSkeleton ? buildSkeleton(groups) : null;
+            const rulerTicksEl = document.getElementById('ruler-ticks');
+            if (rulerTicksEl) buildRulerTicks(rulerTicksEl);
 
             const crownMarker      = document.getElementById('crown-marker');
-            const crownMarkerLine  = crownMarker.querySelector('.crown-marker__line');
-            const crownMarkerDot   = crownMarker.querySelector('.crown-marker__dot');
-            const crownMarkerLabel = crownMarker.querySelector('.crown-marker__label');
+            const crownMarkerLine  = crownMarker ? crownMarker.querySelector('.crown-marker__line')  : null;
+            const crownMarkerDot   = crownMarker ? crownMarker.querySelector('.crown-marker__dot')   : null;
+            const crownMarkerLabel = crownMarker ? crownMarker.querySelector('.crown-marker__label') : null;
 
-            applyLayout(computeLayout(BASE_HEIGHT, BASE_REACH), refs);
+            if (refs) applyLayout(computeLayout(BASE_HEIGHT, BASE_REACH), refs);
             requestAnimationFrame(() => {
                 document.body.classList.remove('is-booting');
             });
@@ -2264,6 +2325,7 @@
             }
 
             function updateSkeleton() {
+                if (!refs) return;
                 const h = toNumber(heightEl.value);
                 const r = toNumber(armspanEl.value);
                 const L = computeLayout(
@@ -2274,6 +2336,7 @@
             }
 
             function updateCrownMarker() {
+                if (!crownMarker || !crownMarkerLine || !crownMarkerDot || !crownMarkerLabel) return;
                 const h = toNumber(heightEl.value);
                 if (!Number.isFinite(h) || h <= 0) {
                     crownMarker.classList.add('is-hidden');
@@ -2289,6 +2352,7 @@
             }
 
             function updateArmsHighlight() {
+                if (!skeletonEl) return;
                 const h = toNumber(heightEl.value);
                 const a = toNumber(armspanEl.value);
 
