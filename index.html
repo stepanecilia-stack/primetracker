@@ -1,0 +1,2373 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Scan — Cartel Boxing Academy</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+    /* ==========================================================================
+       Prime Scan — Cartel Boxing Academy
+       Self-contained single-file build.
+       ========================================================================== */
+
+    :root {
+        --bg-page: #0A0A0A;
+        --bg-right: #050505;
+        --text: #E8E8E8;
+        --text-dim: #555555;
+        --label: #888888;
+        --border: #222222;
+        --border-focus: #C0C0C0;
+        --divider: #1A1A1A;
+
+        --font-heading: 'Bebas Neue', 'Impact', sans-serif;
+        --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        height: 100%;
+        overflow: hidden;
+        background-color: #0A0A0A;
+    }
+
+    body {
+        font-family: var(--font-body);
+        background-color: var(--bg-page);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        background: none;
+        color: inherit;
+    }
+
+    input {
+        font-family: inherit;
+    }
+
+    /* ==========================================================================
+       Layout — two columns
+       ========================================================================== */
+
+    .scan {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        background-color: var(--bg-page);
+    }
+
+    .scan__left {
+        flex: 0 0 45%;
+        width: 45%;
+        padding: 60px;
+        background-color: var(--bg-page);
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .scan__left::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scan__right {
+        flex: 0 0 55%;
+        width: 55%;
+        position: relative;
+        background-color: var(--bg-right);
+        border-left: 1px solid var(--divider);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+            radial-gradient(ellipse at 60% 40%, rgba(255,255,255,0.03), transparent 70%),
+            #050505;
+    }
+
+    /* ==========================================================================
+       Heading — Prime Scan
+       ========================================================================== */
+
+    .scan__heading {
+        margin-top: 0;
+    }
+
+    .scan__title {
+        font-family: var(--font-heading);
+        font-size: 64px;
+        line-height: 1;
+        letter-spacing: 0.02em;
+        font-weight: 400;
+        background: linear-gradient(180deg, #FFFFFF 0%, #A8A8A8 50%, #FFFFFF 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+    }
+
+    .scan__subtitle {
+        margin-top: 8px;
+        font-size: 13px;
+        line-height: 1.4;
+        color: var(--text-dim);
+        font-weight: 400;
+        max-width: 420px;
+    }
+
+    /* ==========================================================================
+       Form
+       ========================================================================== */
+
+    .form {
+        margin-top: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .field {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .field__label {
+        font-family: var(--font-body);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 2px;
+        color: var(--label);
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .field__input {
+        background: transparent;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        color: var(--text);
+        font-size: 16px;
+        font-weight: 400;
+        padding: 12px 0;
+        outline: none;
+        transition: border-color 0.2s ease;
+        width: 100%;
+    }
+
+    .field__input::placeholder {
+        color: var(--text-dim);
+    }
+
+    .field__input:focus {
+        border-bottom-color: var(--border-focus);
+    }
+
+    .field__input::-webkit-outer-spin-button,
+    .field__input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .field__input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+    .field--parent {
+        display: none;
+    }
+
+    .field--parent.is-visible {
+        display: flex;
+        animation: field-in 0.25s ease-out;
+    }
+
+    @keyframes field-in {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==========================================================================
+       Gender toggle
+       ========================================================================== */
+
+    .gender {
+        display: flex;
+        gap: 8px;
+        margin-top: 2px;
+    }
+
+    .gender__btn {
+        font-family: var(--font-heading);
+        font-size: 18px;
+        letter-spacing: 0.08em;
+        padding: 10px 28px;
+        border: 1px solid #333333;
+        border-radius: 2px;
+        background: transparent;
+        color: var(--text-dim);
+        transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+        line-height: 1;
+    }
+
+    .gender__btn:hover:not(.is-active) {
+        color: var(--text);
+        border-color: #555555;
+    }
+
+    .gender__btn.is-active {
+        background: linear-gradient(135deg, #D0D0D0 0%, #F0F0F0 100%);
+        color: #0A0A0A;
+        border-color: transparent;
+    }
+
+    /* ==========================================================================
+       APE INDEX
+       ========================================================================== */
+
+    .ape {
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .ape__label {
+        font-family: var(--font-body);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 2px;
+        color: var(--label);
+        text-transform: uppercase;
+    }
+
+    .ape__value {
+        font-family: var(--font-heading);
+        font-size: 28px;
+        line-height: 1;
+        color: var(--text);
+        letter-spacing: 0.04em;
+    }
+
+    .ape__value--dim {
+        color: var(--text-dim);
+    }
+
+    /* ==========================================================================
+       Calculate button
+       ========================================================================== */
+
+    /* Chrome/Silver button — shared visual across hero__cta and calc-btn. */
+    .calc-btn {
+        margin-top: 12px;
+        width: 100%;
+        padding: 16px 0;
+        background: linear-gradient(135deg, #D0D0D0 0%, #F5F5F5 50%, #A0A0A0 100%);
+        color: #0A0A0A;
+        font-family: var(--font-heading);
+        font-size: 15px;
+        font-weight: 400;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 4px;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.55),
+            0 6px 18px rgba(0, 0, 0, 0.45);
+        transition: filter 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease, opacity 0.25s ease;
+        opacity: 0.2;
+        cursor: not-allowed;
+    }
+
+    .calc-btn:not(:disabled) {
+        opacity: 1;
+        cursor: pointer;
+    }
+
+    .calc-btn:not(:disabled):hover {
+        filter: brightness(1.08);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.7),
+            0 8px 24px rgba(255, 255, 255, 0.18),
+            0 6px 18px rgba(0, 0, 0, 0.45);
+    }
+
+    .calc-btn:not(:disabled):active {
+        transform: translateY(1px);
+        filter: brightness(0.96);
+    }
+
+    .calc-btn:disabled {
+        opacity: 0.2;
+        cursor: not-allowed;
+    }
+
+    /* ==========================================================================
+       Right column — PRIME NODE SYSTEM
+       ========================================================================== */
+
+    .skeleton-svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .prime-caption {
+        position: absolute;
+        top: 28px;
+        right: 32px;
+        z-index: 3;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 4px;
+        pointer-events: none;
+    }
+
+    .prime-caption__id {
+        font-family: var(--font-heading);
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.7);
+        letter-spacing: 0.18em;
+    }
+
+    .prime-caption__label {
+        font-family: var(--font-body);
+        font-size: 9px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.35);
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+    }
+
+    /* ----------------------------------------------------------
+       CSS transitions on SVG attributes (SVG 2)
+       Works in modern Chromium/Firefox/Safari 16+.
+       ---------------------------------------------------------- */
+    .skeleton-svg circle,
+    .skeleton-svg line,
+    .skeleton-svg polyline,
+    .skeleton-svg rect,
+    .figure__svg circle,
+    .figure__svg line,
+    .figure__svg polyline,
+    .figure__svg rect {
+        transition:
+            cx 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            cy 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            x  0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            y  0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            x1 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            y1 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            x2 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            y2 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            r  0.55s cubic-bezier(0.4, 0, 0.2, 1),
+            opacity 0.3s ease,
+            stroke  0.3s ease,
+            fill    0.3s ease;
+    }
+
+    body.is-booting .skeleton-svg *,
+    body.is-booting .skeleton-svg,
+    body.is-booting .figure__svg *,
+    body.is-booting .figure__svg {
+        transition: none !important;
+    }
+
+    /* Bones (double thin lines) */
+    .bone-line {
+        stroke: rgba(255, 255, 255, 0.4);
+        stroke-width: 1;
+        stroke-linecap: round;
+        fill: none;
+    }
+
+    .skull__edge {
+        stroke: rgba(255, 255, 255, 0.45);
+        stroke-width: 1;
+        stroke-linecap: round;
+        fill: none;
+    }
+
+    .skull__inner {
+        stroke: rgba(255, 255, 255, 0.35);
+        stroke-width: 1;
+        stroke-linecap: round;
+        fill: none;
+    }
+
+    .rib-line {
+        stroke: rgba(255, 255, 255, 0.32);
+        stroke-width: 1;
+        stroke-linecap: round;
+        fill: none;
+    }
+
+    .spine-line {
+        stroke: rgba(255, 255, 255, 0.4);
+        stroke-width: 1;
+        stroke-linecap: round;
+        fill: none;
+    }
+
+    .spine-tick {
+        stroke: rgba(255, 255, 255, 0.35);
+        stroke-width: 1;
+        fill: none;
+    }
+
+    .pelvis-line {
+        stroke: rgba(255, 255, 255, 0.4);
+        stroke-width: 1;
+        stroke-linecap: round;
+        fill: none;
+    }
+
+    .pelvis-accent {
+        stroke: rgba(255, 255, 255, 0.22);
+        stroke-width: 1;
+        fill: none;
+    }
+
+    /* Nodes — bright glowing joints */
+    .node {
+        fill: #0A0A0A;
+        stroke: #FFFFFF;
+        stroke-width: 2;
+    }
+
+    .node--major { r: 3.4; }
+    .node--mid   { r: 2.6; }
+    .node--minor { r: 1.9; }
+
+    /* APE INDEX > 0 → neon on arm group */
+    .bones--arms {
+        transition: filter 0.4s ease;
+    }
+
+    #skeleton.is-arms-long .bones--arms {
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9))
+                drop-shadow(0 0 10px rgba(220, 240, 255, 0.5));
+    }
+
+    #skeleton.is-arms-long .bones--arms .bone-line {
+        stroke: rgba(255, 255, 255, 0.85);
+    }
+
+    #skeleton.is-arms-short .bones--arms .bone-line {
+        stroke: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Ruler */
+    .ruler__axis {
+        stroke: rgba(255, 255, 255, 0.18);
+        stroke-width: 1;
+        fill: none;
+    }
+
+    .ruler__tick {
+        stroke: rgba(255, 255, 255, 0.3);
+        stroke-width: 1;
+    }
+
+    .ruler__tick--minor {
+        stroke: rgba(255, 255, 255, 0.12);
+        stroke-width: 1;
+    }
+
+    .ruler__label {
+        font-family: var(--font-heading);
+        font-size: 10px;
+        fill: rgba(255, 255, 255, 0.55);
+        letter-spacing: 0.08em;
+        text-anchor: end;
+    }
+
+    /* Crown marker */
+    .crown-marker { pointer-events: none; }
+
+    .crown-marker.is-hidden { opacity: 0; }
+
+    .crown-marker__line {
+        stroke: rgba(255, 255, 255, 0.55);
+        stroke-width: 1;
+        stroke-dasharray: 3 4;
+    }
+
+    .crown-marker__dot {
+        fill: #FFFFFF;
+        stroke: none;
+    }
+
+    .crown-marker__label {
+        font-family: var(--font-heading);
+        font-size: 12px;
+        fill: #FFFFFF;
+        letter-spacing: 0.12em;
+        text-anchor: start;
+    }
+
+    /* Laser */
+    .laser {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 40px;
+        pointer-events: none;
+        z-index: 2;
+        animation: laser-scan 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+    }
+
+    .laser__line {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 1px;
+        background: rgba(235, 248, 255, 0.9);
+        box-shadow:
+            0 0 6px rgba(200, 230, 255, 0.6),
+            0 0 14px rgba(180, 220, 255, 0.35);
+        filter: blur(0.3px);
+    }
+
+    .laser__trail {
+        position: absolute;
+        top: 1px; left: 0; right: 0;
+        height: 39px;
+        background: linear-gradient(
+            to bottom,
+            rgba(210, 230, 255, 0.28) 0%,
+            rgba(200, 225, 255, 0.10) 50%,
+            rgba(200, 225, 255, 0) 100%
+        );
+        filter: blur(0.4px);
+    }
+
+    .laser__grain {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 40px;
+        mix-blend-mode: screen;
+        opacity: 0.4;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='40'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+        background-size: 180px 40px;
+        animation: grain-shift 0.12s steps(3) infinite;
+    }
+
+    @keyframes laser-scan {
+        from { top: 0; }
+        to   { top: calc(100% - 40px); }
+    }
+
+    @keyframes grain-shift {
+        0%   { background-position:   0 0; }
+        33%  { background-position: -60px 4px; }
+        66%  { background-position:  40px -6px; }
+        100% { background-position:   0 0; }
+    }
+
+    /* ==========================================================================
+       Responsive — mobile stacks columns
+       ========================================================================== */
+
+    @media (max-width: 960px) {
+        html, body {
+            overflow-y: auto;
+            height: auto;
+            min-height: 100%;
+        }
+
+        .scan {
+            flex-direction: column;
+            height: auto;
+            min-height: 100vh;
+            width: 100%;
+        }
+
+        .scan__left,
+        .scan__right {
+            width: 100%;
+            flex: none;
+        }
+
+        .scan__left {
+            padding: 40px 24px;
+            overflow-y: visible;
+        }
+
+        .scan__right {
+            height: 70vh;
+            min-height: 460px;
+            border-left: none;
+            border-top: 1px solid var(--divider);
+        }
+
+        .scan__title {
+            font-size: 48px;
+        }
+
+        .prime-caption {
+            top: 16px;
+            right: 20px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .scan__left {
+            padding: 32px 20px;
+        }
+
+        .scan__heading {
+            margin-top: 40px;
+        }
+
+        .scan__title {
+            font-size: 40px;
+        }
+
+        .scan__right {
+            height: 60vh;
+            min-height: 380px;
+        }
+    }
+
+    /* ==========================================================================
+       Screen router — three full-viewport sections, cross-fade between them
+       ========================================================================== */
+
+    .screen {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        overflow: hidden;
+        will-change: opacity;
+        transform: translateZ(0);
+        transition:
+            opacity    0.8s cubic-bezier(0.4, 0, 0.2, 1),
+            visibility 0s   linear 0.8s;
+    }
+
+    .screen.is-active {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        z-index: 1;
+        transition:
+            opacity    0.8s cubic-bezier(0.4, 0, 0.2, 1),
+            visibility 0s   linear 0s;
+    }
+
+    /* ==========================================================================
+       Screen 1 — Hero
+       ========================================================================== */
+
+    .hero {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background:
+            radial-gradient(ellipse at 50% 30%, rgba(200, 168, 75, 0.08), transparent 60%),
+            linear-gradient(180deg, #0A0A0A 0%, #050505 100%);
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+    }
+
+    /* Parent of the hero logo — enforce fully transparent container
+       (no background fill, no border, no shadow) so nothing we control
+       paints a black box around the image. */
+    .hero__content {
+        position: relative;
+        z-index: 2;
+        text-align: center;
+        max-width: 860px;
+        padding: 40px 24px;
+        background: none;
+        background-color: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    /* Hero logo — transparent PNG, centered, subtle presence for depth. */
+    .hero__logo {
+        display: block;
+        margin: 0 auto 28px;
+        width: min(520px, 72vw);
+        height: auto;
+        opacity: 0.45;
+        background: transparent;
+        background-color: transparent;
+        border: none;
+        box-shadow: none;
+        mix-blend-mode: normal;
+        filter: drop-shadow(0 0 28px rgba(255, 255, 255, 0.08));
+        user-select: none;
+        -webkit-user-drag: none;
+        pointer-events: none;
+    }
+
+    .hero__title {
+        font-family: var(--font-heading);
+        font-size: clamp(44px, 6.4vw, 92px);
+        line-height: 1;
+        color: #FFFFFF;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        font-weight: 400;
+        margin-bottom: 20px;
+        text-shadow: 0 0 40px rgba(255, 255, 255, 0.06);
+    }
+
+    .hero__subtitle {
+        font-family: var(--font-body);
+        font-size: 15px;
+        color: #888888;
+        letter-spacing: 0.06em;
+        margin-bottom: 56px;
+    }
+
+    .hero__cta {
+        display: inline-block;
+        max-width: 360px;
+        width: 100%;
+        padding: 16px 40px;
+        background: linear-gradient(135deg, #D0D0D0 0%, #F5F5F5 50%, #A0A0A0 100%);
+        color: #0A0A0A;
+        font-family: var(--font-heading);
+        font-size: 18px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 4px;
+        cursor: pointer;
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.55),
+            0 6px 18px rgba(0, 0, 0, 0.45);
+        transition: filter 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+    }
+
+    .hero__cta:hover {
+        filter: brightness(1.08);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.7),
+            0 8px 24px rgba(255, 255, 255, 0.18),
+            0 6px 18px rgba(0, 0, 0, 0.45);
+    }
+
+    .hero__cta:active {
+        transform: translateY(1px);
+        filter: brightness(0.96);
+    }
+
+    .hero__footer {
+        position: absolute;
+        bottom: 28px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        font-family: var(--font-body);
+        font-size: 10px;
+        letter-spacing: 4px;
+        color: rgba(255, 255, 255, 0.2);
+        z-index: 2;
+    }
+
+    /* ==========================================================================
+       Screen 3 — Diagnosis
+       ========================================================================== */
+
+    .diagnosis {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        color: var(--text);
+        padding: 28px 48px 24px;
+        background:
+            radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.025), transparent 60%),
+            #0A0A0A;
+        overflow: hidden;
+    }
+
+    .diagnosis__header {
+        display: flex;
+        justify-content: flex-end;
+        align-items: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .diagnosis__meta {
+        text-align: right;
+        font-family: var(--font-body);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 0.32em;
+        color: rgba(255, 255, 255, 0.35);
+        text-transform: uppercase;
+        line-height: 1.6;
+    }
+
+    .diagnosis__meta b {
+        font-family: var(--font-heading);
+        font-weight: 400;
+        color: rgba(255, 255, 255, 0.7);
+        letter-spacing: 0.18em;
+        font-size: 13px;
+        display: block;
+        margin-top: 2px;
+    }
+
+    .kpi {
+        text-align: center;
+        padding: 10px 0 6px;
+    }
+
+    .kpi__label {
+        font-family: var(--font-body);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 4px;
+        color: #888888;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .kpi__value {
+        font-family: var(--font-heading);
+        font-size: clamp(60px, 8.6vw, 128px);
+        line-height: 0.85;
+        letter-spacing: 0.02em;
+        font-weight: 400;
+        background: linear-gradient(180deg, #FFFFFF 0%, #A8A8A8 50%, #FFFFFF 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        color: transparent;
+        display: inline-block;
+        transition: filter 0.4s ease;
+    }
+
+    .kpi__twin {
+        margin-top: 10px;
+        font-family: var(--font-body);
+        font-size: 11px;
+        letter-spacing: 4px;
+        color: #888888;
+        text-transform: uppercase;
+    }
+
+    .kpi__twin b {
+        font-family: var(--font-heading);
+        font-weight: 400;
+        color: #E8E8E8;
+        letter-spacing: 0.16em;
+        margin-left: 6px;
+        font-size: 14px;
+    }
+
+    .compare {
+        flex: 1;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        gap: 20px;
+        min-height: 0;
+        margin-top: 12px;
+    }
+
+    .figure {
+        flex: 1 1 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 0 0;
+    }
+
+    .figure__svg {
+        flex: 1;
+        width: 100%;
+        min-height: 0;
+        display: block;
+    }
+
+    .figure__caption {
+        text-align: center;
+        margin-top: 8px;
+        font-family: var(--font-body);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 2px;
+        color: #555555;
+        text-transform: uppercase;
+        line-height: 1.5;
+    }
+
+    .figure__stats {
+        display: block;
+        margin-top: 4px;
+        font-family: var(--font-body);
+        font-size: 9px;
+        letter-spacing: 2px;
+        color: rgba(255, 255, 255, 0.18);
+    }
+
+    /* BACK view — head is just the contour of the back of the skull,
+       no eyes/nose/mouth (those only exist on the front). */
+    .figure--you-back .skull__inner {
+        display: none;
+    }
+
+    /* TWIN — gold-white tint on joints & bones */
+    .figure--twin .node {
+        stroke: #E8D48C;
+        fill: #0A0A0A;
+    }
+
+    .figure--twin .bone-line,
+    .figure--twin .rib-line,
+    .figure--twin .spine-line,
+    .figure--twin .spine-tick,
+    .figure--twin .pelvis-line,
+    .figure--twin .pelvis-accent,
+    .figure--twin .skull__edge,
+    .figure--twin .skull__inner {
+        stroke: rgba(232, 212, 140, 0.42);
+    }
+
+    /* Muscle constellation dots */
+    .muscle-dot {
+        fill: rgba(255, 255, 255, 0.2);
+        stroke: none;
+        transform-origin: center;
+        transform-box: fill-box;
+    }
+
+    .muscle-dot.is-hot {
+        fill: rgba(255, 255, 255, 0.96);
+        filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.75))
+                drop-shadow(0 0 9px rgba(220, 240, 255, 0.45));
+        animation: muscle-pulse 1.6s ease-in-out infinite;
+    }
+
+    .muscle-dot.is-warm {
+        fill: rgba(255, 255, 255, 0.5);
+    }
+
+    /* "Tension" state — node stays the same size, but lights up bright white
+       with a steady (non-pulsing) glow. Used for triceps: stiffness of the
+       lever, not mass. */
+    .muscle-dot.is-tense {
+        fill: rgba(255, 255, 255, 0.98);
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.9))
+                drop-shadow(0 0 12px rgba(220, 240, 255, 0.55));
+    }
+
+    @keyframes muscle-pulse {
+        0%, 100% { opacity: 1;    transform: scale(1); }
+        50%      { opacity: 0.55; transform: scale(0.8); }
+    }
+
+    /* Weight slider */
+    .weight-slider {
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+        gap: 28px;
+    }
+
+    .weight-slider__header {
+        min-width: 140px;
+    }
+
+    .weight-slider__label {
+        display: block;
+        font-family: var(--font-body);
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 3px;
+        color: #888888;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    .weight-slider__value {
+        font-family: var(--font-heading);
+        font-size: 34px;
+        color: #E8E8E8;
+        line-height: 1;
+        letter-spacing: 0.04em;
+    }
+
+    .weight-slider__value em {
+        font-style: normal;
+        font-size: 15px;
+        color: #888888;
+        margin-left: 6px;
+        letter-spacing: 0.2em;
+    }
+
+    .weight-slider__track {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .weight-slider__input {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.22);
+        outline: none;
+        cursor: pointer;
+        padding: 0;
+        margin: 0;
+    }
+
+    .weight-slider__input::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #F0F0F0, #B0B0B0);
+        border: 1px solid #FFFFFF;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+
+    .weight-slider__input::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #F0F0F0, #B0B0B0);
+        border: 1px solid #FFFFFF;
+        cursor: pointer;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+
+    .weight-slider__bounds {
+        display: flex;
+        justify-content: space-between;
+        font-family: var(--font-heading);
+        font-size: 11px;
+        color: #555555;
+        letter-spacing: 0.18em;
+    }
+
+    .weight-slider__bounds span.is-opt {
+        color: #E8E8E8;
+    }
+
+    @media (max-width: 960px) {
+        .diagnosis {
+            padding: 20px 16px 18px;
+            overflow-y: auto;
+            height: auto;
+            min-height: 100vh;
+        }
+
+        .screen.screen--diagnosis {
+            position: fixed;
+            overflow-y: auto;
+        }
+
+        .diagnosis__header {
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .diagnosis__meta {
+            text-align: left;
+        }
+
+        .compare {
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .figure {
+            height: 320px;
+            flex: 0 0 auto;
+        }
+
+        .weight-slider {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .weight-slider__header {
+            text-align: center;
+            min-width: 0;
+        }
+    }
+    </style>
+</head>
+<body class="is-booting">
+
+    <!-- ==========================================================
+         SCREEN 1 — HERO
+         ========================================================== -->
+    <section class="screen screen--hero is-active" id="screen-hero">
+        <div class="hero">
+            <div class="hero__content">
+                <img class="hero__logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAADbCAYAAADzq+N8AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAEoZSURBVHhe7d13tB1V/ffxB7tBAwGEAAkQEooooAKRJo8QF4sqYIsVRQTJEgELLgSXyE8lAVTUqFjooFlIU5qAVCmLCIRgKFa6IYQktID18fesD/CR7/1yzs0pc+6ZmfN+/XPmzD13yp699+z9nT0z/+f/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAV66Utf+tI8z5ZbbrnlPP2yl73sZS95yUteEv8ev8ffDjevjpQ28bv3e1D2vx1Kk5wuL3/5y1/u6Ve+8pWv9HRMV/2P8lv+X/8tyn9vRaP/9fdYRuK2avv8m/z/+fsgi+kY0yTXJ3XWLD94fqO/KX1i3svp1+h/yugVr3jFK/I8GaTjXxYxP1Ul/7RK+9OoTZLPG8Plu2Zlse5imuR6pt8aHZPhjmEn3NZw+RiuXQwAtaNK1SdL0bQqxtwRUyfIjdNcMeu75ueTbp15X7XfnDiGWlYeiHnNv40dhtjJjvx/eX67hsunuZERO//5b1GjcjGocucvpttwaVgXjfKCvitfO22c/2N9G/8np6HzYRXSL9aH2l7vy/LLL7/8kB+iJ2I96WPh83nOl1Wkfcnn3HgedtmKfzf/rtk5oNG8uonntCjXOf3S6Pg22+ZONMobzfIDANRSKxVes5NCbMA2+lud5f21fNIaVMOlU/5bzD/5f/TdeSz/bThex3Dib2PjUdTYcCPR8zQdy0JcRkQeeE5MU6VVo3qirpaVX/33/JtG9WmRDd+RloPInvffQoiecZrHY1BH2r9cZiKlgS9e+Hv+e/zueXXmtND5THW05nnfy3D+8vboU8fXIwR9Ts770y7vY973OA0AtTVcZRcbnfqdr1DpuyvNfNJVJb3GGmussdFGG2301prbZpttttlqq6228vctt9xyS31uu+22266//vrrx3TBUM53saHhjrXnKW/lDvioUaNGjRs3btwb3vCGN2zxvMnPG3JwWrDZ8zbeeOONx48fP17L9nqGawC58eD87+9V7qT1gtLzLW95y1s23XTTTVVWdKz0XeVEn5vXnPKWPmPe1H6rbpw0adKkmLeVh171qle9Kuc71bc5+Jrr3LJyQzvO0/68+c1vfvPWW2+99dDSiKIp7ymdledU9lQ/uY6qQ0BA5cLniFhuXC/7bzkPRqqj1F7ZcMMNN1S+VDqpforn9bqKddQGG2ywgdKjbOcwH8dNNtlkE2/vdtttt53OKXl/2uXyoU+VEdW/Lhd1KB8A0DJ3ZOJJU5/5iqeGcKoC/eQnP/nJr3/961//xS9+8Yu77rrrrkWLFi3629/+9rd///vf//7fAfCvf/3rX//veZrWPE0rDW644YYbhiQumoodb+U15a0DDjjggJkzZ84855xzzrnttttue/TRRx/9xz/+8Y///Oc//3H6K631Pc5rl47b3//+9797Gf/85z//+dBDDz00d+7cuRdddNFFxx9//PH777///moQtjJ02Z2e4Rqdg0LH1emqNHaaP/3000/HY1B3zqfxu/Ld0qVLlyqvXXbZZZcde+yxx37kIx/5yLrrrruu0s4dmtjZV+Pc+So+L6PM3Blzg1rb/cwzzzwzNIXQKz4vifNSDjJVmfOXvyuf5f1Tva1O3rRp06Z997vf/a7q9Tlz5szROeXJJ598MqaRxPP5oLjmmmuuUQfYaVam85fqDNWT3lado4dufediW9X7X5UAKwAUIp9II1/5V3T8tNNOO23x4sWLVWHmhq2m3SEeBLlRH9PhiiuuuCKn4yAarkMc89vo0aNHf+tb3/qWOodOV3fuY5rrhB3Fv/n3+X+a8fHy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4t85MKbvyqf625QpU6Z4feJOSdG3rww6AgD95brTw/L19o14PHKatkPLiOcdl08dl8cff/zxb37zm990ufJxcQfHZbzu4rHwxYsy5VEHYP1d7VkFwV1n+lg/1+0f+v2/GaEJ5w9Nx3Ot8sm11157rdsIDj7E7crpWEdOf+WL2MZt1N4FUEIqrJdddtllrtxiICBXiJ3wclXhHn/88ccPd4+yK5U8XVV5H+L3KlSSPtGrU/H73//+9zqpupFUxBB9d1r9qTwSr476pN0rXnfcJ2/HTjvttFNOj3bFRoEasGowONDgqwvd8Ha7Eavt1nIVwFDnOp6oy6guAYDcIPZ3H//jjjvuuLhNvqo/dGtfLDY69T0GeTRaa4sttthCy3enP+a33CBFZwgA9I/LbSy/yy+//PJur7gez+naKi3D7RxNP3ejzdDXtep1xu9973vfq7q7V/VIWcX9fe7yTLnypttQDkx4e0866aST4nFVHolBVGklAOu84M842k7z/vCHP/zhYx/72MccnCrjCIleivlB+9vsfAighNxIVCWmSi0OhcuVYSe0HHVOVFm6AtY6rr/++ut32WWXXTS8rFlFWYUOcju0P46WVqlxru3V1cbYCPaJMB/vdsVlaLmK3P/617/+9RVXXHHFpZdeeqk+e+mSSy65RA08rUuNysuD73znO9/JadEJ3UrgRr4aKF/60pe+5I770NRoXx5S7nKm6W233XZbN4rK2nCtegDA4tB7iWmuMq8G4kUXXXSRjrvLTisBoFwnO220HB3n2bNnz9byY32ixlezOhXtIwDQP7EN4HyteQcccMABbk9ITtdWuR7WslwuXX/Gcup65LTTTjtt11133XWQ3hKQ607XLWVtw2h7dc71bSKx3ozfWwkAxOPvfCE5ryxYsGCB3qilB7Tm7RkEsX1Tt3Y7UGuq0HVCmzdv3rxY2RUxAsANplh5ep4atgoOaKjdo48++qieFSALFy5cqNeteLrKtA/aP50gtI8PP/zww5r+61//+ld1MvOxKBud5NXwOv/8889X3ohXICUf73ZpGR7SrGXrxD2SJ5DYuIlXOHKjp1NejjuFKmurr7766k888cQT3TRco1jG9N1p+sMf/vCH7ogWtT9Fq3oAwMttlGfz1ZBNNtlkE9UFPlat7F+sNzXtUTcxnc4888wzvU6G/xePAEB/Nepsqx6d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" alt="" aria-hidden="true" />
+                <h1 class="hero__title">Рассчитай свою траекторию к&nbsp;пику формы</h1>
+                <p class="hero__subtitle">Биометрический анализ для боксёров</p>
+                <button type="button" class="hero__cta" id="hero-cta">Запустить сканирование</button>
+            </div>
+            <div class="hero__footer">V1.0 · MVP · PRECISION · POWER · PRIME</div>
+        </div>
+    </section>
+
+    <!-- ==========================================================
+         SCREEN 2 — SCAN
+         ========================================================== -->
+    <section class="screen screen--scan" id="screen-scan">
+    <main class="scan">
+        <!-- ======================================================
+             LEFT COLUMN — FORM
+             ====================================================== -->
+        <aside class="scan__left">
+
+            <div class="scan__heading">
+                <h1 class="scan__title">PRIME SCAN</h1>
+                <p class="scan__subtitle">Введи параметры — система найдёт твой биометрический эталон</p>
+            </div>
+
+            <form class="form" id="scan-form" novalidate>
+                <div class="field">
+                    <span class="field__label">Пол</span>
+                    <div class="gender" role="radiogroup" aria-label="Пол">
+                        <button type="button" class="gender__btn is-active" data-value="M" role="radio" aria-checked="true">М</button>
+                        <button type="button" class="gender__btn" data-value="F" role="radio" aria-checked="false">Ж</button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="age">Возраст</label>
+                    <input type="number" id="age" name="age" class="field__input" placeholder="18" min="10" max="80" inputmode="numeric" required>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="height">Рост (см)</label>
+                    <input type="number" id="height" name="height" class="field__input" placeholder="175" min="120" max="230" inputmode="numeric" required>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="weight">Вес (кг)</label>
+                    <input type="number" id="weight" name="weight" class="field__input" placeholder="70" min="30" max="200" inputmode="numeric" required>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="armspan">Размах рук (см)</label>
+                    <input type="number" id="armspan" name="armspan" class="field__input" placeholder="178" min="120" max="250" inputmode="numeric" required>
+                </div>
+
+                <div class="field field--parent" id="field-father">
+                    <label class="field__label" for="father-height">Рост отца (см)</label>
+                    <input type="number" id="father-height" name="father-height" class="field__input" placeholder="180" min="140" max="230" inputmode="numeric">
+                </div>
+
+                <div class="field field--parent" id="field-mother">
+                    <label class="field__label" for="mother-height">Рост матери (см)</label>
+                    <input type="number" id="mother-height" name="mother-height" class="field__input" placeholder="165" min="140" max="220" inputmode="numeric">
+                </div>
+
+                <div class="ape">
+                    <span class="ape__label">Ape Index</span>
+                    <span class="ape__value ape__value--dim" id="ape-value">—</span>
+                </div>
+
+                <button type="submit" class="calc-btn" id="calc-btn" disabled>
+                    Рассчитать потенциал
+                </button>
+            </form>
+        </aside>
+
+        <!-- ======================================================
+             RIGHT COLUMN — PRIME NODE SYSTEM
+             ====================================================== -->
+        <section class="scan__right" aria-hidden="true">
+
+            <div class="laser">
+                <div class="laser__line"></div>
+                <div class="laser__trail"></div>
+                <div class="laser__grain"></div>
+            </div>
+
+            <div class="prime-caption">
+                <span class="prime-caption__id">PNS-01</span>
+                <span class="prime-caption__label">PRIME NODE SYSTEM</span>
+            </div>
+
+            <svg class="skeleton-svg"
+                 viewBox="0 0 520 640"
+                 xmlns="http://www.w3.org/2000/svg"
+                 preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <filter id="node-glow" x="-200%" y="-200%" width="500%" height="500%">
+                        <feGaussianBlur stdDeviation="1.4"/>
+                        <feMerge>
+                            <feMergeNode/>
+                            <feMergeNode in="SourceGraphic"/>
+                        </feMerge>
+                    </filter>
+                </defs>
+
+                <g id="ruler" class="ruler">
+                    <line class="ruler__axis" x1="60" y1="40" x2="60" y2="600"/>
+                    <g id="ruler-ticks"></g>
+                </g>
+
+                <g id="crown-marker" class="crown-marker is-hidden">
+                    <line class="crown-marker__line" x1="60" x2="220" y1="0" y2="0"/>
+                    <circle class="crown-marker__dot" cx="60" cy="0" r="2"/>
+                    <text class="crown-marker__label" x="70" y="-6">— см</text>
+                </g>
+
+                <g id="skeleton">
+                    <g id="skull"></g>
+                    <g id="ribcage"></g>
+                    <g id="spine"></g>
+                    <g id="pelvis"></g>
+                    <g id="bones-body" class="bones"></g>
+                    <g id="bones-arms" class="bones bones--arms"></g>
+                    <g id="nodes"></g>
+                </g>
+            </svg>
+        </section>
+    </main>
+    </section>
+
+    <!-- ==========================================================
+         SCREEN 3 — DIAGNOSIS
+         ========================================================== -->
+    <section class="screen screen--diagnosis" id="screen-diagnosis">
+        <div class="diagnosis">
+            <header class="diagnosis__header">
+                <div class="diagnosis__meta">
+                    PRIME DIAGNOSIS
+                    <b>CARTEL / PD-03</b>
+                </div>
+            </header>
+
+            <div class="kpi">
+                <div class="kpi__label">Вероятность успеха</div>
+                <div class="kpi__value" id="kpi-value">0%</div>
+                <div class="kpi__twin">Близнец:<b id="kpi-twin">Julio Cesar La Cruz</b></div>
+            </div>
+
+            <div class="compare">
+                <!-- TWIN -->
+                <div class="figure figure--twin">
+                    <svg class="figure__svg" id="fig-svg-twin"
+                         viewBox="0 0 520 640"
+                         xmlns="http://www.w3.org/2000/svg"
+                         preserveAspectRatio="xMidYMid meet">
+                        <g class="fig-skeleton" id="fig-twin">
+                            <g class="fig-skull"></g>
+                            <g class="fig-ribcage"></g>
+                            <g class="fig-spine"></g>
+                            <g class="fig-pelvis"></g>
+                            <g class="fig-body-bones"></g>
+                            <g class="fig-arm-bones"></g>
+                            <g class="fig-muscles"></g>
+                            <g class="fig-nodes"></g>
+                        </g>
+                    </svg>
+                    <div class="figure__caption">[TWIN: LA CRUZ]</div>
+                    <div class="figure__stats">184 · 191 СМ</div>
+                </div>
+
+                <!-- YOU (FRONT) -->
+                <div class="figure figure--you-front">
+                    <svg class="figure__svg" id="fig-svg-you-front"
+                         viewBox="0 0 520 640"
+                         xmlns="http://www.w3.org/2000/svg"
+                         preserveAspectRatio="xMidYMid meet">
+                        <g class="fig-skeleton" id="fig-you-front">
+                            <g class="fig-skull"></g>
+                            <g class="fig-ribcage"></g>
+                            <g class="fig-spine"></g>
+                            <g class="fig-pelvis"></g>
+                            <g class="fig-body-bones"></g>
+                            <g class="fig-arm-bones"></g>
+                            <g class="fig-muscles"></g>
+                            <g class="fig-nodes"></g>
+                        </g>
+                    </svg>
+                    <div class="figure__caption">[YOU: FRONT]</div>
+                    <div class="figure__stats" id="fig-you-front-stats">— · —</div>
+                </div>
+
+                <!-- YOU (BACK) -->
+                <div class="figure figure--you-back">
+                    <svg class="figure__svg" id="fig-svg-you-back"
+                         viewBox="0 0 520 640"
+                         xmlns="http://www.w3.org/2000/svg"
+                         preserveAspectRatio="xMidYMid meet">
+                        <g class="fig-skeleton" id="fig-you-back">
+                            <g class="fig-skull"></g>
+                            <g class="fig-ribcage"></g>
+                            <g class="fig-spine"></g>
+                            <g class="fig-pelvis"></g>
+                            <g class="fig-body-bones"></g>
+                            <g class="fig-arm-bones"></g>
+                            <g class="fig-muscles"></g>
+                            <g class="fig-nodes"></g>
+                        </g>
+                    </svg>
+                    <div class="figure__caption">[YOU: BACK]</div>
+                    <div class="figure__stats" id="fig-you-back-stats">— · —</div>
+                </div>
+            </div>
+
+            <div class="weight-slider">
+                <div class="weight-slider__header">
+                    <span class="weight-slider__label">Твой вес</span>
+                    <div class="weight-slider__value">
+                        <span id="weight-slider-value">70</span><em>кг</em>
+                    </div>
+                </div>
+                <div class="weight-slider__track">
+                    <input type="range" min="60" max="100" step="0.5" value="70"
+                           class="weight-slider__input" id="weight-slider" aria-label="Вес, кг">
+                    <div class="weight-slider__bounds">
+                        <span>60</span>
+                        <span>70</span>
+                        <span class="is-opt">81 OPT</span>
+                        <span>90</span>
+                        <span>100</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+    /* ==========================================================================
+       PRIME NODE SYSTEM — high-tech bio-schematic
+       --------------------------------------------------------------------------
+       * Procedural SVG, every element is a persistent DOM node whose coords
+         (cx, cy, x1, y1, x2, y2) are updated on input change.  CSS transitions
+         the attributes directly — no `scale()`, no deformation.
+       * Layout = pure function of (height, reach).  Pelvis is static; spine
+         and legs grow from it as height increases; humerus + radius lengthen
+         from the static shoulder girdle as reach increases.
+       ========================================================================== */
+    (function () {
+        'use strict';
+
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const MINUS = '\u2212';
+
+        /* Geometry — SVG user units, viewBox 520 × 640 */
+        const CENTER_X        = 260;
+        const PELVIS_CENTER_Y = 360;
+        const SHOULDER_HW     = 52;
+        const HIP_HW          = 32;
+        const PELVIS_HALF_H   = 22;
+
+        const HEAD_SPAN = 52;
+        const NECK_LEN  = 20;
+        const HAND_LEN  = 24;
+        const FOOT_LEN  = 20;
+
+        const TORSO_BASE   = 166;
+        const FEMUR_BASE   = 98;
+        const TIBIA_BASE   = 98;
+        const HUMERUS_BASE = 92;
+        const RADIUS_BASE  = 98;
+
+        const BASE_HEIGHT = 175;
+        const BASE_REACH  = 175;
+
+        const HUMERUS_ANGLE_DEG = 3;
+        const RADIUS_ANGLE_DEG  = 5;
+        const BONE_GAP = 2.4;
+
+        const HALF_H = HEAD_SPAN / 2;
+        const SKULL_POINTS_LOCAL = [
+            [  0, -HALF_H      ],
+            [ 22, -HALF_H * 0.4],
+            [ 20,  HALF_H * 0.5],
+            [  0,  HALF_H      ],
+            [-20,  HALF_H * 0.5],
+            [-22, -HALF_H * 0.4],
+        ];
+
+        const RULER_X   = 60;
+        const RULER_MIN = 150;
+        const RULER_MAX = 200;
+
+        /* Crown y (formula derived from constants above): 266 - 166*(h/175) */
+        function cmToRulerY(cm) {
+            return (PELVIS_CENTER_Y - PELVIS_HALF_H)
+                 - TORSO_BASE * (cm / BASE_HEIGHT)
+                 - NECK_LEN - HEAD_SPAN;
+        }
+
+        /* =====================================================================
+           Layout — pure function (height, reach) → positions/lengths
+        ===================================================================== */
+        function computeLayout(heightCm, reachCm) {
+            const h = (heightCm > 0) ? heightCm : BASE_HEIGHT;
+            const r = (reachCm  > 0) ? reachCm  : BASE_REACH;
+
+            const hS = h / BASE_HEIGHT;
+            const rS = r / BASE_REACH;
+
+            const torsoLen   = TORSO_BASE * hS;
+            const femurLen   = FEMUR_BASE * hS;
+            const tibiaLen   = TIBIA_BASE * hS;
+            const humerusLen = HUMERUS_BASE * rS;
+            const radiusLen  = RADIUS_BASE  * rS;
+
+            const pelvisTopY = PELVIS_CENTER_Y - PELVIS_HALF_H;
+            const pelvisBotY = PELVIS_CENTER_Y + PELVIS_HALF_H;
+            const hipY       = PELVIS_CENTER_Y + 6;
+
+            const shoulderY    = pelvisTopY - torsoLen;
+            const chinY        = shoulderY - NECK_LEN;
+            const skullCenterY = chinY - HEAD_SPAN / 2;
+            const crownY       = skullCenterY - HEAD_SPAN / 2;
+
+            const shoulderLX = CENTER_X - SHOULDER_HW;
+            const shoulderRX = CENTER_X + SHOULDER_HW;
+            const hipLX      = CENTER_X - HIP_HW;
+            const hipRX      = CENTER_X + HIP_HW;
+
+            const hAng = (HUMERUS_ANGLE_DEG * Math.PI) / 180;
+            const fAng = ((HUMERUS_ANGLE_DEG + RADIUS_ANGLE_DEG) * Math.PI) / 180;
+
+            const elbowLX = shoulderLX - humerusLen * Math.sin(hAng);
+            const elbowRX = shoulderRX + humerusLen * Math.sin(hAng);
+            const elbowY  = shoulderY  + humerusLen * Math.cos(hAng);
+
+            const wristLX = elbowLX - radiusLen * Math.sin(fAng);
+            const wristRX = elbowRX + radiusLen * Math.sin(fAng);
+            const wristY  = elbowY  + radiusLen * Math.cos(fAng);
+
+            const handLX = wristLX - HAND_LEN * Math.sin(fAng);
+            const handRX = wristRX + HAND_LEN * Math.sin(fAng);
+            const handY  = wristY  + HAND_LEN * Math.cos(fAng);
+
+            const kneeY    = hipY + femurLen;
+            const ankleY   = kneeY + tibiaLen;
+            const footBotY = ankleY + FOOT_LEN;
+
+            return {
+                hS, rS, h, r,
+                crown:       { x: CENTER_X,    y: crownY },
+                skullCenter: { x: CENTER_X,    y: skullCenterY },
+                chin:        { x: CENTER_X,    y: chinY },
+                shoulderL:   { x: shoulderLX,  y: shoulderY },
+                shoulderR:   { x: shoulderRX,  y: shoulderY },
+                shoulderC:   { x: CENTER_X,    y: shoulderY },
+                elbowL:      { x: elbowLX,     y: elbowY },
+                elbowR:      { x: elbowRX,     y: elbowY },
+                wristL:      { x: wristLX,     y: wristY },
+                wristR:      { x: wristRX,     y: wristY },
+                handL:       { x: handLX,      y: handY },
+                handR:       { x: handRX,      y: handY },
+                pelvisTop:   { x: CENTER_X,    y: pelvisTopY },
+                pelvisBot:   { x: CENTER_X,    y: pelvisBotY },
+                hipL:        { x: hipLX,       y: hipY },
+                hipR:        { x: hipRX,       y: hipY },
+                kneeL:       { x: hipLX,       y: kneeY },
+                kneeR:       { x: hipRX,       y: kneeY },
+                ankleL:      { x: hipLX,       y: ankleY },
+                ankleR:      { x: hipRX,       y: ankleY },
+                footL:       { x: hipLX - 6,   y: footBotY },
+                footR:       { x: hipRX + 6,   y: footBotY },
+                torsoLen,
+            };
+        }
+
+        /* =====================================================================
+           SVG helpers
+        ===================================================================== */
+        function createSvg(tag, attrs) {
+            const el = document.createElementNS(SVG_NS, tag);
+            if (attrs) {
+                for (const k in attrs) {
+                    if (Object.prototype.hasOwnProperty.call(attrs, k)) {
+                        el.setAttribute(k, String(attrs[k]));
+                    }
+                }
+            }
+            return el;
+        }
+
+        function setLine(el, x1, y1, x2, y2) {
+            el.setAttribute('x1', x1);
+            el.setAttribute('y1', y1);
+            el.setAttribute('x2', x2);
+            el.setAttribute('y2', y2);
+        }
+
+        function setCircle(el, x, y) {
+            el.setAttribute('cx', x);
+            el.setAttribute('cy', y);
+        }
+
+        /* A bone = two parallel lines offset perpendicularly by BONE_GAP/2. */
+        function setBonePair(pair, x1, y1, x2, y2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const len = Math.hypot(dx, dy) || 1;
+            const nx = (-dy / len) * (BONE_GAP / 2);
+            const ny = ( dx / len) * (BONE_GAP / 2);
+            setLine(pair[0], x1 + nx, y1 + ny, x2 + nx, y2 + ny);
+            setLine(pair[1], x1 - nx, y1 - ny, x2 - nx, y2 - ny);
+        }
+
+        /* =====================================================================
+           Build phase — create every persistent SVG element exactly once
+        ===================================================================== */
+        function buildSkeleton(groups) {
+            const refs = {};
+
+            /* Skull — 6 hex edges + inner facets */
+            refs.skullEdges = [];
+            for (let i = 0; i < 6; i++) {
+                const e = createSvg('line', { class: 'skull__edge' });
+                groups.skull.appendChild(e);
+                refs.skullEdges.push(e);
+            }
+            refs.skullEyeL  = createSvg('line', { class: 'skull__inner' });
+            refs.skullEyeR  = createSvg('line', { class: 'skull__inner' });
+            refs.skullNose  = createSvg('line', { class: 'skull__inner' });
+            refs.skullMouth = createSvg('line', { class: 'skull__inner' });
+            groups.skull.appendChild(refs.skullEyeL);
+            groups.skull.appendChild(refs.skullEyeR);
+            groups.skull.appendChild(refs.skullNose);
+            groups.skull.appendChild(refs.skullMouth);
+
+            /* Ribcage — 5 horizontal double-line segments */
+            refs.ribs = [];
+            for (let i = 0; i < 5; i++) {
+                const pair = [
+                    createSvg('line', { class: 'rib-line' }),
+                    createSvg('line', { class: 'rib-line' }),
+                ];
+                groups.ribcage.appendChild(pair[0]);
+                groups.ribcage.appendChild(pair[1]);
+                refs.ribs.push(pair);
+            }
+
+            /* Spine — 4 segments + 8 vertebra ticks */
+            refs.spineSegs = [];
+            for (let i = 0; i < 4; i++) {
+                const pair = [
+                    createSvg('line', { class: 'spine-line' }),
+                    createSvg('line', { class: 'spine-line' }),
+                ];
+                groups.spine.appendChild(pair[0]);
+                groups.spine.appendChild(pair[1]);
+                refs.spineSegs.push(pair);
+            }
+            refs.spineTicks = [];
+            for (let i = 0; i < 8; i++) {
+                const t = createSvg('line', { class: 'spine-tick' });
+                groups.spine.appendChild(t);
+                refs.spineTicks.push(t);
+            }
+
+            /* Pelvis — diamond + horizontal crossbar */
+            refs.pelvisEdges = [];
+            for (let i = 0; i < 4; i++) {
+                const e = createSvg('line', { class: 'pelvis-line' });
+                groups.pelvis.appendChild(e);
+                refs.pelvisEdges.push(e);
+            }
+            refs.pelvisAccent = createSvg('line', { class: 'pelvis-accent' });
+            groups.pelvis.appendChild(refs.pelvisAccent);
+
+            function makeBone(parent) {
+                const pair = [
+                    createSvg('line', { class: 'bone-line' }),
+                    createSvg('line', { class: 'bone-line' }),
+                ];
+                parent.appendChild(pair[0]);
+                parent.appendChild(pair[1]);
+                return pair;
+            }
+
+            refs.neck      = makeBone(groups.bodyBones);
+            refs.clavicleL = makeBone(groups.bodyBones);
+            refs.clavicleR = makeBone(groups.bodyBones);
+            refs.femurL    = makeBone(groups.bodyBones);
+            refs.femurR    = makeBone(groups.bodyBones);
+            refs.tibiaL    = makeBone(groups.bodyBones);
+            refs.tibiaR    = makeBone(groups.bodyBones);
+            refs.footL     = makeBone(groups.bodyBones);
+            refs.footR     = makeBone(groups.bodyBones);
+
+            refs.humerusL = makeBone(groups.armBones);
+            refs.humerusR = makeBone(groups.armBones);
+            refs.radiusL  = makeBone(groups.armBones);
+            refs.radiusR  = makeBone(groups.armBones);
+            refs.handL    = makeBone(groups.armBones);
+            refs.handR    = makeBone(groups.armBones);
+
+            const NODE_R = { major: 3.4, mid: 2.6, minor: 1.9 };
+
+            function makeNode(size) {
+                const c = createSvg('circle', {
+                    class: 'node node--' + size,
+                    cx: 0, cy: 0,
+                    r:  NODE_R[size],
+                    filter: 'url(#node-glow)',
+                });
+                groups.nodes.appendChild(c);
+                return c;
+            }
+
+            refs.nodeCrown      = makeNode('minor');
+            refs.nodeChin       = makeNode('minor');
+            refs.nodeShoulderC  = makeNode('mid');
+            refs.nodeShoulderL  = makeNode('major');
+            refs.nodeShoulderR  = makeNode('major');
+            refs.nodeElbowL     = makeNode('mid');
+            refs.nodeElbowR     = makeNode('mid');
+            refs.nodeWristL     = makeNode('minor');
+            refs.nodeWristR     = makeNode('minor');
+            refs.nodeHandL      = makeNode('minor');
+            refs.nodeHandR      = makeNode('minor');
+            refs.nodePelvisTop  = makeNode('minor');
+            refs.nodePelvisBot  = makeNode('minor');
+            refs.nodeHipL       = makeNode('major');
+            refs.nodeHipR       = makeNode('major');
+            refs.nodeKneeL      = makeNode('mid');
+            refs.nodeKneeR      = makeNode('mid');
+            refs.nodeAnkleL     = makeNode('minor');
+            refs.nodeAnkleR     = makeNode('minor');
+
+            return refs;
+        }
+
+        /* =====================================================================
+           Apply phase — write computed coordinates into existing DOM nodes
+        ===================================================================== */
+        function applyLayout(L, refs) {
+            const cx = L.skullCenter.x;
+            const cy = L.skullCenter.y;
+
+            /* Skull hex */
+            const pts = SKULL_POINTS_LOCAL.map(([dx, dy]) => [cx + dx, cy + dy]);
+            for (let i = 0; i < 6; i++) {
+                const a = pts[i];
+                const b = pts[(i + 1) % 6];
+                setLine(refs.skullEdges[i], a[0], a[1], b[0], b[1]);
+            }
+            setLine(refs.skullEyeL,  cx - 12, cy -  7, cx -  5, cy - 7);
+            setLine(refs.skullEyeR,  cx +  5, cy -  7, cx + 12, cy - 7);
+            setLine(refs.skullNose,  cx,      cy -  2, cx,      cy + 4);
+            setLine(refs.skullMouth, cx -  6, cy + 12, cx +  6, cy + 12);
+
+            /* Ribcage */
+            const ribTop = L.shoulderL.y + L.torsoLen * 0.12;
+            const ribBot = L.shoulderL.y + L.torsoLen * 0.58;
+            const ribWidths = [30, 38, 42, 40, 34];
+            for (let i = 0; i < refs.ribs.length; i++) {
+                const t = refs.ribs.length > 1 ? (i / (refs.ribs.length - 1)) : 0;
+                const y = ribTop + t * (ribBot - ribTop);
+                const w = ribWidths[i] || 32;
+                setBonePair(refs.ribs[i], CENTER_X - w, y, CENTER_X + w, y);
+            }
+
+            /* Spine */
+            const spineTop = L.shoulderL.y;
+            const spineBot = L.pelvisTop.y;
+            for (let i = 0; i < refs.spineSegs.length; i++) {
+                const y1 = spineTop + (i     / refs.spineSegs.length) * (spineBot - spineTop);
+                const y2 = spineTop + ((i+1) / refs.spineSegs.length) * (spineBot - spineTop);
+                setBonePair(refs.spineSegs[i], CENTER_X, y1, CENTER_X, y2);
+            }
+            for (let i = 0; i < refs.spineTicks.length; i++) {
+                const t = (i + 1) / (refs.spineTicks.length + 1);
+                const y = spineTop + t * (spineBot - spineTop);
+                setLine(refs.spineTicks[i], CENTER_X - 3, y, CENTER_X + 3, y);
+            }
+
+            /* Pelvis */
+            setLine(refs.pelvisEdges[0], L.pelvisTop.x, L.pelvisTop.y, L.hipL.x, L.hipL.y);
+            setLine(refs.pelvisEdges[1], L.hipL.x, L.hipL.y, L.pelvisBot.x, L.pelvisBot.y);
+            setLine(refs.pelvisEdges[2], L.pelvisBot.x, L.pelvisBot.y, L.hipR.x, L.hipR.y);
+            setLine(refs.pelvisEdges[3], L.hipR.x, L.hipR.y, L.pelvisTop.x, L.pelvisTop.y);
+            setLine(refs.pelvisAccent,   L.hipL.x, L.hipL.y, L.hipR.x, L.hipR.y);
+
+            /* Body bones */
+            setBonePair(refs.neck,      L.chin.x,      L.chin.y,      L.shoulderC.x, L.shoulderC.y);
+            setBonePair(refs.clavicleL, L.shoulderC.x, L.shoulderC.y, L.shoulderL.x, L.shoulderL.y);
+            setBonePair(refs.clavicleR, L.shoulderC.x, L.shoulderC.y, L.shoulderR.x, L.shoulderR.y);
+            setBonePair(refs.femurL,    L.hipL.x,      L.hipL.y,      L.kneeL.x,     L.kneeL.y);
+            setBonePair(refs.femurR,    L.hipR.x,      L.hipR.y,      L.kneeR.x,     L.kneeR.y);
+            setBonePair(refs.tibiaL,    L.kneeL.x,     L.kneeL.y,     L.ankleL.x,    L.ankleL.y);
+            setBonePair(refs.tibiaR,    L.kneeR.x,     L.kneeR.y,     L.ankleR.x,    L.ankleR.y);
+            setBonePair(refs.footL,     L.ankleL.x,    L.ankleL.y,    L.footL.x,     L.footL.y);
+            setBonePair(refs.footR,     L.ankleR.x,    L.ankleR.y,    L.footR.x,     L.footR.y);
+
+            /* Arm bones */
+            setBonePair(refs.humerusL, L.shoulderL.x, L.shoulderL.y, L.elbowL.x, L.elbowL.y);
+            setBonePair(refs.humerusR, L.shoulderR.x, L.shoulderR.y, L.elbowR.x, L.elbowR.y);
+            setBonePair(refs.radiusL,  L.elbowL.x,    L.elbowL.y,    L.wristL.x, L.wristL.y);
+            setBonePair(refs.radiusR,  L.elbowR.x,    L.elbowR.y,    L.wristR.x, L.wristR.y);
+            setBonePair(refs.handL,    L.wristL.x,    L.wristL.y,    L.handL.x,  L.handL.y);
+            setBonePair(refs.handR,    L.wristR.x,    L.wristR.y,    L.handR.x,  L.handR.y);
+
+            /* Nodes */
+            setCircle(refs.nodeCrown,      L.crown.x,     L.crown.y);
+            setCircle(refs.nodeChin,       L.chin.x,      L.chin.y);
+            setCircle(refs.nodeShoulderC,  L.shoulderC.x, L.shoulderC.y);
+            setCircle(refs.nodeShoulderL,  L.shoulderL.x, L.shoulderL.y);
+            setCircle(refs.nodeShoulderR,  L.shoulderR.x, L.shoulderR.y);
+            setCircle(refs.nodeElbowL,     L.elbowL.x,    L.elbowL.y);
+            setCircle(refs.nodeElbowR,     L.elbowR.x,    L.elbowR.y);
+            setCircle(refs.nodeWristL,     L.wristL.x,    L.wristL.y);
+            setCircle(refs.nodeWristR,     L.wristR.x,    L.wristR.y);
+            setCircle(refs.nodeHandL,      L.handL.x,     L.handL.y);
+            setCircle(refs.nodeHandR,      L.handR.x,     L.handR.y);
+            setCircle(refs.nodePelvisTop,  L.pelvisTop.x, L.pelvisTop.y);
+            setCircle(refs.nodePelvisBot,  L.pelvisBot.x, L.pelvisBot.y);
+            setCircle(refs.nodeHipL,       L.hipL.x,      L.hipL.y);
+            setCircle(refs.nodeHipR,       L.hipR.x,      L.hipR.y);
+            setCircle(refs.nodeKneeL,      L.kneeL.x,     L.kneeL.y);
+            setCircle(refs.nodeKneeR,      L.kneeR.x,     L.kneeR.y);
+            setCircle(refs.nodeAnkleL,     L.ankleL.x,    L.ankleL.y);
+            setCircle(refs.nodeAnkleR,     L.ankleR.x,    L.ankleR.y);
+        }
+
+        /* =====================================================================
+           Ruler — build once, ticks calibrated to cmToRulerY()
+        ===================================================================== */
+        function buildRulerTicks(container) {
+            for (let cm = RULER_MIN; cm <= RULER_MAX; cm += 5) {
+                const y = cmToRulerY(cm);
+                const isMain = (cm % 10) === 0;
+
+                const tick = createSvg('line', {
+                    class: isMain ? 'ruler__tick' : 'ruler__tick--minor',
+                    x1: RULER_X,
+                    x2: isMain ? RULER_X + 10 : RULER_X + 5,
+                    y1: y, y2: y,
+                });
+                container.appendChild(tick);
+
+                if (isMain) {
+                    const label = createSvg('text', {
+                        class: 'ruler__label',
+                        x: RULER_X - 6,
+                        y: y + 3.6,
+                    });
+                    label.textContent = String(cm);
+                    container.appendChild(label);
+                }
+            }
+        }
+
+        /* =====================================================================
+           Shared state across screens
+        ===================================================================== */
+        const PrimeState = {
+            gender: 'M',
+            age:    null,
+            height: BASE_HEIGHT,
+            reach:  BASE_REACH,
+            weight: 70,
+        };
+
+        /* =====================================================================
+           Screen router — cross-fade one screen at a time
+        ===================================================================== */
+        function showScreen(name) {
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach((s) => s.classList.remove('is-active'));
+            const target = document.getElementById('screen-' + name);
+            if (target) target.classList.add('is-active');
+        }
+
+        /* =====================================================================
+           Probability curve — bell around 81 kg for height 183
+               p(70) = 16, p(81) = 89, p(100) = 16, smooth parabola
+        ===================================================================== */
+        function probabilityFor(w) {
+            const OPT = 81, LOW = 16, HI = 89;
+            let dist;
+            if (w <= OPT) dist = (OPT - w) / (OPT - 70);
+            else          dist = (w - OPT) / (100 - OPT);
+            dist = Math.max(0, Math.min(1, dist));
+            const k = 1 - dist * dist;
+            return Math.max(LOW, Math.round(LOW + (HI - LOW) * k));
+        }
+
+        /* Muscle hotness — peaks at 81, decays either side (wider than probability) */
+        function muscleHotness(w) {
+            const OPT = 81;
+            let dist;
+            if (w <= OPT) dist = (OPT - w) / (OPT - 65);
+            else          dist = (w - OPT) / (100 - OPT);
+            dist = Math.max(0, Math.min(1, dist));
+            return 1 - dist * dist;
+        }
+
+        /* Groups that respond to weight by GROWING in diameter — mass.
+           Legs and the entire posterior chain. */
+        const ACTIVE_GROW = {
+            quads: 1, calves: 1, glutes: 1,
+            lats:  1, lowback: 1, traps: 1,
+        };
+
+        /* Groups that respond to weight by GLOWING (opacity + bloom) without
+           changing diameter — stiffness of the lever, not its mass. */
+        const ACTIVE_GLOW = { triceps: 1 };
+
+        /* Per-group growth multiplier on top of the base radius.
+           Focus hypertrophy: legs (quads/glutes) and back (lats) are the
+           dominant gainers. Supporting chains (calves/traps/lowback) scale
+           moderately so the silhouette stays anatomically coherent. */
+        const GROUP_GROW = {
+            quads:   3.6,  glutes:  3.6,  lats: 3.6,
+            calves:  2.0,  traps:   2.2,  lowback: 2.2,
+        };
+
+        /* Vertical anchor — every figure on the diagnosis screen plants its
+           feet on this y, so all three skeletons share one ground line. */
+        const GROUND_Y = 600;
+
+        /* Shift a layout vertically so that footL.y === groundY.
+           Mutates point objects in-place and returns the same layout. */
+        function alignToGround(L, groundY) {
+            const dy = groundY - L.footL.y;
+            if (dy === 0) return L;
+            for (const k in L) {
+                const v = L[k];
+                if (v && typeof v === 'object' && 'y' in v) {
+                    v.y += dy;
+                }
+            }
+            return L;
+        }
+
+        /* =====================================================================
+           Muscle constellations — persistent SVG circles over figure skeleton
+        ===================================================================== */
+        function buildMuscles(view, L, parentG) {
+            while (parentG.firstChild) parentG.removeChild(parentG.firstChild);
+            const dots = [];
+            function add(group, x, y, baseR) {
+                const c = createSvg('circle', {
+                    class: 'muscle-dot',
+                    'data-group': group,
+                    cx: x, cy: y, r: baseR,
+                });
+                parentG.appendChild(c);
+                dots.push({ el: c, group: group, baseR: baseR });
+            }
+
+            if (view === 'front') {
+                const chestY = L.shoulderL.y + L.torsoLen * 0.16;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 2; j++) {
+                        add('chest', L.shoulderC.x - 14 - i * 5, chestY + j * 6, 1.8);
+                        add('chest', L.shoulderC.x + 14 + i * 5, chestY + j * 6, 1.8);
+                    }
+                }
+                for (let i = 0; i < 3; i++) {
+                    const t = 0.28 + i * 0.2;
+                    const xL = L.shoulderL.x + (L.elbowL.x - L.shoulderL.x) * t + 2;
+                    const yL = L.shoulderL.y + (L.elbowL.y - L.shoulderL.y) * t;
+                    const xR = L.shoulderR.x + (L.elbowR.x - L.shoulderR.x) * t - 2;
+                    const yR = L.shoulderR.y + (L.elbowR.y - L.shoulderR.y) * t;
+                    add('biceps', xL,     yL,     1.6);
+                    add('biceps', xL - 3, yL + 2, 1.4);
+                    add('biceps', xR,     yR,     1.6);
+                    add('biceps', xR + 3, yR + 2, 1.4);
+                }
+                add('shoulders', L.shoulderL.x - 2, L.shoulderL.y - 1, 1.7);
+                add('shoulders', L.shoulderL.x + 4, L.shoulderL.y + 2, 1.7);
+                add('shoulders', L.shoulderR.x + 2, L.shoulderR.y - 1, 1.7);
+                add('shoulders', L.shoulderR.x - 4, L.shoulderR.y + 2, 1.7);
+                for (let i = 0; i < 5; i++) {
+                    const t = 0.2 + i * 0.14;
+                    const yL = L.hipL.y + (L.kneeL.y - L.hipL.y) * t;
+                    const yR = L.hipR.y + (L.kneeR.y - L.hipR.y) * t;
+                    add('quads', L.hipL.x - 6, yL,     2.0);
+                    add('quads', L.hipL.x + 2, yL + 1, 2.0);
+                    add('quads', L.hipR.x - 2, yR + 1, 2.0);
+                    add('quads', L.hipR.x + 6, yR,     2.0);
+                }
+            }
+
+            if (view === 'back') {
+                /* Rear deltoids — static, dim. */
+                add('shoulders', L.shoulderL.x - 3, L.shoulderL.y - 1, 1.7);
+                add('shoulders', L.shoulderL.x + 3, L.shoulderL.y + 2, 1.7);
+                add('shoulders', L.shoulderR.x + 3, L.shoulderR.y - 1, 1.7);
+                add('shoulders', L.shoulderR.x - 3, L.shoulderR.y + 2, 1.7);
+
+                /* Trapezius — yoke shape between neck base and rear delts.
+                   Two diagonal lines of dots from chin/neck base out to the
+                   shoulder caps. Grows aggressively at optimal weight. */
+                const trapNeckY = L.shoulderC.y - 4;
+                for (let i = 0; i < 5; i++) {
+                    const t = i / 4;
+                    const xL = L.shoulderC.x + (L.shoulderL.x - L.shoulderC.x) * t;
+                    const xR = L.shoulderC.x + (L.shoulderR.x - L.shoulderC.x) * t;
+                    const y  = trapNeckY + t * 6;
+                    add('traps', xL, y,     1.9);
+                    add('traps', xR, y,     1.9);
+                    if (i > 0 && i < 4) {
+                        add('traps', xL, y + 4, 1.7);
+                        add('traps', xR, y + 4, 1.7);
+                    }
+                }
+
+                /* Latissimus dorsi — V-wings flaring from upper back to waist.
+                   Wider, denser cluster. Grows aggressively. */
+                const latsTopY = L.shoulderL.y + L.torsoLen * 0.22;
+                const latsBotY = L.shoulderL.y + L.torsoLen * 0.62;
+                for (let i = 0; i < 6; i++) {
+                    const t = i / 5;
+                    const y = latsTopY + (latsBotY - latsTopY) * t;
+                    const dx = 38 - t * 14;
+                    add('lats', L.shoulderC.x - dx,      y,     2.2);
+                    add('lats', L.shoulderC.x + dx,      y,     2.2);
+                    add('lats', L.shoulderC.x - dx + 9,  y + 2, 1.8);
+                    add('lats', L.shoulderC.x + dx - 9,  y + 2, 1.8);
+                    add('lats', L.shoulderC.x - dx + 18, y + 4, 1.5);
+                    add('lats', L.shoulderC.x + dx - 18, y + 4, 1.5);
+                }
+
+                /* Triceps — back of the upper arm. Special group: stays the
+                   same diameter, only brightens with hotness (is-tense). */
+                for (let i = 0; i < 3; i++) {
+                    const t  = 0.28 + i * 0.2;
+                    const xL = L.shoulderL.x + (L.elbowL.x - L.shoulderL.x) * t - 2;
+                    const yL = L.shoulderL.y + (L.elbowL.y - L.shoulderL.y) * t;
+                    const xR = L.shoulderR.x + (L.elbowR.x - L.shoulderR.x) * t + 2;
+                    const yR = L.shoulderR.y + (L.elbowR.y - L.shoulderR.y) * t;
+                    add('triceps', xL,     yL,     1.6);
+                    add('triceps', xL + 3, yL + 2, 1.4);
+                    add('triceps', xR,     yR,     1.6);
+                    add('triceps', xR - 3, yR + 2, 1.4);
+                }
+
+                /* Lower back / lumbar columns flanking the spine. */
+                const lbTop = L.pelvisTop.y - 28;
+                const lbBot = L.pelvisTop.y - 4;
+                for (let i = 0; i < 4; i++) {
+                    const t = i / 3;
+                    const y = lbTop + (lbBot - lbTop) * t;
+                    add('lowback', L.shoulderC.x - 7, y, 1.7);
+                    add('lowback', L.shoulderC.x + 7, y, 1.7);
+                }
+
+                /* Glutes. */
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 2; j++) {
+                        add('glutes', L.hipL.x - 2 + i * 3, L.pelvisBot.y - 6 + j * 4, 1.9);
+                        add('glutes', L.hipR.x - 4 + i * 3, L.pelvisBot.y - 6 + j * 4, 1.9);
+                    }
+                }
+
+                /* Calves. */
+                for (let i = 0; i < 4; i++) {
+                    const t = 0.24 + i * 0.16;
+                    const yL = L.kneeL.y + (L.ankleL.y - L.kneeL.y) * t;
+                    const yR = L.kneeR.y + (L.ankleR.y - L.kneeR.y) * t;
+                    add('calves', L.kneeL.x - 4, yL,     1.9);
+                    add('calves', L.kneeL.x + 3, yL - 2, 1.9);
+                    add('calves', L.kneeR.x - 3, yR - 2, 1.9);
+                    add('calves', L.kneeR.x + 4, yR,     1.9);
+                }
+            }
+            return dots;
+        }
+
+        /* Transform muscle dots in-place — only `r`, class & opacity change.
+           Skeleton bones are NEVER touched from this function. */
+        function updateMuscleDots(dots, weight) {
+            const hot = muscleHotness(weight);
+            for (let i = 0; i < dots.length; i++) {
+                const d = dots[i];
+                d.el.classList.remove('is-hot', 'is-warm', 'is-tense');
+                let r = d.baseR;
+
+                if (ACTIVE_GROW[d.group]) {
+                    /* Mass: grow in diameter and brighten / pulse. */
+                    const grow = GROUP_GROW[d.group] || 2.0;
+                    r = d.baseR + hot * grow;
+                    if      (hot > 0.58) d.el.classList.add('is-hot');
+                    else if (hot > 0.2)  d.el.classList.add('is-warm');
+                } else if (ACTIVE_GLOW[d.group]) {
+                    /* Tension: same r, only opacity / glow rises. */
+                    if      (hot > 0.55) d.el.classList.add('is-tense');
+                    else if (hot > 0.2)  d.el.classList.add('is-warm');
+                }
+                d.el.setAttribute('r', r);
+            }
+        }
+
+        /* =====================================================================
+           Diagnosis module — 3 figures, KPI, weight slider.
+           Skeleton bones in each figure are set once per scan-submit and never
+           move on weight changes (prevents the "fractures" bug).
+        ===================================================================== */
+        const Diagnosis = (function () {
+            let built = false;
+            let twinRefs, youFrontRefs, youBackRefs;
+            let youFrontMuscles = [];
+            let youBackMuscles  = [];
+            let slider, kpiValue, weightValue, youFrontStats, youBackStats;
+
+            function groupsFrom(rootId) {
+                const root = document.getElementById(rootId);
+                return {
+                    skull:     root.querySelector('.fig-skull'),
+                    ribcage:   root.querySelector('.fig-ribcage'),
+                    spine:     root.querySelector('.fig-spine'),
+                    pelvis:    root.querySelector('.fig-pelvis'),
+                    bodyBones: root.querySelector('.fig-body-bones'),
+                    armBones:  root.querySelector('.fig-arm-bones'),
+                    nodes:     root.querySelector('.fig-nodes'),
+                };
+            }
+
+            function buildOnce() {
+                if (built) return;
+                built = true;
+
+                twinRefs     = buildSkeleton(groupsFrom('fig-twin'));
+                youFrontRefs = buildSkeleton(groupsFrom('fig-you-front'));
+                youBackRefs  = buildSkeleton(groupsFrom('fig-you-back'));
+
+
+                slider        = document.getElementById('weight-slider');
+                kpiValue      = document.getElementById('kpi-value');
+                weightValue   = document.getElementById('weight-slider-value');
+                youFrontStats = document.getElementById('fig-you-front-stats');
+                youBackStats  = document.getElementById('fig-you-back-stats');
+
+                slider.addEventListener('input', () => {
+                    const w = parseFloat(slider.value);
+                    PrimeState.weight = w;
+                    applyWeight(w);
+                });
+            }
+
+            /* Recomputes bones & rebuilds muscle dot positions — called once
+               per scan submit, not on slider moves. All three figures are
+               aligned to the same GROUND_Y so the feet rest on one line. */
+            function applyLayouts() {
+                const twinL = alignToGround(computeLayout(184, 191), GROUND_Y);
+                applyLayout(twinL, twinRefs);
+
+                const yL = alignToGround(
+                    computeLayout(PrimeState.height, PrimeState.reach),
+                    GROUND_Y
+                );
+                applyLayout(yL, youFrontRefs);
+                applyLayout(yL, youBackRefs);
+
+                const frontMusclesG = document.querySelector('#fig-you-front .fig-muscles');
+                const backMusclesG  = document.querySelector('#fig-you-back  .fig-muscles');
+                youFrontMuscles = buildMuscles('front', yL, frontMusclesG);
+                youBackMuscles  = buildMuscles('back',  yL, backMusclesG);
+
+                const stats = Math.round(PrimeState.height) + ' · ' +
+                              Math.round(PrimeState.reach)  + ' СМ';
+                youFrontStats.textContent = stats;
+                youBackStats.textContent  = stats;
+            }
+
+            /* Per-weight update — only KPI text and muscle dots change. */
+            function applyWeight(w) {
+                weightValue.textContent = (w % 1 === 0) ? String(w) : w.toFixed(1);
+                kpiValue.textContent    = probabilityFor(w) + '%';
+                updateMuscleDots(youFrontMuscles, w);
+                updateMuscleDots(youBackMuscles,  w);
+            }
+
+            return {
+                show: function () {
+                    /* Suppress SVG attr transitions for this frame — new
+                       muscle-dot circles start at cx=0,cy=0 and would
+                       otherwise fly into place. */
+                    document.body.classList.add('is-booting');
+                    buildOnce();
+                    const w = Math.max(60, Math.min(100, PrimeState.weight || 70));
+                    slider.value = String(w);
+                    applyLayouts();
+                    applyWeight(w);
+                    showScreen('diagnosis');
+                    requestAnimationFrame(() => {
+                        document.body.classList.remove('is-booting');
+                    });
+                },
+            };
+        })();
+
+        /* =====================================================================
+           Main init
+        ===================================================================== */
+        document.addEventListener('DOMContentLoaded', init);
+
+        function init() {
+            const heroCta = document.getElementById('hero-cta');
+            if (heroCta) {
+                heroCta.addEventListener('click', () => showScreen('scan'));
+            }
+
+            const form = document.getElementById('scan-form');
+            if (!form) return;
+
+            const genderBtns = form.querySelectorAll('.gender__btn');
+            const ageEl      = form.querySelector('#age');
+            const heightEl   = form.querySelector('#height');
+            const weightEl   = form.querySelector('#weight');
+            const armspanEl  = form.querySelector('#armspan');
+            const fatherWrap = form.querySelector('#field-father');
+            const motherWrap = form.querySelector('#field-mother');
+            const fatherEl   = form.querySelector('#father-height');
+            const motherEl   = form.querySelector('#mother-height');
+            const apeEl      = form.querySelector('#ape-value');
+            const calcBtn    = form.querySelector('#calc-btn');
+
+            const skeletonEl = document.getElementById('skeleton');
+            const groups = {
+                skull:     document.getElementById('skull'),
+                ribcage:   document.getElementById('ribcage'),
+                spine:     document.getElementById('spine'),
+                pelvis:    document.getElementById('pelvis'),
+                bodyBones: document.getElementById('bones-body'),
+                armBones:  document.getElementById('bones-arms'),
+                nodes:     document.getElementById('nodes'),
+            };
+
+            const refs = buildSkeleton(groups);
+            buildRulerTicks(document.getElementById('ruler-ticks'));
+
+            const crownMarker      = document.getElementById('crown-marker');
+            const crownMarkerLine  = crownMarker.querySelector('.crown-marker__line');
+            const crownMarkerDot   = crownMarker.querySelector('.crown-marker__dot');
+            const crownMarkerLabel = crownMarker.querySelector('.crown-marker__label');
+
+            applyLayout(computeLayout(BASE_HEIGHT, BASE_REACH), refs);
+            requestAnimationFrame(() => {
+                document.body.classList.remove('is-booting');
+            });
+
+            const state = { gender: 'M' };
+
+            genderBtns.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    genderBtns.forEach((b) => {
+                        b.classList.remove('is-active');
+                        b.setAttribute('aria-checked', 'false');
+                    });
+                    btn.classList.add('is-active');
+                    btn.setAttribute('aria-checked', 'true');
+                    state.gender = btn.dataset.value;
+                    updateSubmitState();
+                });
+            });
+
+            ageEl.addEventListener('input', () => {
+                const age = parseInt(ageEl.value, 10);
+                const minor = Number.isFinite(age) && age > 0 && age < 18;
+                toggleParentFields(minor);
+                updateSubmitState();
+            });
+
+            heightEl.addEventListener('input', () => {
+                updateSkeleton();
+                updateCrownMarker();
+                updateApeIndex();
+                updateArmsHighlight();
+                updateSubmitState();
+            });
+
+            armspanEl.addEventListener('input', () => {
+                updateSkeleton();
+                updateApeIndex();
+                updateArmsHighlight();
+                updateSubmitState();
+            });
+
+            [weightEl, fatherEl, motherEl].forEach((el) => {
+                el.addEventListener('input', updateSubmitState);
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (calcBtn.disabled) return;
+                const payload = collectPayload();
+                PrimeState.gender = payload.gender;
+                PrimeState.age    = payload.age;
+                PrimeState.height = payload.height;
+                PrimeState.reach  = payload.armspan;
+                PrimeState.weight = payload.weight;
+                Diagnosis.show();
+            });
+
+            function toggleParentFields(visible) {
+                [fatherWrap, motherWrap].forEach((wrap) => {
+                    wrap.classList.toggle('is-visible', visible);
+                });
+                if (!visible) {
+                    fatherEl.value = '';
+                    motherEl.value = '';
+                }
+            }
+
+            function updateSkeleton() {
+                const h = toNumber(heightEl.value);
+                const r = toNumber(armspanEl.value);
+                const L = computeLayout(
+                    Number.isFinite(h) && h > 0 ? h : BASE_HEIGHT,
+                    Number.isFinite(r) && r > 0 ? r : BASE_REACH
+                );
+                applyLayout(L, refs);
+            }
+
+            function updateCrownMarker() {
+                const h = toNumber(heightEl.value);
+                if (!Number.isFinite(h) || h <= 0) {
+                    crownMarker.classList.add('is-hidden');
+                    return;
+                }
+                const y = cmToRulerY(h);
+                crownMarker.classList.remove('is-hidden');
+                crownMarkerLine.setAttribute('y1', y);
+                crownMarkerLine.setAttribute('y2', y);
+                crownMarkerDot.setAttribute('cy', y);
+                crownMarkerLabel.setAttribute('y', y - 6);
+                crownMarkerLabel.textContent = Math.round(h) + ' СМ';
+            }
+
+            function updateArmsHighlight() {
+                const h = toNumber(heightEl.value);
+                const a = toNumber(armspanEl.value);
+
+                skeletonEl.classList.remove('is-arms-long', 'is-arms-short');
+                if (!Number.isFinite(h) || !Number.isFinite(a) || h <= 0 || a <= 0) return;
+
+                const diff = a - h;
+                if (diff > 0)      skeletonEl.classList.add('is-arms-long');
+                else if (diff < 0) skeletonEl.classList.add('is-arms-short');
+            }
+
+            function updateApeIndex() {
+                const h = toNumber(heightEl.value);
+                const a = toNumber(armspanEl.value);
+                if (!Number.isFinite(h) || !Number.isFinite(a) || h <= 0 || a <= 0) {
+                    apeEl.textContent = '—';
+                    apeEl.classList.add('ape__value--dim');
+                    return;
+                }
+                const diff = Math.round((a - h) * 10) / 10;
+                apeEl.classList.remove('ape__value--dim');
+                if (diff > 0)       apeEl.textContent = '+' + formatDiff(diff) + ' см';
+                else if (diff < 0)  apeEl.textContent = MINUS + formatDiff(Math.abs(diff)) + ' см';
+                else                apeEl.textContent = '0 см';
+            }
+
+            function formatDiff(n) {
+                return Number.isInteger(n) ? String(n) : n.toFixed(1);
+            }
+
+            function updateSubmitState() {
+                calcBtn.disabled = !isFormValid();
+            }
+
+            function isFormValid() {
+                if (!state.gender) return false;
+                const age = toNumber(ageEl.value);
+                const height = toNumber(heightEl.value);
+                const weight = toNumber(weightEl.value);
+                const armspan = toNumber(armspanEl.value);
+                if (!isPositive(age) || !isPositive(height) ||
+                    !isPositive(weight) || !isPositive(armspan)) {
+                    return false;
+                }
+                if (age < 18) {
+                    const father = toNumber(fatherEl.value);
+                    const mother = toNumber(motherEl.value);
+                    if (!isPositive(father) || !isPositive(mother)) return false;
+                }
+                return true;
+            }
+
+            function collectPayload() {
+                const age = toNumber(ageEl.value);
+                const payload = {
+                    gender:   state.gender,
+                    age,
+                    height:   toNumber(heightEl.value),
+                    weight:   toNumber(weightEl.value),
+                    armspan:  toNumber(armspanEl.value),
+                    apeIndex: toNumber(armspanEl.value) - toNumber(heightEl.value),
+                };
+                if (age < 18) {
+                    payload.fatherHeight = toNumber(fatherEl.value);
+                    payload.motherHeight = toNumber(motherEl.value);
+                }
+                return payload;
+            }
+
+            function toNumber(v) {
+                const n = parseFloat(v);
+                return Number.isFinite(n) ? n : NaN;
+            }
+
+            function isPositive(n) {
+                return Number.isFinite(n) && n > 0;
+            }
+        }
+    })();
+    </script>
+</body>
+</html>
