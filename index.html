@@ -598,6 +598,18 @@
             min-height: 100%;
         }
 
+        /* On mobile the scan screen stacks columns vertically and grows taller
+           than the viewport. The global .screen rule pins every screen to
+           position:fixed with overflow:hidden, which would clip the form's
+           submit button and the skeleton below the fold. Let the scan screen
+           scroll instead. */
+        .screen.screen--scan {
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .scan {
             flex-direction: column;
             height: auto;
