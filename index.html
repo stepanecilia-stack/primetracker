@@ -879,52 +879,255 @@
         margin-top: 2px;
     }
 
-    .kpi {
-        text-align: center;
-        padding: 10px 0 6px;
+    /* ==========================================================================
+       KSP / KSR Dashboard — the headline numbers of the diagnosis screen.
+       Two big readouts side by side: KSP (ceiling) + KSR (realisation now).
+       Below them: a gap block and four variable bars (Z, H, N, T).
+       ========================================================================== */
+    .dashboard {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin: 6px 0 4px;
     }
 
-    .kpi__label {
+    .dashboard__grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid #222;
+        background: #0d0d0d;
+    }
+
+    .dashboard__card {
+        padding: 22px 26px 20px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .dashboard__card--ksp {
+        border-right: 1px solid #222;
+    }
+
+    .dashboard__card-head {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .dashboard__code {
+        font-family: var(--font-heading);
+        font-size: 16px;
+        letter-spacing: 0.28em;
+        color: #888;
+    }
+
+    .dashboard__num {
+        font-family: var(--font-heading);
+        font-size: clamp(48px, 7.2vw, 88px);
+        line-height: 0.9;
+        letter-spacing: 0.01em;
+        font-weight: 400;
+        transition: color 0.35s ease, text-shadow 0.35s ease;
+    }
+
+    .dashboard__num i {
+        font-style: normal;
+        font-size: 0.38em;
+        margin-left: 3px;
+        opacity: 0.55;
+    }
+
+    .dashboard__card--ksp .dashboard__num {
+        color: #00FF88;
+        text-shadow: 0 0 22px rgba(0, 255, 136, 0.28);
+    }
+
+    .dashboard__card--ksr .dashboard__num {
+        color: #FFCC00;
+        text-shadow: 0 0 22px rgba(255, 204, 0, 0.22);
+    }
+
+    .dashboard__note {
+        font-family: var(--font-body);
+        font-size: 9px;
+        letter-spacing: 2px;
+        color: #666;
+        text-transform: uppercase;
+        align-self: center;
+    }
+
+    .dashboard__title {
         font-family: var(--font-body);
         font-size: 10px;
         font-weight: 500;
-        letter-spacing: 4px;
-        color: #888888;
+        letter-spacing: 3px;
+        color: #999;
         text-transform: uppercase;
-        margin-bottom: 10px;
+        line-height: 1.4;
+        margin-top: 2px;
     }
 
-    .kpi__value {
-        font-family: var(--font-heading);
-        font-size: clamp(60px, 8.6vw, 128px);
-        line-height: 0.85;
-        letter-spacing: 0.02em;
-        font-weight: 400;
-        background: linear-gradient(180deg, #FFFFFF 0%, #A8A8A8 50%, #FFFFFF 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        color: transparent;
-        display: inline-block;
-        transition: filter 0.4s ease;
-    }
-
-    .kpi__twin {
-        margin-top: 10px;
+    .dashboard__desc {
         font-family: var(--font-body);
-        font-size: 11px;
-        letter-spacing: 4px;
-        color: #888888;
+        font-size: 12px;
+        color: #888;
+        line-height: 1.5;
+        max-width: 320px;
+    }
+
+    /* GAP block — one-line, colour-coded delta between KSP and KSR. */
+    .gap {
+        padding: 12px 24px;
+        border: 1px solid #222;
+        background: #0d0d0d;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .gap__label {
+        font-family: var(--font-body);
+        font-size: 10px;
+        letter-spacing: 3px;
+        color: #888;
         text-transform: uppercase;
     }
 
-    .kpi__twin b {
+    .gap__value {
         font-family: var(--font-heading);
-        font-weight: 400;
+        font-size: 30px;
+        letter-spacing: 0.04em;
+        transition: color 0.35s ease, text-shadow 0.35s ease;
         color: #E8E8E8;
-        letter-spacing: 0.16em;
-        margin-left: 6px;
+    }
+
+    .gap--red    .gap__value { color: #ff4444; text-shadow: 0 0 12px rgba(255,68,68,0.38); }
+    .gap--yellow .gap__value { color: #ffcc00; text-shadow: 0 0 12px rgba(255,204,0,0.32); }
+    .gap--green  .gap__value { color: #00ff88; text-shadow: 0 0 12px rgba(0,255,136,0.38); }
+
+    .gap__hint {
+        font-family: var(--font-body);
+        font-size: 12px;
+        color: #999;
+        letter-spacing: 0.04em;
+    }
+
+    /* Four variable bars — Z / H (calculated), N / T (locked placeholders). */
+    .bars {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 14px 0 2px;
+    }
+
+    .bar {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .bar__head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-body);
+        font-size: 12px;
+    }
+
+    .bar__symbol {
+        font-family: var(--font-heading);
+        font-size: 16px;
+        letter-spacing: 0.12em;
+        color: #E8E8E8;
+        min-width: 14px;
+    }
+
+    .bar__lock {
+        font-size: 12px;
+        opacity: 0.75;
+        min-width: 16px;
+        text-align: center;
+    }
+
+    .bar__desc {
+        color: #999;
+        letter-spacing: 0.06em;
+        flex: 1;
+    }
+
+    .bar__value {
+        font-family: var(--font-heading);
+        color: #E8E8E8;
         font-size: 14px;
+        letter-spacing: 0.06em;
+    }
+
+    .bar__cta {
+        font-family: var(--font-body);
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: #FFCC00;
+        border: 1px dashed rgba(255, 204, 0, 0.4);
+        padding: 4px 9px;
+        text-decoration: none;
+        text-transform: uppercase;
+        background: transparent;
+        cursor: pointer;
+        transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .bar__cta:hover {
+        color: #FFFFFF;
+        border-color: rgba(255, 204, 0, 0.85);
+        background: rgba(255, 204, 0, 0.08);
+    }
+
+    .bar__track {
+        height: 4px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .bar__fill {
+        height: 100%;
+        width: 0;
+        background: #E8E8E8;
+        border-radius: 2px;
+        transition: width 0.6s cubic-bezier(0.2, 0, 0.2, 1);
+    }
+
+    .bar--animate .bar__fill {
+        width: var(--fill, 0%);
+    }
+
+    #bar-z .bar__fill {
+        background: #E8E8E8;
+    }
+
+    #bar-h .bar__fill {
+        background: #00FF88;
+        box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+        /* H reacts to the slider in real time — shorter glide. */
+        transition: width 0.3s ease;
+    }
+
+    /* N + T: dashed, dim — "not measured yet", clickable CTA. */
+    .bar--locked .bar__track {
+        height: 10px;
+        background: transparent;
+        border: 1px dashed rgba(255, 255, 255, 0.18);
+        border-radius: 3px;
+    }
+
+    .bar--locked .bar__fill {
+        background: rgba(255, 255, 255, 0.07);
+        border-radius: 2px;
     }
 
     .compare {
@@ -1496,6 +1699,43 @@
             text-align: center;
             min-width: 0;
         }
+
+        .dashboard__grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard__card--ksp {
+            border-right: none;
+            border-bottom: 1px solid #222;
+        }
+
+        .dashboard__card {
+            padding: 18px 18px 14px;
+        }
+
+        .dashboard__desc {
+            font-size: 12px;
+            max-width: none;
+        }
+
+        .gap {
+            padding: 12px 18px;
+        }
+
+        .gap__value {
+            font-size: 24px;
+        }
+
+        .bar__desc {
+            font-size: 11px;
+            letter-spacing: 0.04em;
+        }
+
+        .bar__cta {
+            font-size: 9px;
+            padding: 3px 7px;
+            letter-spacing: 0.15em;
+        }
     }
 
     /* ==========================================================================
@@ -1692,11 +1932,80 @@
                 </div>
             </header>
 
-            <div class="kpi">
-                <div class="kpi__label">Вероятность успеха</div>
-                <div class="kpi__value" id="kpi-value">0%</div>
-                <div class="kpi__twin">Близнец:<b id="kpi-twin">Julio Cesar La Cruz</b></div>
-            </div>
+            <section class="dashboard" aria-label="КСП и КСР">
+                <div class="dashboard__grid">
+                    <div class="dashboard__card dashboard__card--ksp">
+                        <div class="dashboard__card-head">
+                            <span class="dashboard__code">КСП</span>
+                            <span class="dashboard__num" id="ksp-value">0<i>%</i></span>
+                        </div>
+                        <div class="dashboard__title">Спортивный<br>потенциал</div>
+                        <div class="dashboard__desc">Это потолок, который даёт твой скелет и история. Изменить нельзя.</div>
+                    </div>
+                    <div class="dashboard__card dashboard__card--ksr">
+                        <div class="dashboard__card-head">
+                            <span class="dashboard__code">КСР</span>
+                            <span class="dashboard__num" id="ksr-value">0<i>%</i></span>
+                            <span class="dashboard__note">предварительно</span>
+                        </div>
+                        <div class="dashboard__title">Реализация<br>сейчас</div>
+                        <div class="dashboard__desc">Это сколько ты реализуешь прямо сейчас. Зависит от физики и техники.</div>
+                    </div>
+                </div>
+
+                <div class="gap" id="gap-block">
+                    <span class="gap__label">Разрыв:</span>
+                    <span class="gap__value" id="gap-value">0%</span>
+                    <span class="gap__hint">— это и есть твоя задача</span>
+                </div>
+
+                <div class="bars">
+                    <div class="bar" id="bar-z">
+                        <div class="bar__head">
+                            <span class="bar__symbol">Z</span>
+                            <span class="bar__lock" aria-label="неизменяемо">&#128274;</span>
+                            <span class="bar__desc">Скелет (рост + размах)</span>
+                            <span class="bar__value" id="bar-z-value">—%</span>
+                        </div>
+                        <div class="bar__track">
+                            <div class="bar__fill" id="bar-z-fill"></div>
+                        </div>
+                    </div>
+                    <div class="bar" id="bar-h">
+                        <div class="bar__head">
+                            <span class="bar__symbol">H</span>
+                            <span class="bar__lock" aria-label="можно улучшить">&#128275;</span>
+                            <span class="bar__desc">Весовая категория</span>
+                            <span class="bar__value" id="bar-h-value">—%</span>
+                        </div>
+                        <div class="bar__track">
+                            <div class="bar__fill" id="bar-h-fill"></div>
+                        </div>
+                    </div>
+                    <div class="bar bar--locked" id="bar-n">
+                        <div class="bar__head">
+                            <span class="bar__symbol">N</span>
+                            <span class="bar__lock" aria-label="можно улучшить">&#128275;</span>
+                            <span class="bar__desc">Физические нормативы</span>
+                            <button type="button" class="bar__cta" id="bar-n-cta">Сдай тест →</button>
+                        </div>
+                        <div class="bar__track">
+                            <div class="bar__fill" id="bar-n-fill"></div>
+                        </div>
+                    </div>
+                    <div class="bar bar--locked" id="bar-t">
+                        <div class="bar__head">
+                            <span class="bar__symbol">T</span>
+                            <span class="bar__lock" aria-label="можно улучшить">&#128275;</span>
+                            <span class="bar__desc">Техника</span>
+                            <button type="button" class="bar__cta" id="bar-t-cta">Начни программу →</button>
+                        </div>
+                        <div class="bar__track">
+                            <div class="bar__fill" id="bar-t-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <div class="compare">
                 <!-- TWIN -->
@@ -2258,7 +2567,8 @@
             age:    null,
             height: BASE_HEIGHT,
             reach:  BASE_REACH,
-            weight: 70,
+            weight: 70,         // current slider-selected category numeric value
+            inputWeight: 70,    // actual weight user entered on scan (immutable KSP basis)
             weightCategory: '86', // current discrete weight class (string)
         };
 
@@ -2579,6 +2889,241 @@
         })();
 
         /* =====================================================================
+           KSP / KSR scores — the headline numbers of the diagnosis screen.
+
+           KSP ("Спортивный Потенциал") is a ceiling. It doesn't move with the
+           slider — it's set on scan submit from the user's actual skeleton and
+           their weight-at-scan. KSR ("Реализация сейчас") is a placeholder:
+           we don't yet collect physical-norms (N) or technique (T), so we
+           stub them at 0.51 each → KSR = KSP × 0.26.
+        ===================================================================== */
+        function clamp01(x) { return Math.max(0, Math.min(1, x)); }
+
+        /* N and T aren't measured yet — stubbed at 0.51 each so KSR starts at
+           a believable ~26% of the ceiling once H is applied. When we add the
+           physical-norms test and the technique programme (internally graded
+           per Filimonov's methodology), these turn into live inputs. */
+        const N_PLACEHOLDER = 0.51;
+        const T_PLACEHOLDER = 0.51;
+
+        function computeScores(profile) {
+            const h = profile.height;
+            const r = profile.reach;
+            const w = profile.inputWeight;
+
+            // Reach_Index = reach / height, normalised against 0.95..1.15.
+            const reachRatio    = r / h;
+            const reachIdxNorm  = clamp01((reachRatio - 0.95) / (1.15 - 0.95));
+
+            // Weight_Efficiency from BMI; 22..24 is the plateau (score = 1.0),
+            // and every unit of BMI outside that plateau costs 0.1 linearly.
+            const bmi       = w / Math.pow(h / 100, 2);
+            const bmiDev    = bmi < 22 ? (22 - bmi) : (bmi > 24 ? (bmi - 24) : 0);
+            const weightEff = Math.max(0, 1 - bmiDev * 0.1);
+
+            // Height_Penalty — every cm over 185 trims 0.01 off the final Z.
+            const heightPenalty = h > 185 ? (h - 185) * 0.01 : 0;
+
+            // Z = skeletal score (the part the user can't change).
+            const Z = clamp01(reachIdxNorm * 0.5 + weightEff * 0.5 - heightPenalty);
+
+            // H = density of champion skeletons like yours IN THE SELECTED
+            // weight_class. This moves with the slider.
+            const dist     = computeDistribution({
+                gender: profile.gender, height: h, reach: r,
+            });
+            const userKey  = categoryKey(profile.weightCategory);
+            const userRow  = dist.rows.filter(function (row) {
+                return row.key === userKey;
+            })[0];
+            const rowPct   = userRow ? userRow.pct : 0;
+            const H        = clamp01(rowPct / 100);
+
+            const KSP = Z * H * 100;
+            const KSR = Z * H * N_PLACEHOLDER * T_PLACEHOLDER * 100;
+
+            return {
+                Z: Z, H: H,
+                KSP: KSP, KSR: KSR,
+                rowPct: rowPct,
+            };
+        }
+
+        /* =====================================================================
+           Dashboard module — paints KSP/KSR numbers, gap, and the four bars.
+
+           render()  — full sweep on diagnosis entry (all bars animate 0 → target).
+           refresh() — live update on slider move (KSP/KSR count, H bar glides,
+                       Z/N/T untouched).
+        ===================================================================== */
+        const Dashboard = (function () {
+            let els = null;
+            // Last-displayed integers, used as the "from" value for the
+            // counter animation on the next refresh.
+            let lastKsp = 0;
+            let lastKsr = 0;
+            let lastGap = 0;
+            let kspRaf  = 0;
+            let ksrRaf  = 0;
+            let gapRaf  = 0;
+
+            function ensure() {
+                if (els) return;
+                els = {
+                    ksp:       document.getElementById('ksp-value'),
+                    ksr:       document.getElementById('ksr-value'),
+                    gap:       document.getElementById('gap-block'),
+                    gapVal:    document.getElementById('gap-value'),
+                    barZ:      document.getElementById('bar-z'),
+                    barZFill:  document.getElementById('bar-z-fill'),
+                    barZVal:   document.getElementById('bar-z-value'),
+                    barH:      document.getElementById('bar-h'),
+                    barHFill:  document.getElementById('bar-h-fill'),
+                    barHVal:   document.getElementById('bar-h-value'),
+                    barN:      document.getElementById('bar-n'),
+                    barNFill:  document.getElementById('bar-n-fill'),
+                    barT:      document.getElementById('bar-t'),
+                    barTFill:  document.getElementById('bar-t-fill'),
+                };
+            }
+
+            function paintGap(diff) {
+                if (!els.gap) return;
+                els.gap.classList.remove('gap--red', 'gap--yellow', 'gap--green');
+                if (diff > 50)       els.gap.classList.add('gap--red');
+                else if (diff >= 20) els.gap.classList.add('gap--yellow');
+                else                 els.gap.classList.add('gap--green');
+            }
+
+            function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+            /* Smooth integer counter from `from` → `to` over `duration` ms.
+               Cancels any in-flight counter on the same element so rapid
+               slider drags don't stack RAF loops. Returns the new handle. */
+            function animateNumber(el, from, to, duration, suffixHTML, prevHandle) {
+                if (!el) return 0;
+                if (prevHandle) cancelAnimationFrame(prevHandle);
+                if (from === to) {
+                    el.innerHTML = to + suffixHTML;
+                    return 0;
+                }
+                const start = performance.now();
+                let handle = 0;
+                function step(now) {
+                    const t = Math.min(1, (now - start) / duration);
+                    const val = Math.round(from + (to - from) * easeOutCubic(t));
+                    el.innerHTML = val + suffixHTML;
+                    if (t < 1) handle = requestAnimationFrame(step);
+                }
+                handle = requestAnimationFrame(step);
+                return handle;
+            }
+
+            /* Smooth integer counter for plain-text nodes (no HTML suffix). */
+            function animateText(el, from, to, duration, suffix, prevHandle) {
+                if (!el) return 0;
+                if (prevHandle) cancelAnimationFrame(prevHandle);
+                if (from === to) {
+                    el.textContent = to + suffix;
+                    return 0;
+                }
+                const start = performance.now();
+                let handle = 0;
+                function step(now) {
+                    const t = Math.min(1, (now - start) / duration);
+                    const val = Math.round(from + (to - from) * easeOutCubic(t));
+                    el.textContent = val + suffix;
+                    if (t < 1) handle = requestAnimationFrame(step);
+                }
+                handle = requestAnimationFrame(step);
+                return handle;
+            }
+
+            /* Writes the value for a bar and updates its fill width.
+               When `restart` is true we re-trigger the CSS width transition
+               from 0 (used on initial entry). Otherwise the CSS transition
+               on `.bar__fill` handles the glide from the old to the new value. */
+            function setBar(barEl, fillEl, pct, restart) {
+                if (!barEl || !fillEl) return;
+                if (restart) {
+                    barEl.classList.remove('bar--animate');
+                    // Force reflow so the next class-add restarts the transition.
+                    void barEl.offsetWidth;
+                    fillEl.style.setProperty('--fill', pct + '%');
+                    barEl.classList.add('bar--animate');
+                } else {
+                    if (!barEl.classList.contains('bar--animate')) {
+                        barEl.classList.add('bar--animate');
+                    }
+                    fillEl.style.setProperty('--fill', pct + '%');
+                }
+            }
+
+            function readProfile() {
+                return {
+                    gender:         PrimeState.gender,
+                    height:         PrimeState.height,
+                    reach:          PrimeState.reach,
+                    inputWeight:    PrimeState.inputWeight || PrimeState.weight,
+                    weightCategory: PrimeState.weightCategory,
+                };
+            }
+
+            return {
+                /* Full animated paint — once per diagnosis entry. */
+                render: function () {
+                    ensure();
+                    const s    = computeScores(readProfile());
+                    const ksp  = Math.round(s.KSP);
+                    const ksr  = Math.round(s.KSR);
+                    const gap  = ksp - ksr;
+                    const zPct = Math.round(s.Z * 100);
+                    const hPct = Math.round(s.H * 100);
+
+                    if (els.ksp)    els.ksp.innerHTML = ksp + '<i>%</i>';
+                    if (els.ksr)    els.ksr.innerHTML = ksr + '<i>%</i>';
+                    if (els.gapVal) els.gapVal.textContent = gap + '%';
+                    paintGap(gap);
+
+                    if (els.barZVal) els.barZVal.textContent = zPct + '%';
+                    if (els.barHVal) els.barHVal.textContent = hPct + '%';
+
+                    setBar(els.barZ, els.barZFill, zPct, true);
+                    setBar(els.barH, els.barHFill, hPct, true);
+                    setBar(els.barN, els.barNFill, 25,   true);
+                    setBar(els.barT, els.barTFill, 25,   true);
+
+                    lastKsp = ksp;
+                    lastKsr = ksr;
+                    lastGap = gap;
+                },
+
+                /* Slider-driven live update. Z stays, N/T stay.
+                   Only H bar + KSP + KSR + gap move. */
+                refresh: function () {
+                    ensure();
+                    const s    = computeScores(readProfile());
+                    const ksp  = Math.round(s.KSP);
+                    const ksr  = Math.round(s.KSR);
+                    const gap  = ksp - ksr;
+                    const hPct = Math.round(s.H * 100);
+
+                    if (els.barHVal) els.barHVal.textContent = hPct + '%';
+                    setBar(els.barH, els.barHFill, hPct, false);
+
+                    kspRaf = animateNumber(els.ksp,    lastKsp, ksp, 200, '<i>%</i>', kspRaf);
+                    ksrRaf = animateNumber(els.ksr,    lastKsr, ksr, 200, '<i>%</i>', ksrRaf);
+                    gapRaf = animateText(  els.gapVal, lastGap, gap, 200, '%',        gapRaf);
+                    paintGap(gap);
+
+                    lastKsp = ksp;
+                    lastKsr = ksr;
+                    lastGap = gap;
+                },
+            };
+        })();
+
+        /* =====================================================================
            Screen router — cross-fade one screen at a time
         ===================================================================== */
         function showScreen(name) {
@@ -2586,20 +3131,6 @@
             screens.forEach((s) => s.classList.remove('is-active'));
             const target = document.getElementById('screen-' + name);
             if (target) target.classList.add('is-active');
-        }
-
-        /* =====================================================================
-           Probability curve — bell around 81 kg for height 183
-               p(70) = 16, p(81) = 89, p(100) = 16, smooth parabola
-        ===================================================================== */
-        function probabilityFor(w) {
-            const OPT = 81, LOW = 16, HI = 89;
-            let dist;
-            if (w <= OPT) dist = (OPT - w) / (OPT - 70);
-            else          dist = (w - OPT) / (100 - OPT);
-            dist = Math.max(0, Math.min(1, dist));
-            const k = 1 - dist * dist;
-            return Math.max(LOW, Math.round(LOW + (HI - LOW) * k));
         }
 
         /* Muscle hotness — peaks at 81, decays either side (wider than probability) */
@@ -2851,7 +3382,7 @@
             let twinRefs, youFrontRefs, youBackRefs;
             let youFrontMuscles = [];
             let youBackMuscles  = [];
-            let slider, kpiValue, weightValue, weightPrefix, thumbLabel, ticksEl,
+            let slider, weightValue, weightPrefix, thumbLabel, ticksEl,
                 youFrontStats, youBackStats;
             let currentCats = GENDER_CATEGORIES.M;
 
@@ -2881,7 +3412,6 @@
                 if (youBackG)  youBackRefs  = buildSkeleton(youBackG);
 
                 slider        = document.getElementById('weight-slider');
-                kpiValue      = document.getElementById('kpi-value');
                 weightValue   = document.getElementById('weight-slider-value');
                 weightPrefix  = document.getElementById('weight-slider-prefix');
                 thumbLabel    = document.getElementById('weight-thumb-label');
@@ -2958,9 +3488,14 @@
 
                 applyWeight(wNum);
 
-                // Slider-driven updates only refresh the "ВЫ СЕЙЧАС" marker
-                // and conclusion — row fade-in stagger plays once on entry.
-                if (fromUser) Distribution.refresh();
+                // Slider-driven updates:
+                //  - Distribution table: re-mark "ВЫ СЕЙЧАС", re-write conclusion.
+                //  - Dashboard: recompute H/KSP/KSR live, glide H bar, count
+                //    KSP/KSR + gap numbers (Z, N, T stay put).
+                if (fromUser) {
+                    Distribution.refresh();
+                    Dashboard.refresh();
+                }
             }
 
             /* Recomputes bones & rebuilds muscle dot positions — called once
@@ -2988,10 +3523,10 @@
                 if (youBackStats)  youBackStats.textContent  = stats;
             }
 
-            /* Per-weight update — only KPI text and muscle dots change.
+            /* Per-weight update — only muscle dots change with the slider.
+               KSP/KSR don't react to the slider (they're the ceiling).
                Header text is updated separately by applyCategoryByIndex. */
             function applyWeight(w) {
-                if (kpiValue) kpiValue.textContent = probabilityFor(w) + '%';
                 updateMuscleDots(youFrontMuscles, w);
                 updateMuscleDots(youBackMuscles,  w);
             }
@@ -3015,6 +3550,10 @@
                     applyCategoryByIndex(startIdx, /*fromUser=*/false);
                     // Animated first render of the distribution table.
                     Distribution.render(true);
+                    // KSP/KSR + variable bars are based on the *scanned*
+                    // profile (inputWeight) and don't move with the slider,
+                    // so render them exactly once per entry.
+                    Dashboard.render();
 
                     showScreen('diagnosis');
                     requestAnimationFrame(() => {
@@ -3124,11 +3663,12 @@
                 e.preventDefault();
                 if (calcBtn.disabled) return;
                 const payload = collectPayload();
-                PrimeState.gender = payload.gender;
-                PrimeState.age    = payload.age;
-                PrimeState.height = payload.height;
-                PrimeState.reach  = payload.armspan;
-                PrimeState.weight = payload.weight;
+                PrimeState.gender      = payload.gender;
+                PrimeState.age         = payload.age;
+                PrimeState.height      = payload.height;
+                PrimeState.reach       = payload.armspan;
+                PrimeState.weight      = payload.weight;
+                PrimeState.inputWeight = payload.weight;
                 Diagnosis.show();
             });
 
