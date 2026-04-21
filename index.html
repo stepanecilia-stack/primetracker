@@ -1257,17 +1257,124 @@
         50%      { opacity: 0.55; transform: scale(0.8); }
     }
 
+    /* ==========================================================================
+       Muscle map section — three labelled columns: TWIN + FRONT + BACK.
+       Divider line above, single-column stack on mobile.
+       ========================================================================== */
+    .muscle-map {
+        border-top: 1px solid #222;
+        padding-top: 32px;
+        margin: 32px 0;
+    }
+
+    .muscle-map__grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 24px;
+        align-items: stretch;
+    }
+
+    .mapcol {
+        background: #0d0d0d;
+        padding: 18px 14px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .mapcol__head {
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    .mapcol__label {
+        font-family: var(--font-heading);
+        font-size: 13px;
+        letter-spacing: 3px;
+        color: #FFFFFF;
+        text-transform: uppercase;
+        line-height: 1;
+        font-weight: 400;
+    }
+
+    .mapcol__label--twin {
+        color: #00FF88;
+    }
+
+    .mapcol__subline {
+        font-family: var(--font-body);
+        font-size: 11px;
+        color: #666666;
+        letter-spacing: 0.04em;
+        margin-top: 6px;
+        line-height: 1.3;
+    }
+
+    /* Override the inherited .figure flex-grow so SVGs sit cleanly
+       inside the mapcol header/figure/footer stack. */
+    .muscle-map .figure {
+        flex: 0 0 auto;
+        width: 100%;
+        height: auto;
+        min-width: 0;
+        padding: 0;
+        align-items: center;
+    }
+
+    .muscle-map .figure__svg {
+        flex: 0 0 auto;
+        width: 100%;
+        height: 360px;
+        max-height: 360px;
+        min-height: 0;
+    }
+
+    .mapcol__foot {
+        text-align: center;
+        margin-top: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .mapcol__name {
+        font-family: var(--font-heading);
+        font-size: 16px;
+        letter-spacing: 0.14em;
+        color: #E8E8E8;
+        text-transform: uppercase;
+        line-height: 1;
+    }
+
+    .mapcol__tag {
+        font-family: var(--font-body);
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: #888888;
+        text-transform: uppercase;
+    }
+
+    .mapcol__stats {
+        font-family: var(--font-body);
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: rgba(255, 255, 255, 0.28);
+        text-transform: uppercase;
+    }
+
     /* ----------------------------------------------------------
-       Legend — one-line key under the compare row.
+       Legend — one-line key under the three columns.
        ---------------------------------------------------------- */
     .legend {
         display: flex;
         justify-content: center;
         align-items: center;
         gap: 28px;
-        margin-top: 10px;
+        margin-top: 24px;
         font-family: var(--font-body);
-        font-size: 9px;
+        font-size: 10px;
         font-weight: 500;
         letter-spacing: 2px;
         color: #888888;
@@ -1778,6 +1885,30 @@
             display: block;
             flex: 0 0 auto;
         }
+
+        /* Stack the three muscle-map columns vertically: twin → front → back. */
+        .muscle-map {
+            padding-top: 24px;
+            margin: 24px 0;
+        }
+        .muscle-map__grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        .mapcol {
+            padding: 16px 14px 18px;
+        }
+        .muscle-map .figure__svg {
+            height: 320px;
+            max-height: 320px;
+        }
+        .mapcol__name {
+            font-size: 15px;
+        }
+        .legend {
+            gap: 20px;
+            font-size: 10px;
+        }
     }
     </style>
 </head>
@@ -2007,91 +2138,117 @@
                 </div>
             </section>
 
-            <div class="compare">
-                <!-- TWIN -->
-                <div class="figure figure--twin">
-                    <svg class="figure__svg" id="fig-svg-twin"
-                         width="100%"
-                         height="auto"
-                         viewBox="0 0 520 640"
-                         xmlns="http://www.w3.org/2000/svg"
-                         preserveAspectRatio="xMidYMid meet">
-                        <g class="fig-skeleton" id="fig-twin">
-                            <g class="fig-skull"></g>
-                            <g class="fig-ribcage"></g>
-                            <g class="fig-spine"></g>
-                            <g class="fig-pelvis"></g>
-                            <g class="fig-body-bones"></g>
-                            <g class="fig-arm-bones"></g>
-                            <g class="fig-muscles"></g>
-                            <g class="fig-nodes"></g>
-                        </g>
-                    </svg>
-                    <div class="figure__caption">[TWIN: LA CRUZ]</div>
-                    <div class="figure__stats">184 · 191 СМ</div>
+            <section class="muscle-map" aria-label="Близнец и карта мышечного развития">
+                <div class="muscle-map__grid">
+
+                    <!-- LEFT — biometric twin -->
+                    <div class="mapcol mapcol--twin">
+                        <header class="mapcol__head">
+                            <div class="mapcol__label mapcol__label--twin">Биометрический близнец</div>
+                            <div class="mapcol__subline">Боксёр с похожим скелетом и историей побед</div>
+                        </header>
+                        <div class="figure figure--twin">
+                            <svg class="figure__svg" id="fig-svg-twin"
+                                 width="100%"
+                                 height="auto"
+                                 viewBox="0 0 520 640"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 preserveAspectRatio="xMidYMid meet">
+                                <g class="fig-skeleton" id="fig-twin">
+                                    <g class="fig-skull"></g>
+                                    <g class="fig-ribcage"></g>
+                                    <g class="fig-spine"></g>
+                                    <g class="fig-pelvis"></g>
+                                    <g class="fig-body-bones"></g>
+                                    <g class="fig-arm-bones"></g>
+                                    <g class="fig-muscles"></g>
+                                    <g class="fig-nodes"></g>
+                                </g>
+                            </svg>
+                        </div>
+                        <footer class="mapcol__foot">
+                            <div class="mapcol__name">Рёта Мурата</div>
+                            <div class="mapcol__tag">⏱ Темповик / Нокаутёр</div>
+                        </footer>
+                    </div>
+
+                    <!-- CENTER — your muscle map, front projection -->
+                    <div class="mapcol mapcol--front">
+                        <header class="mapcol__head">
+                            <div class="mapcol__label">Карта мышечного развития</div>
+                            <div class="mapcol__subline">Фронтальная проекция</div>
+                        </header>
+                        <div class="figure figure--you-front">
+                            <svg class="figure__svg" id="fig-svg-you-front"
+                                 width="100%"
+                                 height="auto"
+                                 viewBox="0 0 520 640"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 preserveAspectRatio="xMidYMid meet">
+                                <g class="fig-skeleton" id="fig-you-front">
+                                    <g class="fig-skull"></g>
+                                    <g class="fig-ribcage"></g>
+                                    <g class="fig-spine"></g>
+                                    <g class="fig-pelvis"></g>
+                                    <g class="fig-body-bones"></g>
+                                    <g class="fig-arm-bones"></g>
+                                    <g class="fig-muscles"></g>
+                                    <g class="fig-nodes"></g>
+                                </g>
+                            </svg>
+                        </div>
+                        <footer class="mapcol__foot">
+                            <div class="mapcol__stats" id="fig-you-front-stats">— · —</div>
+                        </footer>
+                    </div>
+
+                    <!-- RIGHT — your muscle map, back projection -->
+                    <div class="mapcol mapcol--back">
+                        <header class="mapcol__head">
+                            <div class="mapcol__label">Карта мышечного развития</div>
+                            <div class="mapcol__subline">Задняя проекция</div>
+                        </header>
+                        <div class="figure figure--you-back">
+                            <svg class="figure__svg" id="fig-svg-you-back"
+                                 width="100%"
+                                 height="auto"
+                                 viewBox="0 0 520 640"
+                                 xmlns="http://www.w3.org/2000/svg"
+                                 preserveAspectRatio="xMidYMid meet">
+                                <g class="fig-skeleton" id="fig-you-back">
+                                    <g class="fig-skull"></g>
+                                    <g class="fig-ribcage"></g>
+                                    <g class="fig-spine"></g>
+                                    <g class="fig-pelvis"></g>
+                                    <g class="fig-body-bones"></g>
+                                    <g class="fig-arm-bones"></g>
+                                    <g class="fig-muscles"></g>
+                                    <g class="fig-nodes"></g>
+                                </g>
+                            </svg>
+                        </div>
+                        <footer class="mapcol__foot">
+                            <div class="mapcol__stats" id="fig-you-back-stats">— · —</div>
+                        </footer>
+                    </div>
+
                 </div>
 
-                <!-- YOU (FRONT) -->
-                <div class="figure figure--you-front">
-                    <svg class="figure__svg" id="fig-svg-you-front"
-                         width="100%"
-                         height="auto"
-                         viewBox="0 0 520 640"
-                         xmlns="http://www.w3.org/2000/svg"
-                         preserveAspectRatio="xMidYMid meet">
-                        <g class="fig-skeleton" id="fig-you-front">
-                            <g class="fig-skull"></g>
-                            <g class="fig-ribcage"></g>
-                            <g class="fig-spine"></g>
-                            <g class="fig-pelvis"></g>
-                            <g class="fig-body-bones"></g>
-                            <g class="fig-arm-bones"></g>
-                            <g class="fig-muscles"></g>
-                            <g class="fig-nodes"></g>
-                        </g>
-                    </svg>
-                    <div class="figure__caption">[YOU: FRONT]</div>
-                    <div class="figure__stats" id="fig-you-front-stats">— · —</div>
+                <div class="legend" aria-label="Цветовая легенда">
+                    <span class="legend__item">
+                        <span class="legend__dot legend__dot--priority" aria-hidden="true"></span>
+                        Приоритет
+                    </span>
+                    <span class="legend__item">
+                        <span class="legend__dot legend__dot--neutral" aria-hidden="true"></span>
+                        Норма
+                    </span>
+                    <span class="legend__item">
+                        <span class="legend__dot legend__dot--forbidden" aria-hidden="true"></span>
+                        Не качать
+                    </span>
                 </div>
-
-                <!-- YOU (BACK) -->
-                <div class="figure figure--you-back">
-                    <svg class="figure__svg" id="fig-svg-you-back"
-                         width="100%"
-                         height="auto"
-                         viewBox="0 0 520 640"
-                         xmlns="http://www.w3.org/2000/svg"
-                         preserveAspectRatio="xMidYMid meet">
-                        <g class="fig-skeleton" id="fig-you-back">
-                            <g class="fig-skull"></g>
-                            <g class="fig-ribcage"></g>
-                            <g class="fig-spine"></g>
-                            <g class="fig-pelvis"></g>
-                            <g class="fig-body-bones"></g>
-                            <g class="fig-arm-bones"></g>
-                            <g class="fig-muscles"></g>
-                            <g class="fig-nodes"></g>
-                        </g>
-                    </svg>
-                    <div class="figure__caption">[YOU: BACK]</div>
-                    <div class="figure__stats" id="fig-you-back-stats">— · —</div>
-                </div>
-            </div>
-
-            <div class="legend" aria-label="Цветовая легенда">
-                <span class="legend__item">
-                    <span class="legend__dot legend__dot--priority" aria-hidden="true"></span>
-                    Приоритет
-                </span>
-                <span class="legend__item">
-                    <span class="legend__dot legend__dot--neutral" aria-hidden="true"></span>
-                    Норма
-                </span>
-                <span class="legend__item">
-                    <span class="legend__dot legend__dot--forbidden" aria-hidden="true"></span>
-                    Не качать
-                </span>
-            </div>
+            </section>
 
             <div class="weight-slider weight-slider--discrete">
                 <div class="weight-slider__header">
