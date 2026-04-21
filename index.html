@@ -827,15 +827,28 @@
 
     .diagnosis {
         width: 100%;
-        height: 100%;
+        min-height: 100%;
         display: flex;
         flex-direction: column;
         color: var(--text);
-        padding: 28px 48px 24px;
+        padding: 28px 48px 32px;
         background:
             radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.025), transparent 60%),
             #0A0A0A;
-        overflow: hidden;
+        overflow-y: auto;
+    }
+
+    /* Diagnosis screen has grown beyond one viewport (figures + legend +
+       slider + distribution table). Allow the whole screen to scroll. */
+    .screen.screen--diagnosis {
+        overflow-y: auto;
+    }
+
+    /* Keep the figures from collapsing as the scrolling parent now no
+       longer forces a fixed viewport height. */
+    .screen--diagnosis .compare {
+        flex: 0 0 auto;
+        min-height: 420px;
     }
 
     .diagnosis__header {
@@ -1080,16 +1093,20 @@
         background: rgba(255, 60, 60, 0.55);
     }
 
-    /* Weight slider */
+    /* ==========================================================================
+       Weight slider — DISCRETE CATEGORY SELECTOR.
+       Snaps to fixed amateur-boxing weight classes.  A floating label above
+       the thumb shows the current category (e.g. "до 86 кг").
+       ========================================================================== */
     .weight-slider {
-        margin-top: 16px;
+        margin-top: 20px;
         display: flex;
         align-items: center;
         gap: 28px;
     }
 
     .weight-slider__header {
-        min-width: 140px;
+        min-width: 160px;
     }
 
     .weight-slider__label {
@@ -1105,25 +1122,55 @@
 
     .weight-slider__value {
         font-family: var(--font-heading);
-        font-size: 34px;
+        font-size: 30px;
         color: #E8E8E8;
         line-height: 1;
         letter-spacing: 0.04em;
     }
 
+    .weight-slider__value-prefix,
     .weight-slider__value em {
+        font-family: var(--font-body);
         font-style: normal;
-        font-size: 15px;
+        font-size: 13px;
         color: #888888;
-        margin-left: 6px;
         letter-spacing: 0.2em;
+        text-transform: uppercase;
+    }
+
+    .weight-slider__value-prefix {
+        margin-right: 8px;
+    }
+
+    .weight-slider__value em {
+        margin-left: 6px;
     }
 
     .weight-slider__track {
         flex: 1;
+        position: relative;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
+        padding-top: 30px; /* room for floating thumb label */
+    }
+
+    .weight-slider__thumb-label {
+        position: absolute;
+        top: 0;
+        left: 0;
+        transform: translateX(-50%);
+        padding: 2px 8px;
+        border: 1px solid rgba(0, 255, 120, 0.45);
+        background: rgba(0, 255, 120, 0.08);
+        color: #00FF78;
+        font-family: var(--font-heading);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        white-space: nowrap;
+        pointer-events: none;
+        text-shadow: 0 0 8px rgba(0, 255, 120, 0.4);
+        transition: left 0.18s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .weight-slider__input {
@@ -1136,13 +1183,15 @@
         cursor: pointer;
         padding: 0;
         margin: 0;
+        position: relative;
+        z-index: 2;
     }
 
     .weight-slider__input::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 14px;
-        height: 14px;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
         background: linear-gradient(135deg, #F0F0F0, #B0B0B0);
         border: 1px solid #FFFFFF;
@@ -1151,8 +1200,8 @@
     }
 
     .weight-slider__input::-moz-range-thumb {
-        width: 14px;
-        height: 14px;
+        width: 16px;
+        height: 16px;
         border-radius: 50%;
         background: linear-gradient(135deg, #F0F0F0, #B0B0B0);
         border: 1px solid #FFFFFF;
@@ -1160,17 +1209,249 @@
         box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
     }
 
-    .weight-slider__bounds {
-        display: flex;
-        justify-content: space-between;
-        font-family: var(--font-heading);
-        font-size: 11px;
-        color: #555555;
-        letter-spacing: 0.18em;
+    .weight-slider__ticks {
+        position: relative;
+        width: 100%;
+        height: 18px;
+        margin-top: -4px;
     }
 
-    .weight-slider__bounds span.is-opt {
+    .weight-slider__tick {
+        position: absolute;
+        top: 0;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        font-family: var(--font-heading);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        color: #555555;
+        user-select: none;
+    }
+
+    .weight-slider__tick::before {
+        content: '';
+        width: 1px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.18);
+    }
+
+    .weight-slider__tick.is-current {
         color: #E8E8E8;
+    }
+    .weight-slider__tick.is-current::before {
+        background: #FFFFFF;
+        box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+    }
+
+    /* ==========================================================================
+       Distribution — champion-density table by weight class.
+       Filtered by skeleton similarity (height ±4cm, reach ±5cm).
+       Each row colored by density bracket; user's own class and peak class
+       tagged inline.
+       ========================================================================== */
+    .distribution {
+        margin-top: 36px;
+        padding-top: 24px;
+        border-top: 1px solid #222222;
+    }
+
+    .distribution__header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .distribution__title {
+        font-family: var(--font-heading);
+        font-size: 18px;
+        font-weight: 400;
+        letter-spacing: 0.22em;
+        color: #E8E8E8;
+        margin: 0;
+        text-transform: uppercase;
+    }
+
+    .distribution__subtitle {
+        font-family: var(--font-body);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 2px;
+        color: #666666;
+        text-transform: uppercase;
+    }
+
+    .distribution__table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: var(--font-body);
+        font-size: 13px;
+        color: #BBBBBB;
+        table-layout: fixed;
+    }
+
+    .distribution__table thead th {
+        font-family: var(--font-body);
+        font-size: 9px;
+        font-weight: 500;
+        letter-spacing: 2px;
+        color: #666666;
+        text-transform: uppercase;
+        text-align: left;
+        padding: 10px 14px;
+        border-bottom: 1px solid #222222;
+        background: transparent;
+    }
+
+    .distribution__table thead th:nth-child(2),
+    .distribution__table thead th:nth-child(3) {
+        text-align: right;
+    }
+
+    .distribution__table thead th:nth-child(4) {
+        width: 26%;
+    }
+
+    .distribution__row {
+        border-bottom: 1px solid #222222;
+        opacity: 0;
+        transform: translateY(4px);
+        animation: dist-row-in 0.45s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+        animation-delay: calc(var(--row-idx, 0) * 50ms);
+        transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .distribution__row td {
+        padding: 12px 14px;
+        font-family: var(--font-body);
+        font-size: 14px;
+        letter-spacing: 0.04em;
+    }
+
+    .distribution__row td:nth-child(1) {
+        font-family: var(--font-heading);
+        letter-spacing: 0.14em;
+        font-size: 14px;
+    }
+
+    .distribution__row td:nth-child(2),
+    .distribution__row td:nth-child(3) {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .distribution__row td:nth-child(3) {
+        font-family: var(--font-heading);
+        font-size: 15px;
+    }
+
+    .distribution__row td:nth-child(4) {
+        text-align: right;
+        font-family: var(--font-body);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    /* Density brackets — row backgrounds & text colors per spec. */
+    .distribution__row--zero {
+        background: #1a0000;
+        color: #ff4444;
+    }
+    .distribution__row--low {
+        background: #1a1500;
+        color: #ffcc00;
+    }
+    .distribution__row--mid {
+        background: #0a1a00;
+        color: #88cc44;
+    }
+    .distribution__row--high {
+        background: #001a00;
+        color: #00ff88;
+    }
+
+    /* User's current weight class — red left border + red tag. */
+    .distribution__row--user {
+        box-shadow: inset 3px 0 0 0 #ff4444;
+    }
+    .distribution__tag--user {
+        color: #ff4444;
+        text-shadow: 0 0 8px rgba(255, 68, 68, 0.35);
+    }
+
+    /* Peak category — bold row + green tag. */
+    .distribution__row--peak td {
+        font-weight: 700;
+    }
+    .distribution__tag--peak {
+        color: #00ff88;
+        text-shadow: 0 0 8px rgba(0, 255, 136, 0.35);
+    }
+
+    .distribution__conclusion {
+        margin: 22px 0 0;
+        max-width: 820px;
+        font-family: var(--font-body);
+        font-size: 13px;
+        line-height: 1.6;
+        color: #AAAAAA;
+        letter-spacing: 0.02em;
+    }
+
+    .distribution__conclusion b {
+        color: #E8E8E8;
+        font-weight: 600;
+    }
+
+    .distribution__conclusion .is-peak-val {
+        color: #00ff88;
+        font-weight: 600;
+    }
+
+    .distribution__conclusion .is-warn {
+        color: #ff4444;
+        font-weight: 600;
+    }
+
+    @keyframes dist-row-in {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .distribution {
+            margin-top: 28px;
+        }
+        .distribution__table {
+            font-size: 14px;
+        }
+        .distribution__row td {
+            padding: 10px 8px;
+            font-size: 14px;
+        }
+        .distribution__row td:nth-child(1) {
+            font-size: 13px;
+        }
+        .distribution__row td:nth-child(4) {
+            font-size: 9px;
+            letter-spacing: 0.14em;
+        }
+        .distribution__table thead th {
+            padding: 8px 8px;
+        }
+        .distribution__conclusion {
+            font-size: 13px;
+        }
     }
 
     @media (max-width: 960px) {
@@ -1503,25 +1784,46 @@
                 </span>
             </div>
 
-            <div class="weight-slider">
+            <div class="weight-slider weight-slider--discrete">
                 <div class="weight-slider__header">
-                    <span class="weight-slider__label">Твой вес</span>
+                    <span class="weight-slider__label">Весовая категория</span>
                     <div class="weight-slider__value">
-                        <span id="weight-slider-value">70</span><em>кг</em>
+                        <span class="weight-slider__value-prefix" id="weight-slider-prefix">до</span><span id="weight-slider-value">86</span><em>кг</em>
                     </div>
                 </div>
                 <div class="weight-slider__track">
-                    <input type="range" min="60" max="100" step="0.5" value="70"
-                           class="weight-slider__input" id="weight-slider" aria-label="Вес, кг">
-                    <div class="weight-slider__bounds">
-                        <span>60</span>
-                        <span>70</span>
-                        <span class="is-opt">81 OPT</span>
-                        <span>90</span>
-                        <span>100</span>
-                    </div>
+                    <div class="weight-slider__thumb-label" id="weight-thumb-label">до 86 кг</div>
+                    <input type="range" min="0" max="12" step="1" value="10"
+                           class="weight-slider__input" id="weight-slider"
+                           aria-label="Весовая категория">
+                    <div class="weight-slider__ticks" id="weight-ticks"></div>
                 </div>
             </div>
+
+            <!-- ==========================================================
+                 Distribution map — champion density by weight class.
+                 Slots into the diagnosis flow; shares state with slider.
+                 ========================================================== -->
+            <section class="distribution" id="distribution" aria-label="Карта чемпионов">
+                <div class="distribution__header">
+                    <h2 class="distribution__title">КАРТА ЧЕМПИОНОВ</h2>
+                    <div class="distribution__subtitle">
+                        Совпадения по скелету · рост&nbsp;±4&nbsp;см · размах&nbsp;±5&nbsp;см
+                    </div>
+                </div>
+                <table class="distribution__table" id="distribution-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Весовая категория</th>
+                            <th scope="col">Призёров</th>
+                            <th scope="col">%</th>
+                            <th scope="col" aria-label="Маркер"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="distribution-tbody"></tbody>
+                </table>
+                <p class="distribution__conclusion" id="distribution-conclusion">—</p>
+            </section>
         </div>
     </section>
 
@@ -1957,7 +2259,324 @@
             height: BASE_HEIGHT,
             reach:  BASE_REACH,
             weight: 70,
+            weightCategory: '86', // current discrete weight class (string)
         };
+
+        /* =====================================================================
+           Weight categories — Olympic / AIBA-style amateur boxing classes,
+           driven by gender. The slider snaps between these values.
+        ===================================================================== */
+        const GENDER_CATEGORIES = {
+            M: [48, 51, 54, 57, 60, 63.5, 67, 71, 75, 80, 86, 92, '92+'],
+            F: [48, 50, 52, 54, 57, 60, 63, 66, 70, 75, 81, '81+'],
+        };
+
+        /* Return a normalised string key for any category value. */
+        function categoryKey(cat) {
+            return String(cat);
+        }
+
+        /* Numeric value used for slider position, probability calc, etc.
+           Open-top classes ("92+", "81+") use their lower bound + a small
+           offset so the bell curve reads them as "above peak". */
+        function categoryValue(cat) {
+            const s = categoryKey(cat);
+            const n = parseFloat(s);
+            return s.endsWith('+') ? n + 3 : n;
+        }
+
+        /* Human-readable label for display near the thumb and in the header. */
+        function categoryLabel(cat) {
+            const s = categoryKey(cat);
+            return s.endsWith('+') ? 'св. ' + s.replace('+', '') + ' кг'
+                                   : 'до ' + s + ' кг';
+        }
+
+        /* Label prefix + numeric part, for the split-text header render. */
+        function categoryHeaderParts(cat) {
+            const s = categoryKey(cat);
+            if (s.endsWith('+')) {
+                return { prefix: 'св.', value: s.replace('+', '') };
+            }
+            return { prefix: 'до', value: s };
+        }
+
+        /* Short form used inside the distribution table first column. */
+        function categoryShort(cat) {
+            const s = categoryKey(cat);
+            return s.endsWith('+') ? s + ' кг' : 'до ' + s + ' кг';
+        }
+
+        function categoriesForGender(g) {
+            return GENDER_CATEGORIES[g] || GENDER_CATEGORIES.M;
+        }
+
+        /* Snap an arbitrary numeric weight to the nearest category index. */
+        function closestCategoryIndex(weight, cats) {
+            if (!Number.isFinite(weight)) return 0;
+            let bestIdx = 0;
+            let bestDist = Infinity;
+            for (let i = 0; i < cats.length; i++) {
+                const d = Math.abs(categoryValue(cats[i]) - weight);
+                if (d < bestDist) {
+                    bestDist = d;
+                    bestIdx = i;
+                }
+            }
+            return bestIdx;
+        }
+
+        /* =====================================================================
+           BENCHMARKS — 47 synthetic champion records used for the
+           distribution map. Each entry carries enough shape so future
+           features (style, win_method) can plug in without schema churn.
+        ===================================================================== */
+        const BENCHMARKS = [
+            // ---- M · lighter classes (48–60) ----
+            { name: 'D. Alvarez',     gender: 'M', height: 160, reach: 163, weight_class: '48',   style: 'Outboxer',     win_method: 'Decision' },
+            { name: 'K. Saito',       gender: 'M', height: 163, reach: 166, weight_class: '51',   style: 'Swarmer',      win_method: 'Decision' },
+            { name: 'R. Chen',        gender: 'M', height: 165, reach: 168, weight_class: '51',   style: 'Counter',      win_method: 'Points'   },
+            { name: 'M. Torres',      gender: 'M', height: 166, reach: 169, weight_class: '54',   style: 'Outboxer',     win_method: 'Decision' },
+            { name: 'P. Okonkwo',     gender: 'M', height: 168, reach: 171, weight_class: '54',   style: 'Pressure',     win_method: 'TKO'      },
+            { name: 'S. Dimitrov',    gender: 'M', height: 169, reach: 172, weight_class: '57',   style: 'Counter',      win_method: 'Decision' },
+            { name: 'J. Park',        gender: 'M', height: 170, reach: 173, weight_class: '57',   style: 'Outboxer',     win_method: 'Points'   },
+            { name: 'A. Volkov',      gender: 'M', height: 168, reach: 172, weight_class: '57',   style: 'Swarmer',      win_method: 'Decision' },
+            { name: 'C. Rivera',      gender: 'M', height: 171, reach: 174, weight_class: '60',   style: 'Pressure',     win_method: 'KO'       },
+            { name: 'T. Nakamura',    gender: 'M', height: 172, reach: 175, weight_class: '60',   style: 'Counter',      win_method: 'Decision' },
+
+            // ---- M · middle classes (63.5–71) ----
+            { name: 'E. Kuznetsov',   gender: 'M', height: 173, reach: 177, weight_class: '63.5', style: 'Pressure',     win_method: 'TKO'      },
+            { name: 'V. Petrov',      gender: 'M', height: 175, reach: 179, weight_class: '63.5', style: 'Swarmer',      win_method: 'Decision' },
+            { name: 'D. Silva',       gender: 'M', height: 174, reach: 178, weight_class: '63.5', style: 'Counter',      win_method: 'Points'   },
+            { name: 'O. Kovač',       gender: 'M', height: 177, reach: 181, weight_class: '67',   style: 'Outboxer',     win_method: 'Decision' },
+            { name: 'R. Haddad',      gender: 'M', height: 178, reach: 182, weight_class: '67',   style: 'Pressure',     win_method: 'KO'       },
+            { name: 'F. Okafor',      gender: 'M', height: 176, reach: 181, weight_class: '67',   style: 'Counter',      win_method: 'Decision' },
+            { name: 'S. Lindqvist',   gender: 'M', height: 179, reach: 183, weight_class: '67',   style: 'Switch',       win_method: 'TKO'      },
+            { name: 'I. Babić',       gender: 'M', height: 180, reach: 184, weight_class: '71',   style: 'Pressure',     win_method: 'Decision' },
+            { name: 'G. Marconi',     gender: 'M', height: 181, reach: 186, weight_class: '71',   style: 'Counter',      win_method: 'Points'   },
+            { name: 'N. Osei',        gender: 'M', height: 179, reach: 184, weight_class: '71',   style: 'Outboxer',     win_method: 'Decision' },
+            { name: 'Y. Ishikawa',    gender: 'M', height: 182, reach: 187, weight_class: '71',   style: 'Swarmer',      win_method: 'KO'       },
+
+            // ---- M · upper classes (75–86) — densest cluster ----
+            { name: 'C. Hernández',   gender: 'M', height: 183, reach: 189, weight_class: '75',   style: 'Pressure',     win_method: 'TKO'      },
+            { name: 'J. C. La Cruz',  gender: 'M', height: 184, reach: 191, weight_class: '75',   style: 'Outboxer',     win_method: 'Decision' },
+            { name: 'M. Iversen',     gender: 'M', height: 182, reach: 188, weight_class: '75',   style: 'Counter',      win_method: 'Decision' },
+            { name: 'B. Nakashima',   gender: 'M', height: 185, reach: 191, weight_class: '75',   style: 'Switch',       win_method: 'Points'   },
+            { name: 'R. Zaytsev',     gender: 'M', height: 183, reach: 190, weight_class: '75',   style: 'Pressure',     win_method: 'KO'       },
+            { name: 'T. Abara',       gender: 'M', height: 184, reach: 190, weight_class: '75',   style: 'Swarmer',      win_method: 'TKO'      },
+            { name: 'P. Laurent',     gender: 'M', height: 186, reach: 193, weight_class: '80',   style: 'Outboxer',     win_method: 'Decision' },
+            { name: 'W. Holm',        gender: 'M', height: 188, reach: 195, weight_class: '80',   style: 'Counter',      win_method: 'Decision' },
+            { name: 'M. Dubois',      gender: 'M', height: 185, reach: 192, weight_class: '80',   style: 'Pressure',     win_method: 'KO'       },
+            { name: 'K. Adebayo',     gender: 'M', height: 189, reach: 196, weight_class: '80',   style: 'Switch',       win_method: 'TKO'      },
+            { name: 'Z. Usmanov',     gender: 'M', height: 190, reach: 198, weight_class: '86',   style: 'Pressure',     win_method: 'KO'       },
+            { name: 'J. Bergström',   gender: 'M', height: 192, reach: 200, weight_class: '86',   style: 'Outboxer',     win_method: 'Decision' },
+            { name: 'E. Costa',       gender: 'M', height: 189, reach: 197, weight_class: '86',   style: 'Counter',      win_method: 'Points'   },
+            { name: 'A. Kaminski',    gender: 'M', height: 191, reach: 199, weight_class: '86',   style: 'Pressure',     win_method: 'TKO'      },
+
+            // ---- M · heavyweight (92 / 92+) ----
+            { name: 'R. Orlov',       gender: 'M', height: 194, reach: 203, weight_class: '92',   style: 'Pressure',     win_method: 'KO'       },
+            { name: 'H. Bakker',      gender: 'M', height: 196, reach: 205, weight_class: '92',   style: 'Counter',      win_method: 'Decision' },
+            { name: 'T. Aleksić',     gender: 'M', height: 195, reach: 204, weight_class: '92',   style: 'Swarmer',      win_method: 'TKO'      },
+            { name: 'K. Rasmussen',   gender: 'M', height: 198, reach: 208, weight_class: '92+',  style: 'Pressure',     win_method: 'KO'       },
+            { name: 'S. Ovsiannikov',  gender: 'M', height: 200, reach: 210, weight_class: '92+',  style: 'Swarmer',      win_method: 'KO'       },
+
+            // ---- F · mid–upper ----
+            { name: 'L. Andersen',    gender: 'F', height: 170, reach: 174, weight_class: '60',   style: 'Counter',      win_method: 'Decision' },
+            { name: 'M. Kaur',        gender: 'F', height: 171, reach: 175, weight_class: '63',   style: 'Outboxer',     win_method: 'Decision' },
+            { name: 'E. Rossi',       gender: 'F', height: 173, reach: 178, weight_class: '66',   style: 'Pressure',     win_method: 'TKO'      },
+            { name: 'N. Ibarra',      gender: 'F', height: 175, reach: 180, weight_class: '70',   style: 'Swarmer',      win_method: 'Decision' },
+            { name: 'O. Marchenko',   gender: 'F', height: 177, reach: 183, weight_class: '75',   style: 'Counter',      win_method: 'Points'   },
+            { name: 'T. Obinna',      gender: 'F', height: 180, reach: 186, weight_class: '81',   style: 'Pressure',     win_method: 'KO'       },
+            { name: 'H. Ólafsdóttir', gender: 'F', height: 184, reach: 191, weight_class: '81+',  style: 'Pressure',     win_method: 'KO'       },
+        ];
+
+        /* =====================================================================
+           Distribution computation — filters BENCHMARKS by skeleton similarity
+           (height ±4cm, reach ±5cm) and buckets results by weight class.
+
+           Returns an array aligned to the gender's full category list so
+           every category renders a row (including 0%-density "dead zones"
+           that are visually flagged red — the map reads as a landscape,
+           not a leaderboard).
+        ===================================================================== */
+        const HEIGHT_TOL = 4;
+        const REACH_TOL  = 5;
+
+        function computeDistribution(profile) {
+            const cats = categoriesForGender(profile.gender);
+            const matches = BENCHMARKS.filter((b) =>
+                b.gender === profile.gender &&
+                Math.abs(b.height - profile.height) <= HEIGHT_TOL &&
+                Math.abs(b.reach  - profile.reach)  <= REACH_TOL
+            );
+
+            const counts = {};
+            for (let i = 0; i < cats.length; i++) counts[categoryKey(cats[i])] = 0;
+            for (let i = 0; i < matches.length; i++) {
+                const k = categoryKey(matches[i].weight_class);
+                if (k in counts) counts[k] += 1;
+            }
+
+            const total = matches.length;
+            const rows = cats.map((cat) => {
+                const key = categoryKey(cat);
+                const count = counts[key] || 0;
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                return { cat: cat, key: key, count: count, pct: pct };
+            });
+
+            // Peak = highest pct (prefer higher-weight class on ties for realism).
+            let peakIdx = -1;
+            let peakPct = -1;
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].pct > peakPct) {
+                    peakPct = rows[i].pct;
+                    peakIdx = i;
+                }
+            }
+
+            return {
+                rows: rows,
+                total: total,
+                peakIdx: peakIdx,
+                peak: peakIdx >= 0 ? rows[peakIdx] : null,
+            };
+        }
+
+        function densityBracket(pct) {
+            if (pct === 0)  return 'zero';
+            if (pct <= 15)  return 'low';
+            if (pct <= 30)  return 'mid';
+            return 'high';
+        }
+
+        /* =====================================================================
+           Distribution renderer — paints the table rows and the system
+           conclusion line below. Called on diagnosis entry and whenever the
+           discrete weight slider changes (to re-mark "ВЫ СЕЙЧАС").
+        ===================================================================== */
+        const Distribution = (function () {
+            let tbodyEl, conclusionEl;
+
+            function ensure() {
+                if (!tbodyEl)      tbodyEl      = document.getElementById('distribution-tbody');
+                if (!conclusionEl) conclusionEl = document.getElementById('distribution-conclusion');
+            }
+
+            function renderRows(dist, userKey, peakKey, animate) {
+                if (!tbodyEl) return;
+                // Clear without losing reference (preserves React-friendlyness if ported).
+                while (tbodyEl.firstChild) tbodyEl.removeChild(tbodyEl.firstChild);
+
+                for (let i = 0; i < dist.rows.length; i++) {
+                    const r = dist.rows[i];
+                    const bracket = densityBracket(r.pct);
+                    const isUser  = r.key === userKey;
+                    const isPeak  = r.key === peakKey && dist.total > 0;
+
+                    const tr = document.createElement('tr');
+                    tr.className = [
+                        'distribution__row',
+                        'distribution__row--' + bracket,
+                        isUser ? 'distribution__row--user' : '',
+                        isPeak ? 'distribution__row--peak' : '',
+                    ].filter(Boolean).join(' ');
+                    tr.style.setProperty('--row-idx', animate ? i : 0);
+                    if (!animate) {
+                        tr.style.animation = 'none';
+                        tr.style.opacity = '1';
+                        tr.style.transform = 'none';
+                    }
+
+                    const tdClass = document.createElement('td');
+                    tdClass.textContent = categoryShort(r.cat);
+
+                    const tdCount = document.createElement('td');
+                    tdCount.textContent = String(r.count);
+
+                    const tdPct = document.createElement('td');
+                    tdPct.textContent = r.pct + '%';
+
+                    const tdTag = document.createElement('td');
+                    const tagParts = [];
+                    if (isUser) {
+                        tagParts.push('<span class="distribution__tag--user">◄ ВЫ СЕЙЧАС</span>');
+                    }
+                    if (isPeak) {
+                        tagParts.push('<span class="distribution__tag--peak">★ ЗОНА ПОБЕДЫ</span>');
+                    }
+                    tdTag.innerHTML = tagParts.join('<br>');
+
+                    tr.appendChild(tdClass);
+                    tr.appendChild(tdCount);
+                    tr.appendChild(tdPct);
+                    tr.appendChild(tdTag);
+                    tbodyEl.appendChild(tr);
+                }
+            }
+
+            function renderConclusion(dist, userKey) {
+                if (!conclusionEl) return;
+                const peak = dist.peak;
+                if (!peak || dist.total === 0) {
+                    conclusionEl.innerHTML =
+                        'Исторических призёров с похожим скелетом в базе не найдено. ' +
+                        'Попробуйте уточнить параметры роста и размаха рук.';
+                    return;
+                }
+
+                const peakCatStr = categoryKey(peak.cat);
+                const peakLabel  = peakCatStr.endsWith('+')
+                    ? peakCatStr + ' кг'
+                    : 'до ' + peakCatStr + ' кг';
+
+                const userRow = dist.rows.find((r) => r.key === userKey);
+                const userPct = userRow ? userRow.pct : 0;
+
+                let status;
+                if (userKey === peak.key) {
+                    status = '<b class="is-peak-val">вы уже в зоне победы</b>';
+                } else if (userPct === 0) {
+                    status = '<b class="is-warn">зона с нулевой исторической плотностью</b>';
+                } else {
+                    const delta = Math.abs(categoryValue(peak.cat) - categoryValue(userKey));
+                    const deltaFmt = (delta % 1 === 0) ? delta.toFixed(0) : delta.toFixed(1);
+                    status = '<b>до зоны победы ' + deltaFmt + ' кг</b>';
+                }
+
+                const weightDisplay = (PrimeState.weight % 1 === 0)
+                    ? String(PrimeState.weight)
+                    : PrimeState.weight.toFixed(1);
+
+                conclusionEl.innerHTML =
+                    'С вашей антропометрией исторически побеждали чаще всего в категории ' +
+                    '<b class="is-peak-val">' + peakLabel + '</b> — ' +
+                    '<b class="is-peak-val">' + peak.pct + '%</b> призёров с похожим скелетом. ' +
+                    'Ваш текущий вес <b>' + weightDisplay + ' кг</b> — ' + status + '.';
+            }
+
+            return {
+                render: function (animate) {
+                    ensure();
+                    const profile = {
+                        gender: PrimeState.gender,
+                        height: PrimeState.height,
+                        reach:  PrimeState.reach,
+                    };
+                    const dist = computeDistribution(profile);
+                    const userKey = categoryKey(PrimeState.weightCategory);
+                    const peakKey = dist.peak ? dist.peak.key : null;
+                    renderRows(dist, userKey, peakKey, !!animate);
+                    renderConclusion(dist, userKey);
+                },
+                // Light-weight update: same data, just move ВЫ СЕЙЧАС marker
+                // and re-run the conclusion without re-animating rows.
+                refresh: function () {
+                    ensure();
+                    this.render(false);
+                },
+            };
+        })();
 
         /* =====================================================================
            Screen router — cross-fade one screen at a time
@@ -2232,7 +2851,9 @@
             let twinRefs, youFrontRefs, youBackRefs;
             let youFrontMuscles = [];
             let youBackMuscles  = [];
-            let slider, kpiValue, weightValue, youFrontStats, youBackStats;
+            let slider, kpiValue, weightValue, weightPrefix, thumbLabel, ticksEl,
+                youFrontStats, youBackStats;
+            let currentCats = GENDER_CATEGORIES.M;
 
             function groupsFrom(rootId) {
                 const root = document.getElementById(rootId);
@@ -2259,20 +2880,87 @@
                 if (youFrontG) youFrontRefs = buildSkeleton(youFrontG);
                 if (youBackG)  youBackRefs  = buildSkeleton(youBackG);
 
-
                 slider        = document.getElementById('weight-slider');
                 kpiValue      = document.getElementById('kpi-value');
                 weightValue   = document.getElementById('weight-slider-value');
+                weightPrefix  = document.getElementById('weight-slider-prefix');
+                thumbLabel    = document.getElementById('weight-thumb-label');
+                ticksEl       = document.getElementById('weight-ticks');
                 youFrontStats = document.getElementById('fig-you-front-stats');
                 youBackStats  = document.getElementById('fig-you-back-stats');
 
                 if (slider) {
                     slider.addEventListener('input', () => {
-                        const w = parseFloat(slider.value);
-                        PrimeState.weight = w;
-                        applyWeight(w);
+                        const idx = parseInt(slider.value, 10);
+                        applyCategoryByIndex(idx, /*fromUser=*/true);
                     });
                 }
+            }
+
+            /* Rebuilds the visible tick marks under the track to match the
+               currently-active gender's category list. */
+            function renderTicks(cats, activeIdx) {
+                if (!ticksEl) return;
+                while (ticksEl.firstChild) ticksEl.removeChild(ticksEl.firstChild);
+                const last = Math.max(1, cats.length - 1);
+                for (let i = 0; i < cats.length; i++) {
+                    const tick = document.createElement('span');
+                    tick.className = 'weight-slider__tick' +
+                        (i === activeIdx ? ' is-current' : '');
+                    tick.style.left = (i / last * 100) + '%';
+                    tick.textContent = categoryKey(cats[i]);
+                    ticksEl.appendChild(tick);
+                }
+            }
+
+            /* Positions the floating "до 86 кг" label above the thumb. */
+            function positionThumbLabel(idx, total) {
+                if (!thumbLabel) return;
+                const last = Math.max(1, total - 1);
+                const pct  = idx / last;
+                thumbLabel.style.left = (pct * 100) + '%';
+            }
+
+            /* Reconfigures the slider range to the active gender's category
+               set. Must run before initial value assignment on entry and
+               whenever gender changes. */
+            function configureSliderForGender(gender) {
+                currentCats = categoriesForGender(gender);
+                if (!slider) return;
+                slider.min = '0';
+                slider.max = String(currentCats.length - 1);
+                slider.step = '1';
+            }
+
+            /* Single source of truth for "the user picked category i".
+               Updates state, UI affordances, KPI, skeleton density and
+               (optionally) the distribution map. */
+            function applyCategoryByIndex(idx, fromUser) {
+                idx = Math.max(0, Math.min(currentCats.length - 1, idx));
+                const cat  = currentCats[idx];
+                const wNum = categoryValue(cat);
+
+                PrimeState.weight         = wNum;
+                PrimeState.weightCategory = categoryKey(cat);
+
+                if (slider && parseInt(slider.value, 10) !== idx) {
+                    slider.value = String(idx);
+                }
+
+                // Header "до 86 кг" split into prefix + value + unit.
+                const parts = categoryHeaderParts(cat);
+                if (weightPrefix) weightPrefix.textContent = parts.prefix;
+                if (weightValue)  weightValue.textContent  = parts.value;
+                if (thumbLabel)   thumbLabel.textContent   = categoryLabel(cat);
+
+                positionThumbLabel(idx, currentCats.length);
+                renderTicks(currentCats, idx);
+
+                applyWeight(wNum);
+
+                // Slider-driven updates only refresh the "ВЫ СЕЙЧАС" marker
+                // and conclusion — row fade-in stagger plays once on entry.
+                if (fromUser) Distribution.refresh();
             }
 
             /* Recomputes bones & rebuilds muscle dot positions — called once
@@ -2300,10 +2988,10 @@
                 if (youBackStats)  youBackStats.textContent  = stats;
             }
 
-            /* Per-weight update — only KPI text and muscle dots change. */
+            /* Per-weight update — only KPI text and muscle dots change.
+               Header text is updated separately by applyCategoryByIndex. */
             function applyWeight(w) {
-                if (weightValue) weightValue.textContent = (w % 1 === 0) ? String(w) : w.toFixed(1);
-                if (kpiValue)    kpiValue.textContent    = probabilityFor(w) + '%';
+                if (kpiValue) kpiValue.textContent = probabilityFor(w) + '%';
                 updateMuscleDots(youFrontMuscles, w);
                 updateMuscleDots(youBackMuscles,  w);
             }
@@ -2315,10 +3003,19 @@
                        otherwise fly into place. */
                     document.body.classList.add('is-booting');
                     buildOnce();
-                    const w = Math.max(60, Math.min(100, PrimeState.weight || 70));
-                    if (slider) slider.value = String(w);
+
+                    configureSliderForGender(PrimeState.gender);
+                    const startIdx = closestCategoryIndex(
+                        PrimeState.weight, currentCats
+                    );
+
                     applyLayouts();
-                    applyWeight(w);
+                    // Seed slider + header + skeleton density for the
+                    // category closest to the user's entered weight.
+                    applyCategoryByIndex(startIdx, /*fromUser=*/false);
+                    // Animated first render of the distribution table.
+                    Distribution.render(true);
+
                     showScreen('diagnosis');
                     requestAnimationFrame(() => {
                         document.body.classList.remove('is-booting');
