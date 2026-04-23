@@ -2343,6 +2343,321 @@
             padding: 20px 18px 64px;
         }
     }
+
+    /* ==========================================================================
+       Hero CTA — pulsing "tap me" animation.
+       ========================================================================== */
+    @keyframes hero-cta-pulse {
+        0%   { box-shadow: 0 0 0 0   rgba(0, 0, 0, 0.35), 0 6px 18px rgba(0,0,0,0.18); transform: scale(1); }
+        60%  { box-shadow: 0 0 0 12px rgba(0, 0, 0, 0),   0 6px 18px rgba(0,0,0,0.18); transform: scale(1.03); }
+        100% { box-shadow: 0 0 0 0   rgba(0, 0, 0, 0),   0 6px 18px rgba(0,0,0,0.18); transform: scale(1); }
+    }
+    .hero__cta.hero__cta--pulse {
+        animation: hero-cta-pulse 2s ease-in-out infinite;
+    }
+    .hero__cta.hero__cta--pulse:hover,
+    .hero__cta.hero__cta--pulse:focus-visible {
+        animation-play-state: paused;
+    }
+
+    /* ==========================================================================
+       Muscle panel — replaces the old 3-figure muscle-map.
+       Twin info card (Ryota Murata) + 4-zone zoomed muscle grid.
+       ========================================================================== */
+    .muscle-panel {
+        border-top: 1px solid #E0E0E0;
+        padding: 32px 0 8px;
+        margin: 32px 0 8px;
+        position: relative;
+    }
+
+    /* --- Biometric twin card ---------------------------------------------- */
+    .twin-card {
+        background: #F7F7F7;
+        border: 1px solid #EEEEEE;
+        border-radius: 6px;
+        padding: 22px 26px 20px;
+        margin-bottom: 28px;
+    }
+    .twin-card__head { margin-bottom: 14px; }
+    .twin-card__label {
+        font-family: var(--font-heading);
+        font-size: 13px;
+        letter-spacing: 3px;
+        color: #00994D;
+        text-transform: uppercase;
+        line-height: 1;
+    }
+    .twin-card__subline {
+        font-family: var(--font-body);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        color: #666666;
+        margin-top: 6px;
+    }
+    .twin-card__name {
+        font-family: var(--font-heading);
+        font-size: 30px;
+        letter-spacing: 0.12em;
+        color: #000000;
+        text-transform: uppercase;
+        line-height: 1;
+        margin-bottom: 14px;
+    }
+    .twin-card__grid {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 16px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 28px;
+    }
+    .twin-card__grid li {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px dashed #E0E0E0;
+        font-family: var(--font-body);
+        font-size: 13px;
+    }
+    .twin-card__grid li span { color: #666666; }
+    .twin-card__grid li b { color: #000000; font-weight: 600; text-align: right; }
+    .twin-card__grid-full { grid-column: 1 / -1; }
+
+    .twin-card__ach { margin-top: 4px; }
+    .twin-card__ach-head {
+        font-family: var(--font-body);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: #333333;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .twin-card__ach-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .twin-card__ach-list li {
+        padding: 4px 0 4px 18px;
+        position: relative;
+        font-family: var(--font-body);
+        font-size: 13px;
+        color: #222222;
+    }
+    .twin-card__ach-list li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 11px;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #00994D;
+    }
+    .twin-card__foot {
+        margin-top: 14px;
+        font-family: var(--font-body);
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        color: #999999;
+        text-transform: uppercase;
+    }
+
+    /* --- Zone-map header -------------------------------------------------- */
+    .zone-map__head {
+        text-align: center;
+        margin-bottom: 14px;
+    }
+    .zone-map__label {
+        font-family: var(--font-heading);
+        font-size: 13px;
+        letter-spacing: 3px;
+        color: #000000;
+        text-transform: uppercase;
+        line-height: 1;
+    }
+    .zone-map__subline {
+        font-family: var(--font-body);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        color: #666666;
+        margin-top: 6px;
+    }
+
+    /* --- 4-zone grid ------------------------------------------------------ */
+    .muscle-zones {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+    }
+    .zone {
+        background: #F7F7F7;
+        border: 1px solid #EEEEEE;
+        border-radius: 6px;
+        padding: 14px 10px 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .zone__label {
+        font-family: var(--font-heading);
+        font-size: 12px;
+        letter-spacing: 2.5px;
+        color: #000000;
+        text-transform: uppercase;
+        text-align: center;
+        margin-bottom: 10px;
+        line-height: 1.2;
+    }
+    .zone__svg {
+        width: 100%;
+        max-width: 220px;
+        height: auto;
+        aspect-ratio: 200 / 260;
+        display: block;
+    }
+
+    /* Clickable numbered muscle node — a filled circle with a number inside. */
+    .muscle-node {
+        cursor: pointer;
+        transition: transform 0.15s ease, filter 0.15s ease;
+    }
+    .muscle-node:hover { filter: brightness(1.08); }
+    .muscle-node.is-active .muscle-node__circle {
+        stroke: #000000;
+        stroke-width: 1.5;
+    }
+    .muscle-node__circle {
+        transition: fill 0.3s ease, stroke 0.2s ease;
+    }
+    .muscle-node__num {
+        font-family: var(--font-heading);
+        font-size: 8px;
+        fill: #FFFFFF;
+        text-anchor: middle;
+        dominant-baseline: central;
+        pointer-events: none;
+        letter-spacing: 0;
+    }
+
+    /* --- Legend ----------------------------------------------------------- */
+    .muscle-legend {
+        display: flex;
+        justify-content: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        margin-top: 22px;
+        font-family: var(--font-body);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        color: #555555;
+    }
+    .muscle-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .muscle-legend i {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        flex: 0 0 auto;
+    }
+
+    /* --- Click tooltip ---------------------------------------------------- */
+    .muscle-tooltip {
+        position: fixed;
+        z-index: 100;
+        background: #FFFFFF;
+        border: 1px solid #CCCCCC;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+        border-radius: 8px;
+        padding: 14px 18px 14px 18px;
+        min-width: 260px;
+        max-width: 320px;
+        font-family: var(--font-body);
+    }
+    .muscle-tooltip[hidden] { display: none; }
+    .muscle-tooltip__close {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        font-size: 20px;
+        line-height: 1;
+        color: #888888;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+    .muscle-tooltip__close:hover { color: #000000; }
+    .muscle-tooltip__head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .muscle-tooltip__num {
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--font-heading);
+        font-size: 13px;
+        color: #FFFFFF;
+        background: #555555;
+    }
+    .muscle-tooltip__name {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #000000;
+    }
+    .muscle-tooltip__row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        font-size: 13px;
+        gap: 12px;
+        border-bottom: 1px dashed #EEEEEE;
+    }
+    .muscle-tooltip__row:last-of-type { border-bottom: none; }
+    .muscle-tooltip__row span { color: #666666; }
+    .muscle-tooltip__row b { font-weight: 600; color: #000000; }
+    .muscle-tooltip__status {
+        margin-top: 10px;
+        padding: 7px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-align: center;
+        text-transform: uppercase;
+    }
+    .muscle-tooltip__status--red    { background: #FFE5E5; color: #CC0000; }
+    .muscle-tooltip__status--yellow { background: #FFF5CC; color: #B38600; }
+    .muscle-tooltip__status--lgreen { background: #EEF7DC; color: #558800; }
+    .muscle-tooltip__status--green  { background: #DDF5E5; color: #00994D; }
+
+    /* --- Mobile ----------------------------------------------------------- */
+    @media (max-width: 900px) {
+        .muscle-zones { grid-template-columns: repeat(2, 1fr); }
+        .twin-card__grid { grid-template-columns: 1fr; gap: 0; }
+    }
+    @media (max-width: 520px) {
+        .muscle-zones { grid-template-columns: 1fr; gap: 10px; }
+        .twin-card { padding: 18px 18px 16px; }
+        .twin-card__name { font-size: 24px; }
+        .muscle-tooltip { min-width: 240px; max-width: calc(100vw - 32px); }
+    }
     </style>
 </head>
 <body class="is-booting">
@@ -2354,8 +2669,7 @@
         <div class="hero">
             <div class="hero__content">
                 <img class="hero__logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAADbCAYAAADzq+N8AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAEoZSURBVHhe7d13tB1V/ffxB7tBAwGEAAkQEooooAKRJo8QF4sqYIsVRQTJEgELLgSXyE8lAVTUqFjooFlIU5qAVCmLCIRgKFa6IYQktID18fesD/CR7/1yzs0pc+6ZmfN+/XPmzD13yp699+z9nT0z/+f/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAV66Utf+tI8z5ZbbrnlPP2yl73sZS95yUteEv8ev8ffDjevjpQ28bv3e1D2vx1Kk5wuL3/5y1/u6Ve+8pWv9HRMV/2P8lv+X/8tyn9vRaP/9fdYRuK2avv8m/z/+fsgi+kY0yTXJ3XWLD94fqO/KX1i3svp1+h/yugVr3jFK/I8GaTjXxYxP1Ul/7RK+9OoTZLPG8Plu2Zlse5imuR6pt8aHZPhjmEn3NZw+RiuXQwAtaNK1SdL0bQqxtwRUyfIjdNcMeu75ueTbp15X7XfnDiGWlYeiHnNv40dhtjJjvx/eX67hsunuZERO//5b1GjcjGocucvpttwaVgXjfKCvitfO22c/2N9G/8np6HzYRXSL9aH2l7vy/LLL7/8kB+iJ2I96WPh83nOl1Wkfcnn3HgedtmKfzf/rtk5oNG8uonntCjXOf3S6Pg22+ZONMobzfIDANRSKxVes5NCbMA2+lud5f21fNIaVMOlU/5bzD/5f/TdeSz/bThex3Dib2PjUdTYcCPR8zQdy0JcRkQeeE5MU6VVo3qirpaVX/33/JtG9WmRDd+RloPInvffQoiecZrHY1BH2r9cZiKlgS9e+Hv+e/zueXXmtND5THW05nnfy3D+8vboU8fXIwR9Ts770y7vY973OA0AtTVcZRcbnfqdr1DpuyvNfNJVJb3GGmussdFGG2301prbZpttttlqq6228vctt9xyS31uu+22266//vrrx3TBUM53saHhjrXnKW/lDvioUaNGjRs3btwb3vCGN2zxvMnPG3JwWrDZ8zbeeOONx48fP17L9nqGawC58eD87+9V7qT1gtLzLW95y1s23XTTTVVWdKz0XeVEn5vXnPKWPmPe1H6rbpw0adKkmLeVh171qle9Kuc71bc5+Jrr3LJyQzvO0/68+c1vfvPWW2+99dDSiKIp7ymdledU9lQ/uY6qQ0BA5cLniFhuXC/7bzkPRqqj1F7ZcMMNN1S+VDqpforn9bqKddQGG2ywgdKjbOcwH8dNNtlkE2/vdtttt53OKXl/2uXyoU+VEdW/Lhd1KB8A0DJ3ZOJJU5/5iqeGcKoC/eQnP/nJr3/961//xS9+8Yu77rrrrkWLFi3629/+9rd///vf//7fAfCvf/3rX//veZrWPE0rDW644YYbhiQumoodb+U15a0DDjjggJkzZ84855xzzrnttttue/TRRx/9xz/+8Y///Oc//3H6K631Pc5rl47b3//+9797Gf/85z//+dBDDz00d+7cuRdddNFFxx9//PH777///moQtjJ02Z2e4Rqdg0LH1emqNHaaP/3000/HY1B3zqfxu/Ld0qVLlyqvXXbZZZcde+yxx37kIx/5yLrrrruu0s4dmtjZV+Pc+So+L6PM3Blzg1rb/cwzzzwzNIXQKz4vifNSDjJVmfOXvyuf5f1Tva1O3rRp06Z997vf/a7q9Tlz5szROeXJJ598MqaRxPP5oLjmmmuuUQfYaVam85fqDNWT3lado4dufediW9X7X5UAKwAUIp9II1/5V3T8tNNOO23x4sWLVWHmhq2m3SEeBLlRH9PhiiuuuCKn4yAarkMc89vo0aNHf+tb3/qWOodOV3fuY5rrhB3Fv/n3+X+a8fHy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4t85MKbvyqf625QpU6Z4feJOSdG3rww6AgD95brTw/L19o14PHKatkPLiOcdl08dl8cff/zxb37zm990ufJxcQfHZbzu4rHwxYsy5VEHYP1d7VkFwV1n+lg/1+0f+v2/GaEJ5w9Nx3Ot8sm11157rdsIDj7E7crpWEdOf+WL2MZt1N4FUEIqrJdddtllrtxiICBXiJ3wclXhHn/88ccPd4+yK5U8XVV5H+L3KlSSPtGrU/H73//+9zqpupFUxBB9d1r9qTwSr476pN0rXnfcJ2/HTjvttFNOj3bFRoEasGowONDgqwvd8Ha7Eavt1nIVwFDnOp6oy6guAYDcIPZ3H//jjjvuuLhNvqo/dGtfLDY69T0GeTRaa4sttthCy3enP+a33CBFZwgA9I/LbSy/yy+//PJur7gez+naKi3D7RxNP3ejzdDXtep1xu9973vfq7q7V/VIWcX9fe7yTLnypttQDkx4e0866aST4nFVHolBVGklAOu84M842k7z/vCHP/zhYx/72MccnCrjCIleivlB+9vsfAighNxIVCWmSi0OhcuVYSe0HHVOVFm6AtY6rr/++ut32WWXXTS8rFlFWYUOcju0P46WVqlxru3V1cbYCPaJMB/vdsVlaLmK3P/617/+9RVXXHHFpZdeeqk+e+mSSy65RA08rUuNysuD73znO9/JadEJ3UrgRr4aKF/60pe+5I770NRoXx5S7nKm6W233XZbN4rK2nCtegDA4tB7iWmuMq8G4kUXXXSRjrvLTisBoFwnO220HB3n2bNnz9byY32ixlezOhXtIwDQP7EN4HyteQcccMABbk9ITtdWuR7WslwuXX/Gcup65LTTTjtt11133XWQ3hKQ607XLWVtw2h7dc71bSKx3ozfWwkAxOPvfCE5ryxYsGCB3qilB7Tm7RkEsX1Tt3Y7UGuq0HVCmzdv3rxY2RUxAsANplh5ep4atgoOaKjdo48++qieFSALFy5cqNeteLrKtA/aP50gtI8PP/zww5r+61//+ld1MvOxKBud5NXwOv/8889X3ohXICUf73ZpGR7SrGXrxD2SJ5DYuIlXOHKjp1NejjuFKmurr7766k888cQT3TRco1jG9N1p+sMf/vCH7ogWtT9Fq3oAwMttlGfz1ZBNNtlkE9UFPlat7F+sNzXtUTcxnc4888wzvU6G/xePAEB/Nepsqx6d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" alt="" aria-hidden="true" />
-                <h1 class="hero__title">Биометрический анализ<br>для боксёров</h1>
-                <button type="button" class="hero__cta" id="hero-cta">Запустить сканирование</button>
+                <button type="button" class="hero__cta hero__cta--pulse" id="hero-cta">Запустить сканирование</button>
             </div>
             <div class="hero__footer">V1.0 · MVP · PRECISION · POWER · PRIME</div>
         </div>
@@ -2370,11 +2684,6 @@
              LEFT COLUMN — FORM
              ====================================================== -->
         <aside class="scan__left">
-
-            <div class="scan__heading">
-                <h1 class="scan__title">PRIME SCAN</h1>
-                <p class="scan__subtitle">Введи параметры — система найдёт твой биометрический эталон</p>
-            </div>
 
             <form class="form" id="scan-form" novalidate>
                 <div class="field">
@@ -2570,115 +2879,131 @@
                 </div>
             </section>
 
-            <section class="muscle-map" aria-label="Близнец и карта мышечного развития">
-                <div class="muscle-map__grid">
+            <section class="muscle-panel" aria-label="Биометрический близнец и карта мышечного развития">
 
-                    <!-- LEFT — biometric twin -->
-                    <div class="mapcol mapcol--twin">
-                        <header class="mapcol__head">
-                            <div class="mapcol__label mapcol__label--twin">Биометрический близнец</div>
-                            <div class="mapcol__subline">Боксёр с похожим скелетом и историей побед</div>
-                        </header>
-                        <div class="figure figure--twin">
-                            <svg class="figure__svg" id="fig-svg-twin"
-                                 width="100%"
-                                 height="auto"
-                                 viewBox="0 0 520 640"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 preserveAspectRatio="xMidYMid meet">
-                                <g class="fig-skeleton" id="fig-twin">
-                                    <g class="fig-skull"></g>
-                                    <g class="fig-ribcage"></g>
-                                    <g class="fig-spine"></g>
-                                    <g class="fig-pelvis"></g>
-                                    <g class="fig-body-bones"></g>
-                                    <g class="fig-arm-bones"></g>
-                                    <g class="fig-muscles"></g>
-                                    <g class="fig-nodes"></g>
-                                </g>
-                            </svg>
+                <!-- TWIN INFO CARD (replaces the old gold skeleton) -->
+                <article class="twin-card" aria-label="Биометрический близнец">
+                    <header class="twin-card__head">
+                        <div class="twin-card__label">Биометрический близнец</div>
+                        <div class="twin-card__subline">Боксёр с похожим скелетом и историей побед</div>
+                    </header>
+                    <div class="twin-card__body">
+                        <div class="twin-card__name">Ryota Murata</div>
+                        <ul class="twin-card__grid">
+                            <li><span>Страна</span><b>Япония</b></li>
+                            <li><span>Весовая категория</span><b>75 кг · Middleweight</b></li>
+                            <li><span>Рост</span><b>≈ 183 см</b></li>
+                            <li><span>Размах</span><b>≈ 188 см</b></li>
+                            <li class="twin-card__grid-full"><span>Стиль</span><b>⏱ Темповик / Нокаутёр</b></li>
+                        </ul>
+                        <div class="twin-card__ach">
+                            <div class="twin-card__ach-head">Достижения</div>
+                            <ul class="twin-card__ach-list">
+                                <li>Олимпийский чемпион — Лондон 2012</li>
+                                <li>Чемпион мира WBA — 2017, 2021</li>
+                                <li>Рекорд: 16 побед (13 KO), 2 поражения</li>
+                            </ul>
                         </div>
-                        <footer class="mapcol__foot">
-                            <div class="mapcol__name">Рёта Мурата</div>
-                            <div class="mapcol__tag">⏱ Темповик / Нокаутёр</div>
-                        </footer>
+                        <div class="twin-card__foot">Данные из базы Golden Benchmarks</div>
+                    </div>
+                </article>
+
+                <!-- 4-ZONE MUSCLE MAP -->
+                <div class="zone-map__head">
+                    <div class="zone-map__label">Карта мышечного развития</div>
+                    <div class="zone-map__subline">Четыре проекции · кликни на мышцу для деталей</div>
+                </div>
+                <div class="muscle-zones" id="muscle-zones">
+                    <div class="zone" data-zone="upper-front">
+                        <div class="zone__label">Верх · Фронт</div>
+                        <svg class="zone__svg" viewBox="0 0 200 260"
+                             xmlns="http://www.w3.org/2000/svg"
+                             preserveAspectRatio="xMidYMid meet">
+                            <g class="zone__outline" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                                <ellipse cx="100" cy="32" rx="22" ry="26"/>
+                                <path d="M 88 58 L 88 72 L 112 72 L 112 58"/>
+                                <path d="M 62 72 Q 72 66 100 66 Q 128 66 138 72 L 146 100 L 150 220 L 50 220 L 54 100 Z"/>
+                                <path d="M 62 76 L 38 150 L 24 228 L 44 230 L 58 150 L 66 92"/>
+                                <path d="M 138 76 L 162 150 L 176 228 L 156 230 L 142 150 L 134 92"/>
+                                <line x1="100" y1="78" x2="100" y2="150"/>
+                            </g>
+                            <g class="zone__dots" data-zone-dots="upper-front"></g>
+                        </svg>
                     </div>
 
-                    <!-- CENTER — your muscle map, front projection -->
-                    <div class="mapcol mapcol--front">
-                        <header class="mapcol__head">
-                            <div class="mapcol__label">Карта мышечного развития</div>
-                            <div class="mapcol__subline">Фронтальная проекция</div>
-                        </header>
-                        <div class="figure figure--you-front">
-                            <svg class="figure__svg" id="fig-svg-you-front"
-                                 width="100%"
-                                 height="auto"
-                                 viewBox="0 0 520 640"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 preserveAspectRatio="xMidYMid meet">
-                                <g class="fig-skeleton" id="fig-you-front">
-                                    <g class="fig-skull"></g>
-                                    <g class="fig-ribcage"></g>
-                                    <g class="fig-spine"></g>
-                                    <g class="fig-pelvis"></g>
-                                    <g class="fig-body-bones"></g>
-                                    <g class="fig-arm-bones"></g>
-                                    <g class="fig-muscles"></g>
-                                    <g class="fig-nodes"></g>
-                                </g>
-                            </svg>
-                        </div>
-                        <footer class="mapcol__foot">
-                            <div class="mapcol__stats" id="fig-you-front-stats">— · —</div>
-                        </footer>
+                    <div class="zone" data-zone="lower-front">
+                        <div class="zone__label">Низ · Фронт</div>
+                        <svg class="zone__svg" viewBox="0 0 200 260"
+                             xmlns="http://www.w3.org/2000/svg"
+                             preserveAspectRatio="xMidYMid meet">
+                            <g class="zone__outline" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M 52 10 L 148 10 L 152 48 L 100 62 L 48 48 Z"/>
+                                <path d="M 56 52 L 72 230 L 96 230 L 100 62"/>
+                                <path d="M 100 62 L 104 230 L 128 230 L 144 52"/>
+                                <path d="M 72 230 L 66 250 L 100 250 L 96 230"/>
+                                <path d="M 104 230 L 100 250 L 134 250 L 128 230"/>
+                                <line x1="100" y1="62" x2="100" y2="230"/>
+                            </g>
+                            <g class="zone__dots" data-zone-dots="lower-front"></g>
+                        </svg>
                     </div>
 
-                    <!-- RIGHT — your muscle map, back projection -->
-                    <div class="mapcol mapcol--back">
-                        <header class="mapcol__head">
-                            <div class="mapcol__label">Карта мышечного развития</div>
-                            <div class="mapcol__subline">Задняя проекция</div>
-                        </header>
-                        <div class="figure figure--you-back">
-                            <svg class="figure__svg" id="fig-svg-you-back"
-                                 width="100%"
-                                 height="auto"
-                                 viewBox="0 0 520 640"
-                                 xmlns="http://www.w3.org/2000/svg"
-                                 preserveAspectRatio="xMidYMid meet">
-                                <g class="fig-skeleton" id="fig-you-back">
-                                    <g class="fig-skull"></g>
-                                    <g class="fig-ribcage"></g>
-                                    <g class="fig-spine"></g>
-                                    <g class="fig-pelvis"></g>
-                                    <g class="fig-body-bones"></g>
-                                    <g class="fig-arm-bones"></g>
-                                    <g class="fig-muscles"></g>
-                                    <g class="fig-nodes"></g>
-                                </g>
-                            </svg>
-                        </div>
-                        <footer class="mapcol__foot">
-                            <div class="mapcol__stats" id="fig-you-back-stats">— · —</div>
-                        </footer>
+                    <div class="zone" data-zone="upper-back">
+                        <div class="zone__label">Верх · Спина</div>
+                        <svg class="zone__svg" viewBox="0 0 200 260"
+                             xmlns="http://www.w3.org/2000/svg"
+                             preserveAspectRatio="xMidYMid meet">
+                            <g class="zone__outline" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                                <ellipse cx="100" cy="32" rx="22" ry="26"/>
+                                <path d="M 88 58 L 88 72 L 112 72 L 112 58"/>
+                                <path d="M 62 72 Q 72 66 100 66 Q 128 66 138 72 L 146 100 L 150 220 L 50 220 L 54 100 Z"/>
+                                <path d="M 62 76 L 38 150 L 24 228 L 44 230 L 58 150 L 66 92"/>
+                                <path d="M 138 76 L 162 150 L 176 228 L 156 230 L 142 150 L 134 92"/>
+                                <line x1="100" y1="72" x2="100" y2="220"/>
+                            </g>
+                            <g class="zone__dots" data-zone-dots="upper-back"></g>
+                        </svg>
                     </div>
 
+                    <div class="zone" data-zone="lower-back">
+                        <div class="zone__label">Низ · Спина</div>
+                        <svg class="zone__svg" viewBox="0 0 200 260"
+                             xmlns="http://www.w3.org/2000/svg"
+                             preserveAspectRatio="xMidYMid meet">
+                            <g class="zone__outline" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M 50 10 L 150 10 L 154 62 L 100 76 L 46 62 Z"/>
+                                <path d="M 54 60 L 72 230 L 96 230 L 100 76"/>
+                                <path d="M 100 76 L 104 230 L 128 230 L 146 60"/>
+                                <path d="M 72 230 L 66 250 L 100 250 L 96 230"/>
+                                <path d="M 104 230 L 100 250 L 134 250 L 128 230"/>
+                                <line x1="100" y1="76" x2="100" y2="230"/>
+                            </g>
+                            <g class="zone__dots" data-zone-dots="lower-back"></g>
+                        </svg>
+                    </div>
                 </div>
 
-                <div class="legend" aria-label="Цветовая легенда">
-                    <span class="legend__item">
-                        <span class="legend__dot legend__dot--priority" aria-hidden="true"></span>
-                        Приоритет
-                    </span>
-                    <span class="legend__item">
-                        <span class="legend__dot legend__dot--neutral" aria-hidden="true"></span>
-                        Норма
-                    </span>
-                    <span class="legend__item">
-                        <span class="legend__dot legend__dot--forbidden" aria-hidden="true"></span>
-                        Не качать
-                    </span>
+                <div class="muscle-legend" aria-label="Цветовая легенда">
+                    <span><i style="background:#FF4444"></i>&lt; 50% · требует работы</span>
+                    <span><i style="background:#FFB800"></i>50–70% · в норме</span>
+                    <span><i style="background:#7BC67E"></i>70–90% · хорошо</span>
+                    <span><i style="background:#2E7D32"></i>&gt; 90% · отлично</span>
+                </div>
+
+                <!-- Muscle click tooltip (positioned dynamically, hidden by default) -->
+                <div class="muscle-tooltip" id="muscle-tooltip" role="dialog" aria-modal="false" hidden>
+                    <button type="button" class="muscle-tooltip__close" id="muscle-tooltip-close" aria-label="Закрыть">×</button>
+                    <div class="muscle-tooltip__head">
+                        <span class="muscle-tooltip__num" id="muscle-tooltip-num">1</span>
+                        <h3 class="muscle-tooltip__name" id="muscle-tooltip-name">—</h3>
+                    </div>
+                    <div class="muscle-tooltip__row">
+                        <span>Текущее развитие</span><b id="muscle-tooltip-value">—</b>
+                    </div>
+                    <div class="muscle-tooltip__row">
+                        <span>Норматив для категории</span><b id="muscle-tooltip-target">—</b>
+                    </div>
+                    <div class="muscle-tooltip__status" id="muscle-tooltip-status">—</div>
                 </div>
             </section>
 
@@ -3962,6 +4287,221 @@
         }
 
         /* =====================================================================
+           MusclePanel module — 4 zoomed muscle zones with numbered clickable dots
+           and a click-tooltip showing dev %, target % and status.
+
+           Data here is a DEMO STUB: in production, %-values would be computed
+           from a real body-composition scan. Targets are aspirational values
+           tuned for a boxer profile (lean, strong posterior chain, lean arms).
+        ===================================================================== */
+        const MusclePanel = (function () {
+            /* Colour by % development. */
+            function colorFor(pct) {
+                if (pct < 50)  return '#FF4444';
+                if (pct < 70)  return '#FFB800';
+                if (pct <= 90) return '#7BC67E';
+                return '#2E7D32';
+            }
+            function statusFor(pct) {
+                if (pct < 50) return { text: 'Требует работы', cls: 'muscle-tooltip__status--red' };
+                if (pct < 70) return { text: 'В норме',        cls: 'muscle-tooltip__status--yellow' };
+                if (pct <= 90) return { text: 'В норме',       cls: 'muscle-tooltip__status--lgreen' };
+                return { text: 'Отлично', cls: 'muscle-tooltip__status--green' };
+            }
+
+            /* Each muscle has:
+                 num       — display number
+                 name      — Russian label
+                 pct       — current development %  (STUB)
+                 target    — category-appropriate target %  (STUB)
+                 zone      — which zone SVG to render it in
+                 points    — [x,y] positions inside the 200×260 zone viewBox;
+                             multiple points share the same number for paired
+                             anatomy (e.g. biceps render on both arms).          */
+            const MUSCLES = [
+                /* --- Upper · Front --- */
+                { num: 1, name: 'Дельты',       pct: 78, target: 80, zone: 'upper-front',
+                  points: [[62, 84], [138, 84]] },
+                { num: 2, name: 'Грудь',        pct: 45, target: 55, zone: 'upper-front',
+                  points: [[100, 110]] },
+                { num: 3, name: 'Бицепс',       pct: 62, target: 55, zone: 'upper-front',
+                  points: [[42, 140], [158, 140]] },
+                { num: 4, name: 'Трицепс',      pct: 71, target: 85, zone: 'upper-front',
+                  points: [[26, 168], [174, 168]] },
+                { num: 5, name: 'Предплечья',   pct: 55, target: 75, zone: 'upper-front',
+                  points: [[36, 210], [164, 210]] },
+
+                /* --- Lower · Front --- */
+                { num: 6, name: 'Квадрицепсы',  pct: 82, target: 90, zone: 'lower-front',
+                  points: [[78, 130], [124, 130]] },
+                { num: 7, name: 'Приводящие',   pct: 60, target: 75, zone: 'lower-front',
+                  points: [[100, 160]] },
+                { num: 8, name: 'Икры',         pct: 74, target: 85, zone: 'lower-front',
+                  points: [[82, 212], [120, 212]] },
+
+                /* --- Upper · Back --- */
+                { num: 9,  name: 'Трапеции',    pct: 68, target: 75, zone: 'upper-back',
+                  points: [[100, 84]] },
+                { num: 10, name: 'Широчайшие',  pct: 85, target: 90, zone: 'upper-back',
+                  points: [[72, 130], [128, 130]] },
+                { num: 11, name: 'Поясница',    pct: 59, target: 85, zone: 'upper-back',
+                  points: [[100, 198]] },
+
+                /* --- Lower · Back --- */
+                { num: 12, name: 'Ягодицы',     pct: 88, target: 95, zone: 'lower-back',
+                  points: [[80, 58], [120, 58]] },
+                { num: 13, name: 'Бицепс бедра',pct: 65, target: 85, zone: 'lower-back',
+                  points: [[78, 150], [122, 150]] },
+            ];
+
+            const NODE_R = 9;  // radius of numbered muscle circle in SVG units
+
+            let tooltip, tooltipClose, tooltipNum, tooltipName,
+                tooltipValue, tooltipTarget, tooltipStatus;
+            let activeNode = null;
+            let built = false;
+
+            function createSvgEl(tag, attrs) {
+                const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+                if (attrs) {
+                    for (const k in attrs) el.setAttribute(k, attrs[k]);
+                }
+                return el;
+            }
+
+            function render() {
+                if (built) return;
+                const zonesRoot = document.getElementById('muscle-zones');
+                if (!zonesRoot) return;
+
+                /* Clear & populate each zone's dot layer. */
+                const layers = {};
+                zonesRoot.querySelectorAll('[data-zone-dots]').forEach((g) => {
+                    while (g.firstChild) g.removeChild(g.firstChild);
+                    layers[g.getAttribute('data-zone-dots')] = g;
+                });
+
+                MUSCLES.forEach((m) => {
+                    const layer = layers[m.zone];
+                    if (!layer) return;
+                    const fill   = colorFor(m.pct);
+                    m.points.forEach((p, idx) => {
+                        /* Group so pointer-events work reliably on both circle + text. */
+                        const grp = createSvgEl('g', {
+                            class: 'muscle-node',
+                            'data-num': m.num,
+                            tabindex: 0,
+                            role: 'button',
+                            'aria-label': m.name + ' — ' + m.pct + ' процентов',
+                        });
+                        const c = createSvgEl('circle', {
+                            class: 'muscle-node__circle',
+                            cx: p[0], cy: p[1], r: NODE_R,
+                            fill: fill,
+                        });
+                        const t = createSvgEl('text', {
+                            class: 'muscle-node__num',
+                            x: p[0], y: p[1] + 0.5,
+                        });
+                        t.textContent = String(m.num);
+                        grp.appendChild(c);
+                        grp.appendChild(t);
+                        grp.addEventListener('click', (ev) => {
+                            ev.stopPropagation();
+                            openTooltip(m, grp);
+                        });
+                        grp.addEventListener('keydown', (ev) => {
+                            if (ev.key === 'Enter' || ev.key === ' ') {
+                                ev.preventDefault();
+                                openTooltip(m, grp);
+                            }
+                        });
+                        layer.appendChild(grp);
+                    });
+                });
+
+                /* Cache tooltip refs once. */
+                tooltip       = document.getElementById('muscle-tooltip');
+                tooltipClose  = document.getElementById('muscle-tooltip-close');
+                tooltipNum    = document.getElementById('muscle-tooltip-num');
+                tooltipName   = document.getElementById('muscle-tooltip-name');
+                tooltipValue  = document.getElementById('muscle-tooltip-value');
+                tooltipTarget = document.getElementById('muscle-tooltip-target');
+                tooltipStatus = document.getElementById('muscle-tooltip-status');
+
+                if (tooltipClose) tooltipClose.addEventListener('click', closeTooltip);
+                document.addEventListener('click', (ev) => {
+                    if (!tooltip || tooltip.hidden) return;
+                    if (tooltip.contains(ev.target)) return;
+                    if (ev.target.closest('.muscle-node')) return;
+                    closeTooltip();
+                });
+                document.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Escape') closeTooltip();
+                });
+                window.addEventListener('resize', closeTooltip);
+                window.addEventListener('scroll', closeTooltip, true);
+
+                built = true;
+            }
+
+            function openTooltip(muscle, nodeEl) {
+                if (!tooltip) return;
+                if (activeNode) activeNode.classList.remove('is-active');
+                activeNode = nodeEl;
+                nodeEl.classList.add('is-active');
+
+                const fill   = colorFor(muscle.pct);
+                const status = statusFor(muscle.pct);
+
+                tooltipNum.textContent    = String(muscle.num);
+                tooltipNum.style.background = fill;
+                tooltipName.textContent   = muscle.name;
+                tooltipValue.textContent  = muscle.pct + '%';
+                tooltipTarget.textContent = muscle.target + '%';
+                tooltipStatus.className   = 'muscle-tooltip__status ' + status.cls;
+                tooltipStatus.textContent = status.text;
+
+                /* Show first (hidden), then measure, then position. */
+                tooltip.hidden = false;
+                tooltip.style.visibility = 'hidden';
+                tooltip.style.left = '0px';
+                tooltip.style.top  = '0px';
+
+                const rect = nodeEl.getBoundingClientRect();
+                const tw = tooltip.offsetWidth;
+                const th = tooltip.offsetHeight;
+                const gap = 12;
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+
+                /* Prefer above the node; fall back to below if no room. */
+                let top  = rect.top - th - gap;
+                if (top < 8) top = rect.bottom + gap;
+                if (top + th > vh - 8) top = Math.max(8, vh - th - 8);
+
+                let left = rect.left + (rect.width / 2) - (tw / 2);
+                if (left < 8) left = 8;
+                if (left + tw > vw - 8) left = vw - tw - 8;
+
+                tooltip.style.left = left + 'px';
+                tooltip.style.top  = top  + 'px';
+                tooltip.style.visibility = '';
+            }
+
+            function closeTooltip() {
+                if (!tooltip) return;
+                tooltip.hidden = true;
+                if (activeNode) {
+                    activeNode.classList.remove('is-active');
+                    activeNode = null;
+                }
+            }
+
+            return { render: render, close: closeTooltip };
+        })();
+
+        /* =====================================================================
            Diagnosis module — 3 figures, KPI, weight slider.
            Skeleton bones in each figure are set once per scan-submit and never
            move on weight changes (prevents the "fractures" bug).
@@ -4148,6 +4688,8 @@
                     // profile (inputWeight) and don't move with the slider,
                     // so render them exactly once per entry.
                     Dashboard.render();
+                    // Four zoomed muscle zones with numbered clickable dots.
+                    MusclePanel.render();
 
                     showScreen('diagnosis');
                     requestAnimationFrame(() => {
