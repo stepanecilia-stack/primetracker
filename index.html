@@ -2488,60 +2488,147 @@
         margin-top: 6px;
     }
 
-    /* --- 4-zone grid ------------------------------------------------------ */
-    .muscle-zones {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 14px;
+    /* --- Demo controls --------------------------------------------------- */
+    .anatomy-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
     }
-    .zone {
+    .anatomy-btn {
+        font-family: var(--font-body);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 9px 18px;
+        border-radius: 4px;
+        border: 1px solid #000000;
+        background: #000000;
+        color: #FFFFFF;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.1s ease;
+    }
+    .anatomy-btn:hover { background: #333333; border-color: #333333; }
+    .anatomy-btn:active { transform: translateY(1px); }
+    .anatomy-btn--ghost {
+        background: transparent;
+        color: #000000;
+    }
+    .anatomy-btn--ghost:hover {
+        background: #F0F0F0;
+        color: #000000;
+    }
+    .anatomy-controls__hint {
+        font-family: var(--font-body);
+        font-size: 11px;
+        color: #777777;
+        letter-spacing: 0.02em;
+        flex-basis: 100%;
+        text-align: center;
+        margin-top: 2px;
+    }
+
+    /* --- Anatomy figures (front + back) ---------------------------------- */
+    .muscle-anatomy {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        align-items: start;
+        justify-items: center;
+    }
+    .anatomy-figure {
+        margin: 0;
         background: #F7F7F7;
         border: 1px solid #EEEEEE;
         border-radius: 6px;
-        padding: 14px 10px 12px;
+        padding: 18px 14px 16px;
         display: flex;
         flex-direction: column;
         align-items: center;
+        width: 100%;
+        max-width: 360px;
+        box-sizing: border-box;
     }
-    .zone__label {
+    .anatomy-figure__label {
         font-family: var(--font-heading);
-        font-size: 12px;
+        font-size: 13px;
         letter-spacing: 2.5px;
         color: #000000;
         text-transform: uppercase;
         text-align: center;
         margin-bottom: 10px;
-        line-height: 1.2;
+        line-height: 1;
     }
-    .zone__svg {
+    .anatomy-svg {
         width: 100%;
-        max-width: 220px;
+        max-width: 320px;
         height: auto;
-        aspect-ratio: 200 / 260;
+        aspect-ratio: 200 / 580;
         display: block;
     }
 
-    /* Clickable numbered muscle node — a filled circle with a number inside. */
-    .muscle-node {
-        cursor: pointer;
-        transition: transform 0.15s ease, filter 0.15s ease;
+    /* Silhouette outline — light fill, thin dark stroke. */
+    .anatomy-svg .silhouette {
+        fill: #FAFAFA;
+        stroke: #333333;
+        stroke-width: 1;
+        stroke-linejoin: round;
+        stroke-linecap: round;
     }
-    .muscle-node:hover { filter: brightness(1.08); }
-    .muscle-node.is-active .muscle-node__circle {
-        stroke: #000000;
+
+    /* Muscle shape — stroked outline with data-driven fill.
+       Fill is set via the inline `fill` attribute by applyMuscleColors(); the
+       default (when no inline attribute) comes from the CSS here. */
+    .anatomy-svg .muscle {
+        fill: #F0F0F0;
+        stroke: #333333;
+        stroke-width: 1;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        cursor: pointer;
+        transition: fill 0.35s ease, filter 0.15s ease, stroke-width 0.15s ease;
+        pointer-events: auto;
+    }
+    .anatomy-svg .muscle:hover {
+        filter: brightness(1.06);
         stroke-width: 1.5;
     }
-    .muscle-node__circle {
-        transition: fill 0.3s ease, stroke 0.2s ease;
+    .anatomy-svg .muscle.is-active {
+        stroke: #000000;
+        stroke-width: 2;
     }
-    .muscle-node__num {
-        font-family: var(--font-heading);
-        font-size: 8px;
+
+    /* Numbered circle — white disc with black border and centred number. */
+    .muscle-number {
+        cursor: pointer;
+    }
+    .muscle-number__circle {
         fill: #FFFFFF;
+        stroke: #333333;
+        stroke-width: 1;
+        transition: stroke-width 0.15s ease;
+    }
+    .muscle-number:hover .muscle-number__circle {
+        stroke-width: 1.8;
+    }
+    .muscle-number__text {
+        fill: #000000;
+        font-family: var(--font-heading);
+        font-size: 11px;
+        font-weight: 700;
         text-anchor: middle;
         dominant-baseline: central;
         pointer-events: none;
         letter-spacing: 0;
+    }
+
+    /* Greyed swatch used in the legend for the "no data" state. */
+    .muscle-legend i.legend-dot--none {
+        background: #F0F0F0;
+        border: 1px solid #CCCCCC;
     }
 
     /* --- Legend ----------------------------------------------------------- */
@@ -2642,18 +2729,59 @@
         text-align: center;
         text-transform: uppercase;
     }
+    .muscle-tooltip__status--none   { background: #F0F0F0; color: #666666; }
     .muscle-tooltip__status--red    { background: #FFE5E5; color: #CC0000; }
     .muscle-tooltip__status--yellow { background: #FFF5CC; color: #B38600; }
     .muscle-tooltip__status--lgreen { background: #EEF7DC; color: #558800; }
     .muscle-tooltip__status--green  { background: #DDF5E5; color: #00994D; }
 
+    .muscle-tooltip__gto {
+        margin: 6px 0 10px;
+        padding: 10px 12px;
+        background: #F7F7F7;
+        border-radius: 4px;
+    }
+    .muscle-tooltip__gto-head {
+        font-family: var(--font-body);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: #555555;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .muscle-tooltip__gto-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .muscle-tooltip__gto-list li {
+        position: relative;
+        padding: 3px 0 3px 14px;
+        font-size: 13px;
+        color: #222222;
+        line-height: 1.35;
+    }
+    .muscle-tooltip__gto-list li::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 10px;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #333333;
+    }
+
     /* --- Mobile ----------------------------------------------------------- */
     @media (max-width: 900px) {
-        .muscle-zones { grid-template-columns: repeat(2, 1fr); }
         .twin-card__grid { grid-template-columns: 1fr; gap: 0; }
     }
+    @media (max-width: 640px) {
+        .muscle-anatomy { grid-template-columns: 1fr; gap: 14px; }
+        .anatomy-figure { max-width: 320px; }
+    }
     @media (max-width: 520px) {
-        .muscle-zones { grid-template-columns: 1fr; gap: 10px; }
         .twin-card { padding: 18px 18px 16px; }
         .twin-card__name { font-size: 24px; }
         .muscle-tooltip { min-width: 240px; max-width: calc(100vw - 32px); }
@@ -2908,84 +3036,252 @@
                     </div>
                 </article>
 
-                <!-- 4-ZONE MUSCLE MAP -->
+                <!-- ANATOMICAL MUSCLE MAP — vector silhouettes with muscle paths -->
                 <div class="zone-map__head">
                     <div class="zone-map__label">Карта мышечного развития</div>
-                    <div class="zone-map__subline">Четыре проекции · кликни на мышцу для деталей</div>
+                    <div class="zone-map__subline">Анатомические проекции · кликни на мышцу для деталей</div>
                 </div>
-                <div class="muscle-zones" id="muscle-zones">
-                    <div class="zone" data-zone="upper-front">
-                        <div class="zone__label">Верх · Фронт</div>
-                        <svg class="zone__svg" viewBox="0 0 200 260"
-                             xmlns="http://www.w3.org/2000/svg"
-                             preserveAspectRatio="xMidYMid meet">
-                            <g class="zone__outline" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                                <ellipse cx="100" cy="32" rx="22" ry="26"/>
-                                <path d="M 88 58 L 88 72 L 112 72 L 112 58"/>
-                                <path d="M 62 72 Q 72 66 100 66 Q 128 66 138 72 L 146 100 L 150 220 L 50 220 L 54 100 Z"/>
-                                <path d="M 62 76 L 38 150 L 24 228 L 44 230 L 58 150 L 66 92"/>
-                                <path d="M 138 76 L 162 150 L 176 228 L 156 230 L 142 150 L 134 92"/>
-                                <line x1="100" y1="78" x2="100" y2="150"/>
-                            </g>
-                            <g class="zone__dots" data-zone-dots="upper-front"></g>
-                        </svg>
-                    </div>
 
-                    <div class="zone" data-zone="lower-front">
-                        <div class="zone__label">Низ · Фронт</div>
-                        <svg class="zone__svg" viewBox="0 0 200 260"
-                             xmlns="http://www.w3.org/2000/svg"
-                             preserveAspectRatio="xMidYMid meet">
-                            <g class="zone__outline" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M 52 10 L 148 10 L 152 48 L 100 62 L 48 48 Z"/>
-                                <path d="M 56 52 L 72 230 L 96 230 L 100 62"/>
-                                <path d="M 100 62 L 104 230 L 128 230 L 144 52"/>
-                                <path d="M 72 230 L 66 250 L 100 250 L 96 230"/>
-                                <path d="M 104 230 L 100 250 L 134 250 L 128 230"/>
-                                <line x1="100" y1="62" x2="100" y2="230"/>
-                            </g>
-                            <g class="zone__dots" data-zone-dots="lower-front"></g>
-                        </svg>
-                    </div>
+                <div class="anatomy-controls">
+                    <button type="button" class="anatomy-btn" id="muscle-demo-btn">Демо-режим</button>
+                    <button type="button" class="anatomy-btn anatomy-btn--ghost" id="muscle-reset-btn" hidden>Сбросить</button>
+                    <span class="anatomy-controls__hint" id="muscle-demo-hint">Все мышцы пока серые — человек не сдавал тесты. Включи демо, чтобы увидеть цветовую карту.</span>
+                </div>
 
-                    <div class="zone" data-zone="upper-back">
-                        <div class="zone__label">Верх · Спина</div>
-                        <svg class="zone__svg" viewBox="0 0 200 260"
+                <div class="muscle-anatomy" id="muscle-anatomy">
+                    <figure class="anatomy-figure">
+                        <figcaption class="anatomy-figure__label">Фронт</figcaption>
+                        <svg class="anatomy-svg" id="anatomy-front" viewBox="0 0 200 580"
                              xmlns="http://www.w3.org/2000/svg"
                              preserveAspectRatio="xMidYMid meet">
-                            <g class="zone__outline" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                                <ellipse cx="100" cy="32" rx="22" ry="26"/>
-                                <path d="M 88 58 L 88 72 L 112 72 L 112 58"/>
-                                <path d="M 62 72 Q 72 66 100 66 Q 128 66 138 72 L 146 100 L 150 220 L 50 220 L 54 100 Z"/>
-                                <path d="M 62 76 L 38 150 L 24 228 L 44 230 L 58 150 L 66 92"/>
-                                <path d="M 138 76 L 162 150 L 176 228 L 156 230 L 142 150 L 134 92"/>
-                                <line x1="100" y1="72" x2="100" y2="220"/>
-                            </g>
-                            <g class="zone__dots" data-zone-dots="upper-back"></g>
-                        </svg>
-                    </div>
+                            <!-- Body silhouette: single closed path traces head → arm → torso → leg → center → leg → arm → head -->
+                            <path class="silhouette" d="
+                                M 100 14
+                                C 124 14 138 34 136 56
+                                C 134 72 126 82 120 86
+                                L 120 92
+                                L 148 96
+                                C 160 98 170 108 174 124
+                                L 176 150
+                                L 180 220
+                                L 180 280
+                                L 178 310
+                                L 175 345
+                                L 160 345
+                                L 160 310
+                                L 158 270
+                                L 152 200
+                                L 148 160
+                                L 138 158
+                                L 140 240
+                                L 142 290
+                                L 146 330
+                                L 144 440
+                                L 138 540
+                                L 142 550
+                                L 142 556
+                                L 104 556
+                                L 104 550
+                                L 106 540
+                                L 104 440
+                                L 104 330
+                                L 100 280
+                                L 96 330
+                                L 96 440
+                                L 94 540
+                                L 94 550
+                                L 96 556
+                                L 58 556
+                                L 58 550
+                                L 62 540
+                                L 56 440
+                                L 54 330
+                                L 58 290
+                                L 60 240
+                                L 62 158
+                                L 52 160
+                                L 48 200
+                                L 42 270
+                                L 40 310
+                                L 40 345
+                                L 25 345
+                                L 22 310
+                                L 20 280
+                                L 20 220
+                                L 24 150
+                                L 26 124
+                                C 30 108 40 98 52 96
+                                L 80 92
+                                L 80 86
+                                C 74 82 66 72 64 56
+                                C 62 34 76 14 100 14 Z"/>
 
-                    <div class="zone" data-zone="lower-back">
-                        <div class="zone__label">Низ · Спина</div>
-                        <svg class="zone__svg" viewBox="0 0 200 260"
+                            <!-- Muscle paths. Every <path> has data-muscle + data-percent. -->
+                            <g class="muscles">
+                                <!-- 5. Deltoids (front) -->
+                                <path class="muscle" data-muscle="delts" data-percent="0"
+                                      d="M 82 96 C 74 108 66 128 66 146 L 86 148 C 92 128 90 108 90 96 Z"/>
+                                <path class="muscle" data-muscle="delts" data-percent="0"
+                                      d="M 118 96 C 126 108 134 128 134 146 L 114 148 C 108 128 110 108 110 96 Z"/>
+
+                                <!-- 6. Triceps (front view — outer upper arm) -->
+                                <path class="muscle" data-muscle="triceps" data-percent="0"
+                                      d="M 28 155 L 22 260 L 40 262 L 46 158 Z"/>
+                                <path class="muscle" data-muscle="triceps" data-percent="0"
+                                      d="M 172 155 L 178 260 L 160 262 L 154 158 Z"/>
+
+                                <!-- 7. Forearms -->
+                                <path class="muscle" data-muscle="forearms" data-percent="0"
+                                      d="M 24 270 L 22 340 L 40 344 L 42 272 Z"/>
+                                <path class="muscle" data-muscle="forearms" data-percent="0"
+                                      d="M 176 270 L 178 340 L 160 344 L 158 272 Z"/>
+
+                                <!-- 4. Core / obliques (central abdomen + side strips) -->
+                                <path class="muscle" data-muscle="core" data-percent="0"
+                                      d="M 88 160 L 82 285 L 118 285 L 112 160 Z"/>
+                                <path class="muscle" data-muscle="core" data-percent="0"
+                                      d="M 66 170 L 62 280 L 80 282 L 82 165 Z"/>
+                                <path class="muscle" data-muscle="core" data-percent="0"
+                                      d="M 134 170 L 138 280 L 120 282 L 118 165 Z"/>
+
+                                <!-- 2. Glutes-front / IT band (outer hip strip) -->
+                                <path class="muscle" data-muscle="glutes-front" data-percent="0"
+                                      d="M 54 295 L 52 385 L 62 388 L 66 300 Z"/>
+                                <path class="muscle" data-muscle="glutes-front" data-percent="0"
+                                      d="M 146 295 L 148 385 L 138 388 L 134 300 Z"/>
+
+                                <!-- 1. Quads -->
+                                <path class="muscle" data-muscle="quads" data-percent="0"
+                                      d="M 68 335 Q 60 385 64 425 L 96 425 Q 100 385 94 335 Z"/>
+                                <path class="muscle" data-muscle="quads" data-percent="0"
+                                      d="M 132 335 Q 140 385 136 425 L 104 425 Q 100 385 106 335 Z"/>
+
+                                <!-- 8. Adductors (inner thighs) -->
+                                <path class="muscle" data-muscle="adductors" data-percent="0"
+                                      d="M 94 340 L 92 420 L 108 420 L 106 340 Z"/>
+
+                                <!-- 3. Calves-front (shins) -->
+                                <path class="muscle" data-muscle="calves-front" data-percent="0"
+                                      d="M 62 440 Q 58 490 62 530 L 94 530 Q 96 490 92 440 Z"/>
+                                <path class="muscle" data-muscle="calves-front" data-percent="0"
+                                      d="M 138 440 Q 142 490 138 530 L 106 530 Q 104 490 108 440 Z"/>
+                            </g>
+
+                            <!-- Numbered circles (one per muscle group). Populated by JS. -->
+                            <g class="muscle-numbers" data-numbers="front"></g>
+                        </svg>
+                    </figure>
+
+                    <figure class="anatomy-figure">
+                        <figcaption class="anatomy-figure__label">Спина</figcaption>
+                        <svg class="anatomy-svg" id="anatomy-back" viewBox="0 0 200 580"
                              xmlns="http://www.w3.org/2000/svg"
                              preserveAspectRatio="xMidYMid meet">
-                            <g class="zone__outline" fill="none" stroke="rgba(0,0,0,0.18)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M 50 10 L 150 10 L 154 62 L 100 76 L 46 62 Z"/>
-                                <path d="M 54 60 L 72 230 L 96 230 L 100 76"/>
-                                <path d="M 100 76 L 104 230 L 128 230 L 146 60"/>
-                                <path d="M 72 230 L 66 250 L 100 250 L 96 230"/>
-                                <path d="M 104 230 L 100 250 L 134 250 L 128 230"/>
-                                <line x1="100" y1="76" x2="100" y2="230"/>
+                            <!-- Same silhouette outline for back view. -->
+                            <path class="silhouette" d="
+                                M 100 14
+                                C 124 14 138 34 136 56
+                                C 134 72 126 82 120 86
+                                L 120 92
+                                L 148 96
+                                C 160 98 170 108 174 124
+                                L 176 150
+                                L 180 220
+                                L 180 280
+                                L 178 310
+                                L 175 345
+                                L 160 345
+                                L 160 310
+                                L 158 270
+                                L 152 200
+                                L 148 160
+                                L 138 158
+                                L 140 240
+                                L 142 290
+                                L 146 330
+                                L 144 440
+                                L 138 540
+                                L 142 550
+                                L 142 556
+                                L 104 556
+                                L 104 550
+                                L 106 540
+                                L 104 440
+                                L 104 330
+                                L 100 280
+                                L 96 330
+                                L 96 440
+                                L 94 540
+                                L 94 550
+                                L 96 556
+                                L 58 556
+                                L 58 550
+                                L 62 540
+                                L 56 440
+                                L 54 330
+                                L 58 290
+                                L 60 240
+                                L 62 158
+                                L 52 160
+                                L 48 200
+                                L 42 270
+                                L 40 310
+                                L 40 345
+                                L 25 345
+                                L 22 310
+                                L 20 280
+                                L 20 220
+                                L 24 150
+                                L 26 124
+                                C 30 108 40 98 52 96
+                                L 80 92
+                                L 80 86
+                                C 74 82 66 72 64 56
+                                C 62 34 76 14 100 14 Z"/>
+
+                            <g class="muscles">
+                                <!-- 11. Trapezius (diamond across upper back) -->
+                                <path class="muscle" data-muscle="traps" data-percent="0"
+                                      d="M 82 92 L 118 92 L 140 135 L 100 160 L 60 135 Z"/>
+
+                                <!-- 9. Lats (V-flare from upper back down to waist) -->
+                                <path class="muscle" data-muscle="lats" data-percent="0"
+                                      d="M 56 150 Q 44 215 58 258 L 98 260 L 98 168 L 70 156 Z"/>
+                                <path class="muscle" data-muscle="lats" data-percent="0"
+                                      d="M 144 150 Q 156 215 142 258 L 102 260 L 102 168 L 130 156 Z"/>
+
+                                <!-- 10. Lower back (sacrum area) -->
+                                <path class="muscle" data-muscle="lowback" data-percent="0"
+                                      d="M 82 248 L 118 248 L 120 298 L 80 298 Z"/>
+
+                                <!-- 13. Glutes-back (cheeks) -->
+                                <path class="muscle" data-muscle="glutes-back" data-percent="0"
+                                      d="M 58 300 Q 50 325 60 348 L 98 352 L 98 298 Z"/>
+                                <path class="muscle" data-muscle="glutes-back" data-percent="0"
+                                      d="M 142 300 Q 150 325 140 348 L 102 352 L 102 298 Z"/>
+
+                                <!-- 12. Hamstrings (back of thighs) -->
+                                <path class="muscle" data-muscle="hamstrings" data-percent="0"
+                                      d="M 64 360 Q 58 400 62 430 L 96 430 Q 100 400 94 360 Z"/>
+                                <path class="muscle" data-muscle="hamstrings" data-percent="0"
+                                      d="M 136 360 Q 142 400 138 430 L 104 430 Q 100 400 106 360 Z"/>
+
+                                <!-- 14. Calves-back (gastrocnemius, wider, central bulge) -->
+                                <path class="muscle" data-muscle="calves-back" data-percent="0"
+                                      d="M 60 445 Q 52 485 66 530 L 94 530 Q 98 485 90 445 Z"/>
+                                <path class="muscle" data-muscle="calves-back" data-percent="0"
+                                      d="M 140 445 Q 148 485 134 530 L 106 530 Q 102 485 110 445 Z"/>
                             </g>
-                            <g class="zone__dots" data-zone-dots="lower-back"></g>
+
+                            <g class="muscle-numbers" data-numbers="back"></g>
                         </svg>
-                    </div>
+                    </figure>
                 </div>
 
                 <div class="muscle-legend" aria-label="Цветовая легенда">
+                    <span><i class="legend-dot--none"></i>нет данных</span>
                     <span><i style="background:#FF4444"></i>&lt; 50% · требует работы</span>
-                    <span><i style="background:#FFB800"></i>50–70% · в норме</span>
+                    <span><i style="background:#FFB800"></i>50–70% · развивается</span>
                     <span><i style="background:#7BC67E"></i>70–90% · хорошо</span>
                     <span><i style="background:#2E7D32"></i>&gt; 90% · отлично</span>
                 </div>
@@ -2997,11 +3293,12 @@
                         <span class="muscle-tooltip__num" id="muscle-tooltip-num">1</span>
                         <h3 class="muscle-tooltip__name" id="muscle-tooltip-name">—</h3>
                     </div>
-                    <div class="muscle-tooltip__row">
-                        <span>Текущее развитие</span><b id="muscle-tooltip-value">—</b>
+                    <div class="muscle-tooltip__gto">
+                        <div class="muscle-tooltip__gto-head">Норматив ГТО</div>
+                        <ul class="muscle-tooltip__gto-list" id="muscle-tooltip-gto-list"></ul>
                     </div>
                     <div class="muscle-tooltip__row">
-                        <span>Норматив для категории</span><b id="muscle-tooltip-target">—</b>
+                        <span>Текущее развитие</span><b id="muscle-tooltip-value">—</b>
                     </div>
                     <div class="muscle-tooltip__status" id="muscle-tooltip-status">—</div>
                 </div>
@@ -4287,79 +4584,117 @@
         }
 
         /* =====================================================================
-           MusclePanel module — 4 zoomed muscle zones with numbered clickable dots
-           and a click-tooltip showing dev %, target % and status.
+           MusclePanel module — vector anatomy map.
 
-           Data here is a DEMO STUB: in production, %-values would be computed
-           from a real body-composition scan. Targets are aspirational values
-           tuned for a boxer profile (lean, strong posterior chain, lean arms).
+           TWO SVG silhouettes (front + back) each hold a set of muscle <path>
+           elements. Every muscle path carries a `data-muscle` group id and a
+           `data-percent` development value (0 = "no data, not tested yet").
+
+           The module:
+             • Paints each muscle via applyMuscleColors() using data-percent.
+             • Draws a numbered disc over each muscle group once, at a fixed
+               anchor point inside that figure's SVG viewBox (200 × 580).
+             • Opens a click-tooltip with GTO-binding, current %, target %, and
+               a textual status based on the colour band.
+             • Exposes a "Демо-режим" button that stamps in sample values so the
+               map can be seen in colour before real tests are entered.
         ===================================================================== */
         const MusclePanel = (function () {
-            /* Colour by % development. */
+            /* Colour + status bands. "no data" (percent === 0) is a separate
+               band rendered in neutral grey; it explicitly means the athlete
+               has not yet taken the relevant test. */
             function colorFor(pct) {
+                if (pct <= 0)  return '#F0F0F0';
                 if (pct < 50)  return '#FF4444';
                 if (pct < 70)  return '#FFB800';
                 if (pct <= 90) return '#7BC67E';
                 return '#2E7D32';
             }
             function statusFor(pct) {
+                if (pct <= 0) return { text: 'Нет данных',     cls: 'muscle-tooltip__status--none' };
                 if (pct < 50) return { text: 'Требует работы', cls: 'muscle-tooltip__status--red' };
-                if (pct < 70) return { text: 'В норме',        cls: 'muscle-tooltip__status--yellow' };
-                if (pct <= 90) return { text: 'В норме',       cls: 'muscle-tooltip__status--lgreen' };
+                if (pct < 70) return { text: 'Развивается',    cls: 'muscle-tooltip__status--yellow' };
+                if (pct <= 90) return { text: 'Хорошо',        cls: 'muscle-tooltip__status--lgreen' };
                 return { text: 'Отлично', cls: 'muscle-tooltip__status--green' };
             }
 
-            /* Each muscle has:
-                 num       — display number
-                 name      — Russian label
-                 pct       — current development %  (STUB)
-                 target    — category-appropriate target %  (STUB)
-                 zone      — which zone SVG to render it in
-                 points    — [x,y] positions inside the 200×260 zone viewBox;
-                             multiple points share the same number for paired
-                             anatomy (e.g. biceps render on both arms).          */
+            /* Muscle registry — one row per group.
+                 num     — display number (1–14)
+                 id      — data-muscle key shared across paired paths
+                 name    — Russian label
+                 gto     — GTO test names this group hangs off of
+                 view    — which SVG the numbered disc is drawn in
+                 anchor  — [x, y] in that SVG's viewBox (200 × 580)               */
             const MUSCLES = [
-                /* --- Upper · Front --- */
-                { num: 1, name: 'Дельты',       pct: 78, target: 80, zone: 'upper-front',
-                  points: [[62, 84], [138, 84]] },
-                { num: 2, name: 'Грудь',        pct: 45, target: 55, zone: 'upper-front',
-                  points: [[100, 110]] },
-                { num: 3, name: 'Бицепс',       pct: 62, target: 55, zone: 'upper-front',
-                  points: [[42, 140], [158, 140]] },
-                { num: 4, name: 'Трицепс',      pct: 71, target: 85, zone: 'upper-front',
-                  points: [[26, 168], [174, 168]] },
-                { num: 5, name: 'Предплечья',   pct: 55, target: 75, zone: 'upper-front',
-                  points: [[36, 210], [164, 210]] },
+                /* --- FRONT view --------------------------------------------- */
+                { num: 1,  id: 'quads',        name: 'Квадрицепсы',
+                  gto: ['Бег 30 м', 'Прыжок в длину с места'],
+                  view: 'front', anchor: [80, 380] },
+                { num: 2,  id: 'glutes-front', name: 'Ягодицы (передняя часть / ПБТ)',
+                  gto: ['Прыжок в длину с места', 'Бег 30 м'],
+                  view: 'front', anchor: [58, 340] },
+                { num: 3,  id: 'calves-front', name: 'Икры (передняя)',
+                  gto: ['Прыжок', 'Бег 2 км'],
+                  view: 'front', anchor: [78, 490] },
+                { num: 4,  id: 'core',         name: 'Кор / Косые мышцы',
+                  gto: ['Рывок гири', 'Подтягивания'],
+                  view: 'front', anchor: [100, 225] },
+                { num: 5,  id: 'delts',        name: 'Дельты (передняя)',
+                  gto: ['Отжимания', 'Рывок гири'],
+                  view: 'front', anchor: [78, 125] },
+                { num: 6,  id: 'triceps',      name: 'Трицепс',
+                  gto: ['Отжимания'],
+                  view: 'front', anchor: [34, 210] },
+                { num: 7,  id: 'forearms',     name: 'Предплечья',
+                  gto: ['Рывок гири (расширенный тест — кистевой динамометр)'],
+                  view: 'front', anchor: [32, 307] },
+                { num: 8,  id: 'adductors',    name: 'Приводящие',
+                  gto: ['Прыжок в сторону (расширенный тест)'],
+                  view: 'front', anchor: [100, 378] },
 
-                /* --- Lower · Front --- */
-                { num: 6, name: 'Квадрицепсы',  pct: 82, target: 90, zone: 'lower-front',
-                  points: [[78, 130], [124, 130]] },
-                { num: 7, name: 'Приводящие',   pct: 60, target: 75, zone: 'lower-front',
-                  points: [[100, 160]] },
-                { num: 8, name: 'Икры',         pct: 74, target: 85, zone: 'lower-front',
-                  points: [[82, 212], [120, 212]] },
-
-                /* --- Upper · Back --- */
-                { num: 9,  name: 'Трапеции',    pct: 68, target: 75, zone: 'upper-back',
-                  points: [[100, 84]] },
-                { num: 10, name: 'Широчайшие',  pct: 85, target: 90, zone: 'upper-back',
-                  points: [[72, 130], [128, 130]] },
-                { num: 11, name: 'Поясница',    pct: 59, target: 85, zone: 'upper-back',
-                  points: [[100, 198]] },
-
-                /* --- Lower · Back --- */
-                { num: 12, name: 'Ягодицы',     pct: 88, target: 95, zone: 'lower-back',
-                  points: [[80, 58], [120, 58]] },
-                { num: 13, name: 'Бицепс бедра',pct: 65, target: 85, zone: 'lower-back',
-                  points: [[78, 150], [122, 150]] },
+                /* --- BACK view ---------------------------------------------- */
+                { num: 9,  id: 'lats',         name: 'Широчайшие',
+                  gto: ['Подтягивания'],
+                  view: 'back',  anchor: [72, 205] },
+                { num: 10, id: 'lowback',      name: 'Поясница',
+                  gto: ['Наклон вперёд стоя', 'Бег 2 км'],
+                  view: 'back',  anchor: [100, 273] },
+                { num: 11, id: 'traps',        name: 'Трапеции',
+                  gto: ['Подтягивания'],
+                  view: 'back',  anchor: [100, 125] },
+                { num: 12, id: 'hamstrings',   name: 'Бицепс бедра',
+                  gto: ['Наклон вперёд стоя', 'Бег'],
+                  view: 'back',  anchor: [80, 395] },
+                { num: 13, id: 'glutes-back',  name: 'Ягодицы (задняя)',
+                  gto: ['Прыжок в длину с места', 'Бег 30 м'],
+                  view: 'back',  anchor: [76, 325] },
+                { num: 14, id: 'calves-back',  name: 'Икры (задняя / икроножная)',
+                  gto: ['Прыжок', 'Бег 2 км'],
+                  view: 'back',  anchor: [76, 490] },
             ];
 
-            const NODE_R = 9;  // radius of numbered muscle circle in SVG units
+            /* Fast lookup: id → muscle meta. */
+            const BY_ID = MUSCLES.reduce((acc, m) => { acc[m.id] = m; return acc; }, {});
+
+            /* Demo values — spec from the brief. Both glutes/calves IDs share
+               a single source value because anatomically they are the same
+               muscle seen from different angles. */
+            const DEMO_PERCENTS = {
+                quads: 82,
+                'glutes-front': 88, 'glutes-back': 88,
+                'calves-front': 74, 'calves-back': 74,
+                core: 65, delts: 78, triceps: 71, forearms: 55, adductors: 60,
+                lats: 85, lowback: 59, traps: 68, hamstrings: 65,
+            };
+
+            const NUM_R = 10;  // radius of numbered disc in SVG units
 
             let tooltip, tooltipClose, tooltipNum, tooltipName,
-                tooltipValue, tooltipTarget, tooltipStatus;
-            let activeNode = null;
+                tooltipValue, tooltipStatus, tooltipGto;
+            let demoBtn, resetBtn, demoHint;
+            let activeEl = null;
             let built = false;
+            let demoOn = false;
 
             function createSvgEl(tag, attrs) {
                 const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -4369,71 +4704,134 @@
                 return el;
             }
 
-            function render() {
-                if (built) return;
-                const zonesRoot = document.getElementById('muscle-zones');
-                if (!zonesRoot) return;
-
-                /* Clear & populate each zone's dot layer. */
-                const layers = {};
-                zonesRoot.querySelectorAll('[data-zone-dots]').forEach((g) => {
-                    while (g.firstChild) g.removeChild(g.firstChild);
-                    layers[g.getAttribute('data-zone-dots')] = g;
+            /* Paint every muscle path by its current data-percent. Called on
+               initial render and every time the user toggles demo/reset. */
+            function applyMuscleColors() {
+                const paths = document.querySelectorAll('.anatomy-svg .muscle');
+                paths.forEach((p) => {
+                    const pct = parseFloat(p.getAttribute('data-percent')) || 0;
+                    p.setAttribute('fill', colorFor(pct));
                 });
+            }
+
+            /* Write a new pct into every <path> in a muscle group. */
+            function setPercent(id, pct) {
+                const paths = document.querySelectorAll(
+                    '.anatomy-svg .muscle[data-muscle="' + id + '"]'
+                );
+                paths.forEach((p) => p.setAttribute('data-percent', String(pct)));
+            }
+
+            function buildNumbers() {
+                const frontG = document.querySelector('#anatomy-front [data-numbers="front"]');
+                const backG  = document.querySelector('#anatomy-back  [data-numbers="back"]');
+                if (!frontG || !backG) return;
+                while (frontG.firstChild) frontG.removeChild(frontG.firstChild);
+                while (backG.firstChild)  backG.removeChild(backG.firstChild);
 
                 MUSCLES.forEach((m) => {
-                    const layer = layers[m.zone];
-                    if (!layer) return;
-                    const fill   = colorFor(m.pct);
-                    m.points.forEach((p, idx) => {
-                        /* Group so pointer-events work reliably on both circle + text. */
-                        const grp = createSvgEl('g', {
-                            class: 'muscle-node',
-                            'data-num': m.num,
-                            tabindex: 0,
-                            role: 'button',
-                            'aria-label': m.name + ' — ' + m.pct + ' процентов',
-                        });
-                        const c = createSvgEl('circle', {
-                            class: 'muscle-node__circle',
-                            cx: p[0], cy: p[1], r: NODE_R,
-                            fill: fill,
-                        });
-                        const t = createSvgEl('text', {
-                            class: 'muscle-node__num',
-                            x: p[0], y: p[1] + 0.5,
-                        });
-                        t.textContent = String(m.num);
-                        grp.appendChild(c);
-                        grp.appendChild(t);
-                        grp.addEventListener('click', (ev) => {
-                            ev.stopPropagation();
+                    const parent = m.view === 'front' ? frontG : backG;
+                    const grp = createSvgEl('g', {
+                        class: 'muscle-number',
+                        'data-num':    String(m.num),
+                        'data-muscle': m.id,
+                        tabindex: 0,
+                        role: 'button',
+                        'aria-label': m.num + '. ' + m.name,
+                    });
+                    const c = createSvgEl('circle', {
+                        class: 'muscle-number__circle',
+                        cx: m.anchor[0], cy: m.anchor[1], r: NUM_R,
+                    });
+                    const t = createSvgEl('text', {
+                        class: 'muscle-number__text',
+                        x: m.anchor[0], y: m.anchor[1] + 0.5,
+                    });
+                    t.textContent = String(m.num);
+                    grp.appendChild(c);
+                    grp.appendChild(t);
+
+                    grp.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        openTooltip(m, grp);
+                    });
+                    grp.addEventListener('keydown', (ev) => {
+                        if (ev.key === 'Enter' || ev.key === ' ') {
+                            ev.preventDefault();
                             openTooltip(m, grp);
-                        });
-                        grp.addEventListener('keydown', (ev) => {
-                            if (ev.key === 'Enter' || ev.key === ' ') {
-                                ev.preventDefault();
-                                openTooltip(m, grp);
-                            }
-                        });
-                        layer.appendChild(grp);
+                        }
+                    });
+                    parent.appendChild(grp);
+                });
+            }
+
+            /* Wire muscle-path clicks (click on the painted shape itself). */
+            function bindMusclePathClicks() {
+                const paths = document.querySelectorAll('.anatomy-svg .muscle');
+                paths.forEach((p) => {
+                    p.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        const id = p.getAttribute('data-muscle');
+                        const m = BY_ID[id];
+                        if (m) openTooltip(m, p);
                     });
                 });
+            }
 
-                /* Cache tooltip refs once. */
+            function applyDemo() {
+                demoOn = true;
+                for (const id in DEMO_PERCENTS) setPercent(id, DEMO_PERCENTS[id]);
+                applyMuscleColors();
+                updateDemoButtons();
+            }
+            function resetDemo() {
+                demoOn = false;
+                MUSCLES.forEach((m) => setPercent(m.id, 0));
+                applyMuscleColors();
+                updateDemoButtons();
+                closeTooltip();
+            }
+            function updateDemoButtons() {
+                if (demoBtn)  demoBtn.hidden  = demoOn;
+                if (resetBtn) resetBtn.hidden = !demoOn;
+                if (demoHint) demoHint.hidden = demoOn;
+            }
+
+            function render() {
+                if (built) return;
+                const root = document.getElementById('muscle-anatomy');
+                if (!root) return;
+
+                /* One-time DOM build. */
+                buildNumbers();
+                bindMusclePathClicks();
+                applyMuscleColors();
+
+                /* Cache tooltip refs. */
                 tooltip       = document.getElementById('muscle-tooltip');
                 tooltipClose  = document.getElementById('muscle-tooltip-close');
                 tooltipNum    = document.getElementById('muscle-tooltip-num');
                 tooltipName   = document.getElementById('muscle-tooltip-name');
                 tooltipValue  = document.getElementById('muscle-tooltip-value');
-                tooltipTarget = document.getElementById('muscle-tooltip-target');
                 tooltipStatus = document.getElementById('muscle-tooltip-status');
+                tooltipGto    = document.getElementById('muscle-tooltip-gto-list');
 
                 if (tooltipClose) tooltipClose.addEventListener('click', closeTooltip);
+
+                /* Demo toggle wiring. */
+                demoBtn  = document.getElementById('muscle-demo-btn');
+                resetBtn = document.getElementById('muscle-reset-btn');
+                demoHint = document.getElementById('muscle-demo-hint');
+                if (demoBtn)  demoBtn.addEventListener('click',  applyDemo);
+                if (resetBtn) resetBtn.addEventListener('click', resetDemo);
+                updateDemoButtons();
+
+                /* Dismiss tooltip when clicking outside. */
                 document.addEventListener('click', (ev) => {
                     if (!tooltip || tooltip.hidden) return;
                     if (tooltip.contains(ev.target)) return;
-                    if (ev.target.closest('.muscle-node')) return;
+                    if (ev.target.closest('.muscle-number')) return;
+                    if (ev.target.closest('.anatomy-svg .muscle')) return;
                     closeTooltip();
                 });
                 document.addEventListener('keydown', (ev) => {
@@ -4445,37 +4843,62 @@
                 built = true;
             }
 
-            function openTooltip(muscle, nodeEl) {
+            function openTooltip(muscle, anchorEl) {
                 if (!tooltip) return;
-                if (activeNode) activeNode.classList.remove('is-active');
-                activeNode = nodeEl;
-                nodeEl.classList.add('is-active');
 
-                const fill   = colorFor(muscle.pct);
-                const status = statusFor(muscle.pct);
+                /* Clear previous active highlight (on any shape or number). */
+                if (activeEl) activeEl.classList.remove('is-active');
+                activeEl = anchorEl;
+                if (anchorEl.classList) anchorEl.classList.add('is-active');
+
+                /* Also highlight every muscle path in the group so the user
+                   sees which shape corresponds to the clicked number. */
+                document.querySelectorAll('.anatomy-svg .muscle.is-active')
+                    .forEach((el) => el.classList.remove('is-active'));
+                document.querySelectorAll(
+                    '.anatomy-svg .muscle[data-muscle="' + muscle.id + '"]'
+                ).forEach((el) => el.classList.add('is-active'));
+
+                /* Pull current pct from the first path in this group (the
+                   source of truth after applyMuscleColors). */
+                const firstPath = document.querySelector(
+                    '.anatomy-svg .muscle[data-muscle="' + muscle.id + '"]'
+                );
+                const pct = firstPath
+                    ? (parseFloat(firstPath.getAttribute('data-percent')) || 0)
+                    : 0;
+
+                const fill   = colorFor(pct);
+                const status = statusFor(pct);
 
                 tooltipNum.textContent    = String(muscle.num);
-                tooltipNum.style.background = fill;
+                tooltipNum.style.background = pct > 0 ? fill : '#888888';
                 tooltipName.textContent   = muscle.name;
-                tooltipValue.textContent  = muscle.pct + '%';
-                tooltipTarget.textContent = muscle.target + '%';
+                tooltipValue.textContent  = pct > 0 ? (pct + '%') : '— тест не сдан';
                 tooltipStatus.className   = 'muscle-tooltip__status ' + status.cls;
                 tooltipStatus.textContent = status.text;
 
-                /* Show first (hidden), then measure, then position. */
+                /* GTO list. */
+                while (tooltipGto.firstChild) tooltipGto.removeChild(tooltipGto.firstChild);
+                muscle.gto.forEach((g) => {
+                    const li = document.createElement('li');
+                    li.textContent = g;
+                    tooltipGto.appendChild(li);
+                });
+
+                /* Show, measure, then position. */
                 tooltip.hidden = false;
                 tooltip.style.visibility = 'hidden';
                 tooltip.style.left = '0px';
                 tooltip.style.top  = '0px';
 
-                const rect = nodeEl.getBoundingClientRect();
+                const rect = anchorEl.getBoundingClientRect();
                 const tw = tooltip.offsetWidth;
                 const th = tooltip.offsetHeight;
                 const gap = 12;
                 const vw = window.innerWidth;
                 const vh = window.innerHeight;
 
-                /* Prefer above the node; fall back to below if no room. */
                 let top  = rect.top - th - gap;
                 if (top < 8) top = rect.bottom + gap;
                 if (top + th > vh - 8) top = Math.max(8, vh - th - 8);
@@ -4492,13 +4915,22 @@
             function closeTooltip() {
                 if (!tooltip) return;
                 tooltip.hidden = true;
-                if (activeNode) {
-                    activeNode.classList.remove('is-active');
-                    activeNode = null;
+                if (activeEl && activeEl.classList) {
+                    activeEl.classList.remove('is-active');
+                    activeEl = null;
                 }
+                document.querySelectorAll('.anatomy-svg .muscle.is-active')
+                    .forEach((el) => el.classList.remove('is-active'));
             }
 
-            return { render: render, close: closeTooltip };
+            return {
+                render:             render,
+                close:              closeTooltip,
+                applyMuscleColors:  applyMuscleColors,
+                setPercent:         setPercent,
+                applyDemo:          applyDemo,
+                resetDemo:          resetDemo,
+            };
         })();
 
         /* =====================================================================
