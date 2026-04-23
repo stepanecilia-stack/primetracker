@@ -218,21 +218,27 @@
 
     .gender {
         display: flex;
-        gap: 8px;
+        gap: 4px;
         margin-top: 2px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .gender__btn {
         font-family: var(--font-heading);
         font-size: 18px;
         letter-spacing: 0.08em;
-        padding: 10px 28px;
+        padding: 12px 0;
         border: 1px solid #333333;
         border-radius: 2px;
         background: transparent;
         color: var(--text-dim);
         transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
         line-height: 1;
+        flex: 1 1 50%;
+        min-width: 0;
+        text-align: center;
+        box-sizing: border-box;
     }
 
     .gender__btn:hover:not(.is-active) {
@@ -1496,33 +1502,65 @@
         height: 1px;
         background: rgba(255, 255, 255, 0.22);
         outline: none;
-        cursor: pointer;
+        cursor: grab;
         padding: 0;
         margin: 0;
         position: relative;
         z-index: 2;
     }
+    .weight-slider__input:active {
+        cursor: grabbing;
+    }
 
+    /* Draggable-affordance thumb: 24×24 round, horizontal chevrons inside,
+       pulses gently until the user interacts. */
     .weight-slider__input::-webkit-slider-thumb {
         -webkit-appearance: none;
         appearance: none;
-        width: 16px;
-        height: 16px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #F0F0F0, #B0B0B0);
-        border: 1px solid #FFFFFF;
-        cursor: pointer;
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+        background:
+            url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M9 8l-3 4 3 4M15 8l3 4-3 4' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 18px 18px no-repeat,
+            linear-gradient(135deg, #2a2a2a, #000000);
+        border: 1px solid #000000;
+        cursor: grab;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        transition: transform 0.15s ease;
+    }
+    .weight-slider__input:active::-webkit-slider-thumb {
+        cursor: grabbing;
+        transform: scale(1.08);
     }
 
     .weight-slider__input::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #F0F0F0, #B0B0B0);
-        border: 1px solid #FFFFFF;
-        cursor: pointer;
-        box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+        background:
+            url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M9 8l-3 4 3 4M15 8l3 4-3 4' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>") center / 18px 18px no-repeat,
+            linear-gradient(135deg, #2a2a2a, #000000);
+        border: 1px solid #000000;
+        cursor: grab;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        transition: transform 0.15s ease;
+    }
+    .weight-slider__input:active::-moz-range-thumb {
+        cursor: grabbing;
+        transform: scale(1.08);
+    }
+
+    /* Pulse signal — "please drag me". Stops after first interaction when
+       JS removes the .is-idle class from the <input>. */
+    @keyframes slider-thumb-pulse {
+        0%, 100% { transform: scale(1);    box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+        50%      { transform: scale(1.15); box-shadow: 0 4px 14px rgba(0,0,0,0.45); }
+    }
+    .weight-slider__input.is-idle::-webkit-slider-thumb {
+        animation: slider-thumb-pulse 1.5s ease-in-out infinite;
+    }
+    .weight-slider__input.is-idle::-moz-range-thumb {
+        animation: slider-thumb-pulse 1.5s ease-in-out infinite;
     }
 
     .weight-slider__ticks {
@@ -1961,11 +1999,21 @@
         opacity: 0.85;
     }
     .hero__title {
+        font-family: var(--font-body);
+        font-size: clamp(18px, 2.4vw, 26px);
+        font-weight: 300;
+        letter-spacing: 0.04em;
+        line-height: 1.35;
         color: #000000;
         text-shadow: none;
-        font-weight: 700;
+        text-transform: none;
         text-align: center;
+        margin-bottom: 36px;
+        max-width: 520px;
+        margin-left: auto;
+        margin-right: auto;
     }
+    .hero__title br { display: none; }
     .hero__subtitle {
         color: #555555;
     }
@@ -3961,7 +4009,12 @@
                 youBackStats  = document.getElementById('fig-you-back-stats');
 
                 if (slider) {
+                    slider.classList.add('is-idle');
+                    const stopPulse = () => slider.classList.remove('is-idle');
+                    slider.addEventListener('pointerdown', stopPulse, { once: true });
+                    slider.addEventListener('keydown',     stopPulse, { once: true });
                     slider.addEventListener('input', () => {
+                        slider.classList.remove('is-idle');
                         const idx = parseInt(slider.value, 10);
                         applyCategoryByIndex(idx, /*fromUser=*/true);
                     });
