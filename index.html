@@ -936,6 +936,19 @@
         color: #888;
     }
 
+    /* Long variant — used when the code label is spelled out in full
+       ("Коэффициент Спортивного Потенциала (КСП)"). Needs tighter
+       tracking and a smaller size so it fits on one or two lines. */
+    .dashboard__code--long {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        line-height: 1.35;
+        flex: 1 1 100%;
+        text-transform: uppercase;
+        display: block;
+        margin-bottom: 4px;
+    }
+
     .dashboard__num {
         font-family: var(--font-heading);
         font-size: clamp(48px, 7.2vw, 88px);
@@ -1550,24 +1563,44 @@
         transform: scale(1.08);
     }
 
-    /* Pulse signal — "please drag me". Stops after first interaction when
-       JS removes the .is-idle class from the <input>. */
+    /* Pulse signal — glowing halo that repeats forever so the thumb
+       is always obviously interactive. Not gated by .is-idle anymore. */
     @keyframes slider-thumb-pulse {
-        0%, 100% { transform: scale(1);    box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
-        50%      { transform: scale(1.15); box-shadow: 0 4px 14px rgba(0,0,0,0.45); }
+        0%, 100% {
+            transform: scale(1);
+            box-shadow:
+                0 0 0 0 rgba(0, 255, 120, 0.55),
+                0 2px 8px rgba(0, 0, 0, 0.35);
+        }
+        50% {
+            transform: scale(1.12);
+            box-shadow:
+                0 0 0 10px rgba(0, 255, 120, 0),
+                0 0 18px 4px rgba(0, 255, 120, 0.35),
+                0 4px 14px rgba(0, 0, 0, 0.45);
+        }
     }
+    .weight-slider__input::-webkit-slider-thumb {
+        animation: slider-thumb-pulse 1.6s ease-in-out infinite;
+    }
+    .weight-slider__input::-moz-range-thumb {
+        animation: slider-thumb-pulse 1.6s ease-in-out infinite;
+    }
+    /* Legacy .is-idle hook kept for compatibility — behaves identically. */
     .weight-slider__input.is-idle::-webkit-slider-thumb {
-        animation: slider-thumb-pulse 1.5s ease-in-out infinite;
+        animation: slider-thumb-pulse 1.6s ease-in-out infinite;
     }
     .weight-slider__input.is-idle::-moz-range-thumb {
-        animation: slider-thumb-pulse 1.5s ease-in-out infinite;
+        animation: slider-thumb-pulse 1.6s ease-in-out infinite;
     }
 
     .weight-slider__ticks {
         position: relative;
         width: 100%;
-        height: 18px;
-        margin-top: -4px;
+        height: 26px;
+        margin-top: 4px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        padding-top: 4px;
     }
 
     .weight-slider__tick {
@@ -1579,25 +1612,28 @@
         align-items: center;
         gap: 4px;
         font-family: var(--font-heading);
-        font-size: 9px;
-        letter-spacing: 0.08em;
-        color: #555555;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        color: #999999;
         user-select: none;
+        white-space: nowrap;
     }
 
     .weight-slider__tick::before {
         content: '';
         width: 1px;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.18);
+        height: 7px;
+        background: rgba(255, 255, 255, 0.35);
     }
 
     .weight-slider__tick.is-current {
-        color: #E8E8E8;
+        color: #FFFFFF;
+        font-weight: 600;
     }
     .weight-slider__tick.is-current::before {
         background: #FFFFFF;
-        box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        height: 10px;
     }
 
     /* ==========================================================================
@@ -2599,6 +2635,22 @@
         outline: none;
     }
 
+    /* Desktop (>1024px): enlarge the skeleton figures by ~35% so the
+       muscle marker circles have breathing room and don't overlap. */
+    @media (min-width: 1025px) {
+        .muscle-anatomy.mm3 {
+            gap: 40px;
+        }
+        .mm3-figure {
+            max-width: 500px;
+            min-height: 620px;
+        }
+        .mm3-svg {
+            max-width: 500px;
+            min-height: 600px;
+        }
+    }
+
     /* Mobile: stack front + back vertically. */
     @media (max-width: 720px) {
         .muscle-anatomy.mm3 {
@@ -3003,7 +3055,7 @@
                 <div class="dashboard__grid">
                     <div class="dashboard__card dashboard__card--ksp">
                         <div class="dashboard__card-head">
-                            <span class="dashboard__code">КСП</span>
+                            <span class="dashboard__code dashboard__code--long">Коэффициент Спортивного Потенциала (КСП)</span>
                             <span class="dashboard__num" id="ksp-value">0<i>%</i></span>
                         </div>
                         <div class="dashboard__title">Спортивный<br>потенциал</div>
@@ -3011,7 +3063,7 @@
                     </div>
                     <div class="dashboard__card dashboard__card--ksr">
                         <div class="dashboard__card-head">
-                            <span class="dashboard__code">КСР</span>
+                            <span class="dashboard__code dashboard__code--long">Коэффициент Спортивной Реализации (КСР)</span>
                             <span class="dashboard__num" id="ksr-value">0<i>%</i></span>
                             <span class="dashboard__note">предварительно</span>
                         </div>
@@ -3812,6 +3864,34 @@ C 128 46 138 28 160 30 Z"/>
             inputWeight: 70,    // actual weight user entered on scan (immutable KSP basis)
             weightCategory: '86', // current discrete weight class (string)
         };
+
+        /* Persist a snapshot of the diagnosis inputs so that when the
+           user returns from muscle_detail.html (#muscle-anatomy), the
+           diagnosis screen can be restored instead of landing on hero. */
+        const DIAG_SNAP_KEY = 'ca-diagnosis-snap';
+        function saveDiagnosisSnapshot() {
+            try {
+                sessionStorage.setItem(DIAG_SNAP_KEY, JSON.stringify({
+                    gender:         PrimeState.gender,
+                    age:            PrimeState.age,
+                    height:         PrimeState.height,
+                    reach:          PrimeState.reach,
+                    weight:         PrimeState.weight,
+                    inputWeight:    PrimeState.inputWeight,
+                    weightCategory: PrimeState.weightCategory,
+                }));
+            } catch (e) { /* sessionStorage may be disabled */ }
+        }
+        function readDiagnosisSnapshot() {
+            try {
+                const raw = sessionStorage.getItem(DIAG_SNAP_KEY);
+                if (!raw) return null;
+                const snap = JSON.parse(raw);
+                if (!snap || typeof snap !== 'object') return null;
+                if (!snap.height || !snap.weight) return null;
+                return snap;
+            } catch (e) { return null; }
+        }
 
         /* =====================================================================
            Weight categories — Olympic / AIBA-style amateur boxing classes,
@@ -5145,7 +5225,8 @@ C 128 46 138 28 160 30 Z"/>
                     tick.className = 'weight-slider__tick' +
                         (i === activeIdx ? ' is-current' : '');
                     tick.style.left = (i / last * 100) + '%';
-                    tick.textContent = categoryKey(cats[i]);
+                    const key = categoryKey(cats[i]);
+                    tick.textContent = key.endsWith('+') ? key + ' кг' : key + ' кг';
                     ticksEl.appendChild(tick);
                 }
             }
@@ -5179,6 +5260,7 @@ C 128 46 138 28 160 30 Z"/>
 
                 PrimeState.weight         = wNum;
                 PrimeState.weightCategory = categoryKey(cat);
+                saveDiagnosisSnapshot();
 
                 if (slider && parseInt(slider.value, 10) !== idx) {
                     slider.value = String(idx);
@@ -5378,6 +5460,7 @@ C 128 46 138 28 160 30 Z"/>
                 PrimeState.reach       = payload.armspan;
                 PrimeState.weight      = payload.weight;
                 PrimeState.inputWeight = payload.weight;
+                saveDiagnosisSnapshot();
                 Diagnosis.show();
             });
 
@@ -5497,6 +5580,40 @@ C 128 46 138 28 160 30 Z"/>
             function isPositive(n) {
                 return Number.isFinite(n) && n > 0;
             }
+
+            /* If the user is returning from muscle_detail.html via
+               "#muscle-anatomy", restore the last diagnosis snapshot
+               and jump straight to screen 3 (muscle map), instead of
+               landing on the hero. */
+            maybeRestoreFromHash();
+
+            function maybeRestoreFromHash() {
+                const hash = (window.location.hash || '').toLowerCase();
+                const isDiagHash = hash === '#muscle-anatomy' ||
+                                   hash === '#screen-diagnosis';
+                if (!isDiagHash) return;
+                const snap = readDiagnosisSnapshot();
+                if (!snap) return;
+
+                PrimeState.gender      = snap.gender || 'M';
+                PrimeState.age         = snap.age;
+                PrimeState.height      = snap.height;
+                PrimeState.reach       = snap.reach;
+                PrimeState.weight      = snap.weight;
+                PrimeState.inputWeight = snap.inputWeight || snap.weight;
+                if (snap.weightCategory) {
+                    PrimeState.weightCategory = snap.weightCategory;
+                }
+
+                try { Diagnosis.show(); } catch (e) { return; }
+
+                requestAnimationFrame(() => {
+                    const target = document.getElementById('muscle-anatomy');
+                    if (target && typeof target.scrollIntoView === 'function') {
+                        target.scrollIntoView({ behavior: 'auto', block: 'start' });
+                    }
+                });
+            }
         }
     })();
     </script>
@@ -5528,6 +5645,12 @@ C 128 46 138 28 160 30 Z"/>
                     }
                     slot.appendChild(clone);
                 });
+
+                /* Back view: strip all facial features (eyes, nose, mouth).
+                   The back-of-head should show only the skull outline. */
+                if (slot.getAttribute('data-view') === 'back') {
+                    slot.querySelectorAll('.skull__inner').forEach((el) => el.remove());
+                }
             });
             return true;
         }
