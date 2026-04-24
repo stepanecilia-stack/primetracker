@@ -2531,104 +2531,173 @@
         margin-top: 2px;
     }
 
-    /* --- Anatomy figures (front + back) ---------------------------------- */
-    .muscle-anatomy {
+    /* ======================================================================
+       MM3 — skeleton-based muscle map (screen 3).
+       Reuses the same skeleton SVG artwork as screen 2, rendered twice
+       (front + back) with colored muscle markers on top.
+       ====================================================================== */
+    .mm3-legacy-hidden { display: none !important; }
+
+    .muscle-anatomy.mm3 {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
         align-items: start;
         justify-items: center;
     }
-    .anatomy-figure {
+    .mm3-figure {
         margin: 0;
-        background: #F7F7F7;
-        border: 1px solid #EEEEEE;
-        border-radius: 6px;
-        padding: 18px 14px 16px;
         display: flex;
         flex-direction: column;
         align-items: center;
         width: 100%;
         max-width: 360px;
+        background: #FFFFFF;
+        padding: 8px 0 10px;
+        box-sizing: border-box;
+    }
+    .mm3-svg {
+        width: 100%;
+        max-width: 360px;
+        height: auto;
+        aspect-ratio: 520 / 640;
+        display: block;
+        overflow: visible;
+    }
+    .mm3-label {
+        font-family: var(--font-body, system-ui, sans-serif);
+        font-size: 11px;
+        font-weight: 300;
+        letter-spacing: 0.2em;
+        color: #666666;
+        text-transform: uppercase;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    /* The cloned skeleton sits beneath the marker layer. Markers draw above. */
+    .mm3-skeleton-slot { pointer-events: none; }
+    .mm3-markers       { pointer-events: auto; }
+
+    .mm3-dot {
+        cursor: pointer;
+        stroke: #2B2B2B;
+        stroke-width: 1.4;
+        transition: r 0.15s ease, filter 0.15s ease, stroke-width 0.15s ease;
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+    .mm3-dot--green   { fill: #4CAF50; }
+    .mm3-dot--neutral { fill: #E8E8E8; }
+    .mm3-dot--red     { fill: #C0392B; }
+
+    .mm3-dot:hover,
+    .mm3-dot:focus-visible {
+        stroke-width: 2;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+        r: 14;
+        outline: none;
+    }
+
+    /* Mobile: stack front + back vertically. */
+    @media (max-width: 720px) {
+        .muscle-anatomy.mm3 {
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+        .mm3-figure { max-width: 320px; }
+    }
+
+    /* --- Anatomy figures (front + back) ---------------------------------- */
+    .muscle-anatomy {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+        align-items: start;
+        justify-items: center;
+    }
+    .anatomy-figure {
+        margin: 0;
+        background: #FFFFFF;
+        border: none;
+        border-radius: 0;
+        padding: 0 0 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 340px;
         box-sizing: border-box;
     }
     .anatomy-figure__label {
-        font-family: var(--font-heading);
-        font-size: 13px;
-        letter-spacing: 2.5px;
-        color: #000000;
+        font-family: var(--font-body, system-ui, sans-serif);
+        font-size: 11px;
+        font-weight: 300;
+        letter-spacing: 0.2em;
+        color: #666666;
         text-transform: uppercase;
         text-align: center;
-        margin-bottom: 10px;
-        line-height: 1;
+        margin-top: 8px;
+        line-height: 1.2;
     }
     .anatomy-svg {
         width: 100%;
         max-width: 320px;
         height: auto;
-        aspect-ratio: 200 / 580;
+        aspect-ratio: 320 / 640;
         display: block;
     }
 
-    /* Silhouette outline — light fill, thin dark stroke. */
+    .anatomy-views[hidden] { display: none; }
+    .muscle-screen[hidden] { display: none; }
+
     .anatomy-svg .silhouette {
-        fill: #FAFAFA;
-        stroke: #333333;
+        fill: #E8E8E8;
+        stroke: #AAAAAA;
         stroke-width: 1;
         stroke-linejoin: round;
         stroke-linecap: round;
+        pointer-events: none;
     }
 
-    /* Muscle shape — stroked outline with data-driven fill.
-       Fill is set via the inline `fill` attribute by applyMuscleColors(); the
-       default (when no inline attribute) comes from the CSS here. */
-    .anatomy-svg .muscle {
-        fill: #F0F0F0;
-        stroke: #333333;
-        stroke-width: 1;
-        stroke-linejoin: round;
-        stroke-linecap: round;
+    /* Кликабельные точки-номера (r=10 в user space при viewBox 320) */
+    .muscle-point {
         cursor: pointer;
-        transition: fill 0.35s ease, filter 0.15s ease, stroke-width 0.15s ease;
-        pointer-events: auto;
     }
-    .anatomy-svg .muscle:hover {
-        filter: brightness(1.06);
+    .muscle-point__hit {
+        fill: #FFFFFF;
+        stroke: #333333;
         stroke-width: 1.5;
+        r: 10;
+        transition: r 0.2s ease, fill 0.25s ease, filter 0.2s ease;
     }
-    .anatomy-svg .muscle.is-active {
+    .muscle-point:hover,
+    .muscle-point:focus-visible {
+        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.25));
+    }
+    .muscle-point:hover .muscle-point__hit,
+    .muscle-point:focus-visible .muscle-point__hit {
+        r: 13;
+    }
+    .muscle-point.is-active .muscle-point__hit {
         stroke: #000000;
         stroke-width: 2;
     }
-
-    /* Numbered circle — white disc with black border and centred number. */
-    .muscle-number {
-        cursor: pointer;
-    }
-    .muscle-number__circle {
-        fill: #FFFFFF;
-        stroke: #333333;
-        stroke-width: 1;
-        transition: stroke-width 0.15s ease;
-    }
-    .muscle-number:hover .muscle-number__circle {
-        stroke-width: 1.8;
-    }
-    .muscle-number__text {
+    .muscle-point__text {
         fill: #000000;
-        font-family: var(--font-heading);
-        font-size: 11px;
-        font-weight: 700;
+        font-family: var(--font-body, system-ui, sans-serif);
+        font-size: 10px;
+        font-weight: 600;
         text-anchor: middle;
         dominant-baseline: central;
         pointer-events: none;
-        letter-spacing: 0;
     }
+    .muscle-point:focus { outline: none; }
 
     /* Greyed swatch used in the legend for the "no data" state. */
     .muscle-legend i.legend-dot--none {
-        background: #F0F0F0;
-        border: 1px solid #CCCCCC;
+        background: #FFFFFF;
+        border: 1.5px solid #333333;
     }
 
     /* --- Legend ----------------------------------------------------------- */
@@ -2656,121 +2725,119 @@
         flex: 0 0 auto;
     }
 
-    /* --- Click tooltip ---------------------------------------------------- */
-    .muscle-tooltip {
-        position: fixed;
-        z-index: 100;
-        background: #FFFFFF;
-        border: 1px solid #CCCCCC;
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
-        border-radius: 8px;
-        padding: 14px 18px 14px 18px;
-        min-width: 260px;
-        max-width: 320px;
+    /* --- Muscle screen (GTO) ---------------------------------------------- */
+    .muscle-screen {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 8px 0 20px;
         font-family: var(--font-body);
     }
-    .muscle-tooltip[hidden] { display: none; }
-    .muscle-tooltip__close {
-        position: absolute;
-        top: 6px;
-        right: 8px;
-        font-size: 20px;
-        line-height: 1;
-        color: #888888;
-        background: none;
-        border: none;
+    .muscle-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-body);
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: #000000;
+        background: #F0F0F0;
+        border: 1px solid #CCCCCC;
+        border-radius: 6px;
+        padding: 8px 16px;
+        margin-bottom: 16px;
         cursor: pointer;
-        padding: 4px 8px;
     }
-    .muscle-tooltip__close:hover { color: #000000; }
-    .muscle-tooltip__head {
+    .muscle-back:hover { background: #E8E8E8; }
+    .muscle-screen__head {
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        margin-bottom: 12px;
     }
-    .muscle-tooltip__num {
-        flex: 0 0 auto;
-        width: 24px;
-        height: 24px;
+    .muscle-screen__num {
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         font-family: var(--font-heading);
-        font-size: 13px;
+        font-size: 15px;
         color: #FFFFFF;
         background: #555555;
     }
-    .muscle-tooltip__name {
+    .muscle-screen__title {
         margin: 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: #000000;
+        flex: 1 1 200px;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.1;
     }
-    .muscle-tooltip__row {
-        display: flex;
-        justify-content: space-between;
-        padding: 5px 0;
-        font-size: 13px;
-        gap: 12px;
-        border-bottom: 1px dashed #EEEEEE;
-    }
-    .muscle-tooltip__row:last-of-type { border-bottom: none; }
-    .muscle-tooltip__row span { color: #666666; }
-    .muscle-tooltip__row b { font-weight: 600; color: #000000; }
-    .muscle-tooltip__status {
-        margin-top: 10px;
-        padding: 7px 10px;
+    .muscle-pill {
+        display: inline-block;
+        margin-left: 0;
+        margin-bottom: 8px;
+        padding: 6px 12px;
         border-radius: 4px;
         font-size: 12px;
         font-weight: 600;
-        letter-spacing: 0.5px;
-        text-align: center;
+        letter-spacing: 0.6px;
         text-transform: uppercase;
     }
-    .muscle-tooltip__status--none   { background: #F0F0F0; color: #666666; }
-    .muscle-tooltip__status--red    { background: #FFE5E5; color: #CC0000; }
-    .muscle-tooltip__status--yellow { background: #FFF5CC; color: #B38600; }
-    .muscle-tooltip__status--lgreen { background: #EEF7DC; color: #558800; }
-    .muscle-tooltip__status--green  { background: #DDF5E5; color: #00994D; }
+    .muscle-pill--none   { background: #F0F0F0; color: #666666; }
+    .muscle-pill--red    { background: #FFE5E5; color: #CC0000; }
+    .muscle-pill--yellow { background: #FFF5CC; color: #B38600; }
+    .muscle-pill--lgreen { background: #EEF7DC; color: #558800; }
+    .muscle-pill--green  { background: #DDF5E5; color: #00994D; }
 
-    .muscle-tooltip__gto {
-        margin: 6px 0 10px;
-        padding: 10px 12px;
-        background: #F7F7F7;
-        border-radius: 4px;
-    }
-    .muscle-tooltip__gto-head {
-        font-family: var(--font-body);
+    .muscle-block__k {
         font-size: 10px;
         font-weight: 600;
         letter-spacing: 2px;
         color: #555555;
         text-transform: uppercase;
-        margin-bottom: 6px;
+        margin: 20px 0 8px;
     }
-    .muscle-tooltip__gto-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    .muscle-tooltip__gto-list li {
-        position: relative;
-        padding: 3px 0 3px 14px;
-        font-size: 13px;
+    .muscle-block__role {
+        margin: 0 0 12px;
+        padding: 12px 14px;
+        background: #F7F7F7;
+        border: 1px solid #E5E5E5;
+        border-radius: 6px;
+        font-size: 14px;
+        line-height: 1.45;
         color: #222222;
-        line-height: 1.35;
     }
-    .muscle-tooltip__gto-list li::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 10px;
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: #333333;
+    .muscle-gto {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+    }
+    .muscle-gto th, .muscle-gto td {
+        border: 1px solid #DDDDDD;
+        padding: 8px 10px;
+        text-align: left;
+    }
+    .muscle-gto th {
+        background: #F0F0F0;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+    }
+    .muscle-gto__input {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        font-family: var(--font-body);
+        font-size: 12px;
+        padding: 5px 8px;
+        border: 1px solid #CCCCCC;
+        border-radius: 4px;
+    }
+    .muscle-gto__pct {
+        font-weight: 600;
     }
 
     /* --- Mobile ----------------------------------------------------------- */
@@ -2784,7 +2851,7 @@
     @media (max-width: 520px) {
         .twin-card { padding: 18px 18px 16px; }
         .twin-card__name { font-size: 24px; }
-        .muscle-tooltip { min-width: 240px; max-width: calc(100vw - 32px); }
+        .muscle-gto { font-size: 11px; }
     }
     </style>
 </head>
@@ -3009,6 +3076,8 @@
 
             <section class="muscle-panel" aria-label="Биометрический близнец и карта мышечного развития">
 
+                <!-- ANATOMICAL MUSCLE MAP — vector silhouettes with muscle paths -->
+                <div class="anatomy-views" id="anatomy-views">
                 <!-- TWIN INFO CARD (replaces the old gold skeleton) -->
                 <article class="twin-card" aria-label="Биометрический близнец">
                     <header class="twin-card__head">
@@ -3036,271 +3105,232 @@
                     </div>
                 </article>
 
-                <!-- ANATOMICAL MUSCLE MAP — vector silhouettes with muscle paths -->
                 <div class="zone-map__head">
                     <div class="zone-map__label">Карта мышечного развития</div>
-                    <div class="zone-map__subline">Анатомические проекции · кликни на мышцу для деталей</div>
+                    <div class="zone-map__subline">Анатомические проекции · кликни на мышцу для нормативов</div>
                 </div>
 
                 <div class="anatomy-controls">
-                    <button type="button" class="anatomy-btn" id="muscle-demo-btn">Демо-режим</button>
+                    <button type="button" class="anatomy-btn" id="muscle-demo-btn">Демо</button>
                     <button type="button" class="anatomy-btn anatomy-btn--ghost" id="muscle-reset-btn" hidden>Сбросить</button>
-                    <span class="anatomy-controls__hint" id="muscle-demo-hint">Все мышцы пока серые — человек не сдавал тесты. Включи демо, чтобы увидеть цветовую карту.</span>
+                    <span class="anatomy-controls__hint" id="muscle-demo-hint">Все точки белые, пока нет данных. «Демо» заполняет тесты и перекрашивает точки.</span>
                 </div>
 
-                <div class="muscle-anatomy" id="muscle-anatomy">
-                    <figure class="anatomy-figure">
-                        <figcaption class="anatomy-figure__label">Фронт</figcaption>
-                        <svg class="anatomy-svg" id="anatomy-front" viewBox="0 0 200 580"
+                <div class="muscle-anatomy mm3" id="muscle-anatomy">
+                    <!-- FRONT VIEW: cloned skeleton + muscle markers -->
+                    <figure class="mm3-figure">
+                        <svg class="mm3-svg" viewBox="0 0 520 640"
                              xmlns="http://www.w3.org/2000/svg"
-                             preserveAspectRatio="xMidYMid meet">
-                            <!-- Body silhouette: single closed path traces head → arm → torso → leg → center → leg → arm → head -->
-                            <path class="silhouette" d="
-                                M 100 14
-                                C 124 14 138 34 136 56
-                                C 134 72 126 82 120 86
-                                L 120 92
-                                L 148 96
-                                C 160 98 170 108 174 124
-                                L 176 150
-                                L 180 220
-                                L 180 280
-                                L 178 310
-                                L 175 345
-                                L 160 345
-                                L 160 310
-                                L 158 270
-                                L 152 200
-                                L 148 160
-                                L 138 158
-                                L 140 240
-                                L 142 290
-                                L 146 330
-                                L 144 440
-                                L 138 540
-                                L 142 550
-                                L 142 556
-                                L 104 556
-                                L 104 550
-                                L 106 540
-                                L 104 440
-                                L 104 330
-                                L 100 280
-                                L 96 330
-                                L 96 440
-                                L 94 540
-                                L 94 550
-                                L 96 556
-                                L 58 556
-                                L 58 550
-                                L 62 540
-                                L 56 440
-                                L 54 330
-                                L 58 290
-                                L 60 240
-                                L 62 158
-                                L 52 160
-                                L 48 200
-                                L 42 270
-                                L 40 310
-                                L 40 345
-                                L 25 345
-                                L 22 310
-                                L 20 280
-                                L 20 220
-                                L 24 150
-                                L 26 124
-                                C 30 108 40 98 52 96
-                                L 80 92
-                                L 80 86
-                                C 74 82 66 72 64 56
-                                C 62 34 76 14 100 14 Z"/>
+                             preserveAspectRatio="xMidYMid meet"
+                             aria-label="Мышечная карта — фронт">
+                            <!-- Skeleton will be cloned here from screen 2 at runtime -->
+                            <g class="mm3-skeleton-slot" data-view="front"></g>
 
-                            <!-- Muscle paths. Every <path> has data-muscle + data-percent. -->
-                            <g class="muscles">
-                                <!-- 5. Deltoids (front) -->
-                                <path class="muscle" data-muscle="delts" data-percent="0"
-                                      d="M 82 96 C 74 108 66 128 66 146 L 86 148 C 92 128 90 108 90 96 Z"/>
-                                <path class="muscle" data-muscle="delts" data-percent="0"
-                                      d="M 118 96 C 126 108 134 128 134 146 L 114 148 C 108 128 110 108 110 96 Z"/>
-
-                                <!-- 6. Triceps (front view — outer upper arm) -->
-                                <path class="muscle" data-muscle="triceps" data-percent="0"
-                                      d="M 28 155 L 22 260 L 40 262 L 46 158 Z"/>
-                                <path class="muscle" data-muscle="triceps" data-percent="0"
-                                      d="M 172 155 L 178 260 L 160 262 L 154 158 Z"/>
-
-                                <!-- 7. Forearms -->
-                                <path class="muscle" data-muscle="forearms" data-percent="0"
-                                      d="M 24 270 L 22 340 L 40 344 L 42 272 Z"/>
-                                <path class="muscle" data-muscle="forearms" data-percent="0"
-                                      d="M 176 270 L 178 340 L 160 344 L 158 272 Z"/>
-
-                                <!-- 4. Core / obliques (central abdomen + side strips) -->
-                                <path class="muscle" data-muscle="core" data-percent="0"
-                                      d="M 88 160 L 82 285 L 118 285 L 112 160 Z"/>
-                                <path class="muscle" data-muscle="core" data-percent="0"
-                                      d="M 66 170 L 62 280 L 80 282 L 82 165 Z"/>
-                                <path class="muscle" data-muscle="core" data-percent="0"
-                                      d="M 134 170 L 138 280 L 120 282 L 118 165 Z"/>
-
-                                <!-- 2. Glutes-front / IT band (outer hip strip) -->
-                                <path class="muscle" data-muscle="glutes-front" data-percent="0"
-                                      d="M 54 295 L 52 385 L 62 388 L 66 300 Z"/>
-                                <path class="muscle" data-muscle="glutes-front" data-percent="0"
-                                      d="M 146 295 L 148 385 L 138 388 L 134 300 Z"/>
-
-                                <!-- 1. Quads -->
-                                <path class="muscle" data-muscle="quads" data-percent="0"
-                                      d="M 68 335 Q 60 385 64 425 L 96 425 Q 100 385 94 335 Z"/>
-                                <path class="muscle" data-muscle="quads" data-percent="0"
-                                      d="M 132 335 Q 140 385 136 425 L 104 425 Q 100 385 106 335 Z"/>
-
-                                <!-- 8. Adductors (inner thighs) -->
-                                <path class="muscle" data-muscle="adductors" data-percent="0"
-                                      d="M 94 340 L 92 420 L 108 420 L 106 340 Z"/>
-
-                                <!-- 3. Calves-front (shins) -->
-                                <path class="muscle" data-muscle="calves-front" data-percent="0"
-                                      d="M 62 440 Q 58 490 62 530 L 94 530 Q 96 490 92 440 Z"/>
-                                <path class="muscle" data-muscle="calves-front" data-percent="0"
-                                      d="M 138 440 Q 142 490 138 530 L 106 530 Q 104 490 108 440 Z"/>
+                            <!-- Muscle markers (SVG-native coords, scale with figure) -->
+                            <g class="mm3-markers" data-view="front">
+                                <circle class="mm3-dot mm3-dot--green"   cx="228" cy="418" r="12" data-muscle="Квадрицепсы"     data-norm="Приседания за 30 сек: ≥ 25 (золото, м 18–24)"><title>Квадрицепсы</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="292" cy="418" r="12" data-muscle="Квадрицепсы"     data-norm="Приседания за 30 сек: ≥ 25 (золото, м 18–24)"><title>Квадрицепсы</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="238" cy="378" r="12" data-muscle="Ягодицы"         data-norm="Прыжок в длину с места: ≥ 240 см (золото, м 18–24)"><title>Ягодицы</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="282" cy="378" r="12" data-muscle="Ягодицы"         data-norm="Прыжок в длину с места: ≥ 240 см (золото, м 18–24)"><title>Ягодицы</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="218" cy="254" r="12" data-muscle="Широчайшие"      data-norm="Подтягивания: ≥ 13 раз (золото, м 18–24)"><title>Широчайшие</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="302" cy="254" r="12" data-muscle="Широчайшие"      data-norm="Подтягивания: ≥ 13 раз (золото, м 18–24)"><title>Широчайшие</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="260" cy="328" r="12" data-muscle="Поясница"        data-norm="Наклон вперёд стоя: ≥ +13 см (золото, м 18–24)"><title>Поясница</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="228" cy="515" r="12" data-muscle="Икры"            data-norm="Бег 3 км: ≤ 12:30 (золото, м 18–24)"><title>Икры</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="292" cy="515" r="12" data-muscle="Икры"            data-norm="Бег 3 км: ≤ 12:30 (золото, м 18–24)"><title>Икры</title></circle>
+                                <circle class="mm3-dot mm3-dot--neutral" cx="205" cy="180" r="12" data-muscle="Плечи"           data-norm="Рывок гири 16 кг: ≥ 45 раз (золото, м 18–24)"><title>Плечи</title></circle>
+                                <circle class="mm3-dot mm3-dot--neutral" cx="315" cy="180" r="12" data-muscle="Плечи"           data-norm="Рывок гири 16 кг: ≥ 45 раз (золото, м 18–24)"><title>Плечи</title></circle>
+                                <circle class="mm3-dot mm3-dot--neutral" cx="232" cy="162" r="12" data-muscle="Трапеции"        data-norm="Рывок гири 16 кг: ≥ 45 раз (золото, м 18–24)"><title>Трапеции</title></circle>
+                                <circle class="mm3-dot mm3-dot--neutral" cx="288" cy="162" r="12" data-muscle="Трапеции"        data-norm="Рывок гири 16 кг: ≥ 45 раз (золото, м 18–24)"><title>Трапеции</title></circle>
+                                <circle class="mm3-dot mm3-dot--red"     cx="205" cy="222" r="12" data-muscle="Бицепс"          data-norm="Подтягивания: ≥ 13 раз (золото, м 18–24)"><title>Бицепс</title></circle>
+                                <circle class="mm3-dot mm3-dot--red"     cx="315" cy="222" r="12" data-muscle="Бицепс"          data-norm="Подтягивания: ≥ 13 раз (золото, м 18–24)"><title>Бицепс</title></circle>
+                                <circle class="mm3-dot mm3-dot--red"     cx="233" cy="200" r="12" data-muscle="Грудная (большая)" data-norm="Отжимания от пола: ≥ 44 раза (золото, м 18–24)"><title>Грудная (большая)</title></circle>
+                                <circle class="mm3-dot mm3-dot--red"     cx="287" cy="200" r="12" data-muscle="Грудная (большая)" data-norm="Отжимания от пола: ≥ 44 раза (золото, м 18–24)"><title>Грудная (большая)</title></circle>
                             </g>
+                        </svg>
+                        <figcaption class="mm3-label">ФРОНТ</figcaption>
+                    </figure>
 
-                            <!-- Numbered circles (one per muscle group). Populated by JS. -->
+                    <!-- BACK VIEW: same skeleton, mirrored muscle set -->
+                    <figure class="mm3-figure">
+                        <svg class="mm3-svg" viewBox="0 0 520 640"
+                             xmlns="http://www.w3.org/2000/svg"
+                             preserveAspectRatio="xMidYMid meet"
+                             aria-label="Мышечная карта — спина">
+                            <g class="mm3-skeleton-slot" data-view="back"></g>
+
+                            <g class="mm3-markers" data-view="back">
+                                <circle class="mm3-dot mm3-dot--neutral" cx="233" cy="162" r="12" data-muscle="Трапеции"   data-norm="Рывок гири 16 кг: ≥ 45 раз (золото, м 18–24)"><title>Трапеции</title></circle>
+                                <circle class="mm3-dot mm3-dot--neutral" cx="287" cy="162" r="12" data-muscle="Трапеции"   data-norm="Рывок гири 16 кг: ≥ 45 раз (золото, м 18–24)"><title>Трапеции</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="220" cy="234" r="12" data-muscle="Широчайшие" data-norm="Подтягивания: ≥ 13 раз (золото, м 18–24)"><title>Широчайшие</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="300" cy="234" r="12" data-muscle="Широчайшие" data-norm="Подтягивания: ≥ 13 раз (золото, м 18–24)"><title>Широчайшие</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="260" cy="320" r="12" data-muscle="Поясница"   data-norm="Наклон вперёд стоя: ≥ +13 см (золото, м 18–24)"><title>Поясница</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="236" cy="370" r="12" data-muscle="Ягодицы"    data-norm="Прыжок в длину с места: ≥ 240 см (золото, м 18–24)"><title>Ягодицы</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="284" cy="370" r="12" data-muscle="Ягодицы"    data-norm="Прыжок в длину с места: ≥ 240 см (золото, м 18–24)"><title>Ягодицы</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="228" cy="515" r="12" data-muscle="Икры"       data-norm="Бег 3 км: ≤ 12:30 (золото, м 18–24)"><title>Икры</title></circle>
+                                <circle class="mm3-dot mm3-dot--green"   cx="292" cy="515" r="12" data-muscle="Икры"       data-norm="Бег 3 км: ≤ 12:30 (золото, м 18–24)"><title>Икры</title></circle>
+                            </g>
+                        </svg>
+                        <figcaption class="mm3-label">СПИНА</figcaption>
+                    </figure>
+                </div>
+
+                <!-- =====================================================
+                     Legacy silhouette figures kept hidden so the legacy
+                     muscle-numbers / muscle-point code paths don't throw.
+                     They are not displayed on screen.
+                     ===================================================== -->
+                <div class="mm3-legacy-hidden" aria-hidden="true" hidden>
+                    <figure class="anatomy-figure">
+                        <svg class="anatomy-svg" id="anatomy-front" viewBox="0 0 320 640"
+                             xmlns="http://www.w3.org/2000/svg"
+                             preserveAspectRatio="xMidYMid meet"
+                             aria-label="Силуэт фронт">
+                            <path class="silhouette" d="M 160 30
+C 182 28 192 46 188 72
+C 186 86 180 94 176 98
+L 176 118
+C 198 122 220 128 236 140
+C 248 172 256 208 262 248
+C 268 280 276 320 286 362
+C 290 374 288 386 282 388
+C 274 390 268 386 262 378
+C 254 360 244 330 238 304
+C 230 272 222 240 216 212
+C 212 190 210 170 208 152
+C 206 180 202 210 200 238
+C 210 258 220 274 220 292
+C 220 316 216 348 212 382
+C 206 420 198 454 194 488
+C 190 518 186 548 184 578
+L 200 616
+L 202 624
+L 168 624
+L 170 614
+L 172 580
+C 174 546 174 510 172 474
+C 168 432 164 388 162 348
+L 160 316
+L 158 348
+C 156 388 152 432 148 474
+C 146 510 146 546 148 580
+L 150 614
+L 152 624
+L 118 624
+L 120 616
+L 136 578
+C 134 548 130 518 126 488
+C 122 454 114 420 108 382
+C 104 348 100 316 100 292
+C 100 274 110 258 120 238
+C 118 210 114 180 112 152
+C 110 170 108 190 104 212
+C 98 240 90 272 82 304
+C 76 330 66 360 58 378
+C 52 386 46 390 38 388
+C 32 384 30 374 34 362
+C 44 320 52 280 58 248
+C 64 208 72 172 84 140
+C 100 128 122 122 144 118
+L 144 98
+C 140 94 134 86 132 72
+C 128 46 138 28 160 30 Z"/>
                             <g class="muscle-numbers" data-numbers="front"></g>
                         </svg>
+                        <figcaption class="anatomy-figure__label">ФРОНТ</figcaption>
                     </figure>
 
                     <figure class="anatomy-figure">
-                        <figcaption class="anatomy-figure__label">Спина</figcaption>
-                        <svg class="anatomy-svg" id="anatomy-back" viewBox="0 0 200 580"
+                        <svg class="anatomy-svg" id="anatomy-back" viewBox="0 0 320 640"
                              xmlns="http://www.w3.org/2000/svg"
-                             preserveAspectRatio="xMidYMid meet">
-                            <!-- Same silhouette outline for back view. -->
-                            <path class="silhouette" d="
-                                M 100 14
-                                C 124 14 138 34 136 56
-                                C 134 72 126 82 120 86
-                                L 120 92
-                                L 148 96
-                                C 160 98 170 108 174 124
-                                L 176 150
-                                L 180 220
-                                L 180 280
-                                L 178 310
-                                L 175 345
-                                L 160 345
-                                L 160 310
-                                L 158 270
-                                L 152 200
-                                L 148 160
-                                L 138 158
-                                L 140 240
-                                L 142 290
-                                L 146 330
-                                L 144 440
-                                L 138 540
-                                L 142 550
-                                L 142 556
-                                L 104 556
-                                L 104 550
-                                L 106 540
-                                L 104 440
-                                L 104 330
-                                L 100 280
-                                L 96 330
-                                L 96 440
-                                L 94 540
-                                L 94 550
-                                L 96 556
-                                L 58 556
-                                L 58 550
-                                L 62 540
-                                L 56 440
-                                L 54 330
-                                L 58 290
-                                L 60 240
-                                L 62 158
-                                L 52 160
-                                L 48 200
-                                L 42 270
-                                L 40 310
-                                L 40 345
-                                L 25 345
-                                L 22 310
-                                L 20 280
-                                L 20 220
-                                L 24 150
-                                L 26 124
-                                C 30 108 40 98 52 96
-                                L 80 92
-                                L 80 86
-                                C 74 82 66 72 64 56
-                                C 62 34 76 14 100 14 Z"/>
-
-                            <g class="muscles">
-                                <!-- 11. Trapezius (diamond across upper back) -->
-                                <path class="muscle" data-muscle="traps" data-percent="0"
-                                      d="M 82 92 L 118 92 L 140 135 L 100 160 L 60 135 Z"/>
-
-                                <!-- 9. Lats (V-flare from upper back down to waist) -->
-                                <path class="muscle" data-muscle="lats" data-percent="0"
-                                      d="M 56 150 Q 44 215 58 258 L 98 260 L 98 168 L 70 156 Z"/>
-                                <path class="muscle" data-muscle="lats" data-percent="0"
-                                      d="M 144 150 Q 156 215 142 258 L 102 260 L 102 168 L 130 156 Z"/>
-
-                                <!-- 10. Lower back (sacrum area) -->
-                                <path class="muscle" data-muscle="lowback" data-percent="0"
-                                      d="M 82 248 L 118 248 L 120 298 L 80 298 Z"/>
-
-                                <!-- 13. Glutes-back (cheeks) -->
-                                <path class="muscle" data-muscle="glutes-back" data-percent="0"
-                                      d="M 58 300 Q 50 325 60 348 L 98 352 L 98 298 Z"/>
-                                <path class="muscle" data-muscle="glutes-back" data-percent="0"
-                                      d="M 142 300 Q 150 325 140 348 L 102 352 L 102 298 Z"/>
-
-                                <!-- 12. Hamstrings (back of thighs) -->
-                                <path class="muscle" data-muscle="hamstrings" data-percent="0"
-                                      d="M 64 360 Q 58 400 62 430 L 96 430 Q 100 400 94 360 Z"/>
-                                <path class="muscle" data-muscle="hamstrings" data-percent="0"
-                                      d="M 136 360 Q 142 400 138 430 L 104 430 Q 100 400 106 360 Z"/>
-
-                                <!-- 14. Calves-back (gastrocnemius, wider, central bulge) -->
-                                <path class="muscle" data-muscle="calves-back" data-percent="0"
-                                      d="M 60 445 Q 52 485 66 530 L 94 530 Q 98 485 90 445 Z"/>
-                                <path class="muscle" data-muscle="calves-back" data-percent="0"
-                                      d="M 140 445 Q 148 485 134 530 L 106 530 Q 102 485 110 445 Z"/>
-                            </g>
-
+                             preserveAspectRatio="xMidYMid meet"
+                             aria-label="Силуэт спина">
+                            <path class="silhouette" d="M 160 30
+C 182 28 192 46 188 72
+C 186 86 180 94 176 98
+L 176 118
+C 198 122 220 128 236 140
+C 248 172 256 208 262 248
+C 268 280 276 320 286 362
+C 290 374 288 386 282 388
+C 274 390 268 386 262 378
+C 254 360 244 330 238 304
+C 230 272 222 240 216 212
+C 212 190 210 170 208 152
+C 206 180 202 210 200 238
+C 210 258 220 274 220 292
+C 220 316 216 348 212 382
+C 206 420 198 454 194 488
+C 190 518 186 548 184 578
+L 200 616
+L 202 624
+L 168 624
+L 170 614
+L 172 580
+C 174 546 174 510 172 474
+C 168 432 164 388 162 348
+L 160 316
+L 158 348
+C 156 388 152 432 148 474
+C 146 510 146 546 148 580
+L 150 614
+L 152 624
+L 118 624
+L 120 616
+L 136 578
+C 134 548 130 518 126 488
+C 122 454 114 420 108 382
+C 104 348 100 316 100 292
+C 100 274 110 258 120 238
+C 118 210 114 180 112 152
+C 110 170 108 190 104 212
+C 98 240 90 272 82 304
+C 76 330 66 360 58 378
+C 52 386 46 390 38 388
+C 32 384 30 374 34 362
+C 44 320 52 280 58 248
+C 64 208 72 172 84 140
+C 100 128 122 122 144 118
+L 144 98
+C 140 94 134 86 132 72
+C 128 46 138 28 160 30 Z"/>
                             <g class="muscle-numbers" data-numbers="back"></g>
                         </svg>
+                        <figcaption class="anatomy-figure__label">СПИНА</figcaption>
                     </figure>
                 </div>
 
-                <div class="muscle-legend" aria-label="Цветовая легенда">
+                <div class="muscle-legend mm3-legend" aria-label="Цветовая легенда">
                     <span><i class="legend-dot--none"></i>нет данных</span>
                     <span><i style="background:#FF4444"></i>&lt; 50% · требует работы</span>
                     <span><i style="background:#FFB800"></i>50–70% · развивается</span>
                     <span><i style="background:#7BC67E"></i>70–90% · хорошо</span>
                     <span><i style="background:#2E7D32"></i>&gt; 90% · отлично</span>
                 </div>
+                </div>
 
-                <!-- Muscle click tooltip (positioned dynamically, hidden by default) -->
-                <div class="muscle-tooltip" id="muscle-tooltip" role="dialog" aria-modal="false" hidden>
-                    <button type="button" class="muscle-tooltip__close" id="muscle-tooltip-close" aria-label="Закрыть">×</button>
-                    <div class="muscle-tooltip__head">
-                        <span class="muscle-tooltip__num" id="muscle-tooltip-num">1</span>
-                        <h3 class="muscle-tooltip__name" id="muscle-tooltip-name">—</h3>
+                <div class="muscle-screen" id="muscle-screen" role="region" aria-labelledby="muscle-screen-title" hidden>
+                    <button type="button" class="muscle-back" id="muscle-back-btn">← Назад</button>
+                    <div class="muscle-screen__head">
+                        <span class="muscle-screen__num" id="muscle-screen-num" aria-hidden="true">0</span>
+                        <h2 class="muscle-screen__title" id="muscle-screen-title">—</h2>
                     </div>
-                    <div class="muscle-tooltip__gto">
-                        <div class="muscle-tooltip__gto-head">Норматив ГТО</div>
-                        <ul class="muscle-tooltip__gto-list" id="muscle-tooltip-gto-list"></ul>
+                    <div class="muscle-pill" id="muscle-screen-pill" role="status">—</div>
+                    <div class="muscle-block__k">За что отвечает</div>
+                    <p class="muscle-block__role" id="muscle-screen-role"></p>
+                    <div class="muscle-block__k">Нормативы ГТО</div>
+                    <div style="overflow-x: auto">
+                        <table class="muscle-gto" id="muscle-gto-table" aria-label="Нормативы ГТО, золото, мужчины 18–24">
+                            <thead>
+                                <tr>
+                                    <th>Упражнение</th>
+                                    <th>Норматив (золото, муж 18–24)</th>
+                                    <th>Твой результат</th>
+                                    <th>Выполнение %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="muscle-gto-tbody"></tbody>
+                        </table>
                     </div>
-                    <div class="muscle-tooltip__row">
-                        <span>Текущее развитие</span><b id="muscle-tooltip-value">—</b>
-                    </div>
-                    <div class="muscle-tooltip__status" id="muscle-tooltip-status">—</div>
                 </div>
             </section>
 
@@ -4342,6 +4372,9 @@
             screens.forEach((s) => s.classList.remove('is-active'));
             const target = document.getElementById('screen-' + name);
             if (target) target.classList.add('is-active');
+            if (name !== 'diagnosis' && typeof MusclePanel !== 'undefined' && MusclePanel.close) {
+                try { MusclePanel.close(); } catch (e) { /* */ }
+            }
         }
 
         /* Muscle hotness — peaks at 81, decays either side (wider than probability) */
@@ -4584,142 +4617,357 @@
         }
 
         /* =====================================================================
-           MusclePanel module — vector anatomy map.
-
-           TWO SVG silhouettes (front + back) each hold a set of muscle <path>
-           elements. Every muscle path carries a `data-muscle` group id and a
-           `data-percent` development value (0 = "no data, not tested yet").
-
-           The module:
-             • Paints each muscle via applyMuscleColors() using data-percent.
-             • Draws a numbered disc over each muscle group once, at a fixed
-               anchor point inside that figure's SVG viewBox (200 × 580).
-             • Opens a click-tooltip with GTO-binding, current %, target %, and
-               a textual status based on the colour band.
-             • Exposes a "Демо-режим" button that stamps in sample values so the
-               map can be seen in colour before real tests are entered.
+           MusclePanel — векторная карта, экран нормативов ГТО, localStorage.
         ===================================================================== */
         const MusclePanel = (function () {
-            /* Colour + status bands. "no data" (percent === 0) is a separate
-               band rendered in neutral grey; it explicitly means the athlete
-               has not yet taken the relevant test. */
+            const LS = 'muscle_';
+
+            /* Заливка круга на карте: 0 и нет данных — белый */
+            function mapPointColor(pct) {
+                if (pct <= 0)  return '#FFFFFF';
+                if (pct < 50)  return '#FF4444';
+                if (pct < 70)  return '#FFB800';
+                if (pct <= 90) return '#7BC67E';
+                return '#2E7D32';
+            }
             function colorFor(pct) {
-                if (pct <= 0)  return '#F0F0F0';
+                if (pct <= 0)  return '#888888';
                 if (pct < 50)  return '#FF4444';
                 if (pct < 70)  return '#FFB800';
                 if (pct <= 90) return '#7BC67E';
                 return '#2E7D32';
             }
             function statusFor(pct) {
-                if (pct <= 0) return { text: 'Нет данных',     cls: 'muscle-tooltip__status--none' };
-                if (pct < 50) return { text: 'Требует работы', cls: 'muscle-tooltip__status--red' };
-                if (pct < 70) return { text: 'Развивается',    cls: 'muscle-tooltip__status--yellow' };
-                if (pct <= 90) return { text: 'Хорошо',        cls: 'muscle-tooltip__status--lgreen' };
-                return { text: 'Отлично', cls: 'muscle-tooltip__status--green' };
+                if (pct <= 0) return { text: 'Нет данных',     cls: 'muscle-pill--none' };
+                if (pct < 50) return { text: 'Требует работы', cls: 'muscle-pill--red' };
+                if (pct < 70) return { text: 'Развивается',    cls: 'muscle-pill--yellow' };
+                if (pct <= 90) return { text: 'Хорошо',         cls: 'muscle-pill--lgreen' };
+                return { text: 'Отлично', cls: 'muscle-pill--green' };
             }
 
-            /* Muscle registry — one row per group.
-                 num     — display number (1–14)
-                 id      — data-muscle key shared across paired paths
-                 name    — Russian label
-                 gto     — GTO test names this group hangs off of
-                 view    — which SVG the numbered disc is drawn in
-                 anchor  — [x, y] in that SVG's viewBox (200 × 580)               */
             const MUSCLES = [
-                /* --- FRONT view --------------------------------------------- */
-                { num: 1,  id: 'quads',        name: 'Квадрицепсы',
-                  gto: ['Бег 30 м', 'Прыжок в длину с места'],
-                  view: 'front', anchor: [80, 380] },
-                { num: 2,  id: 'glutes-front', name: 'Ягодицы (передняя часть / ПБТ)',
-                  gto: ['Прыжок в длину с места', 'Бег 30 м'],
-                  view: 'front', anchor: [58, 340] },
-                { num: 3,  id: 'calves-front', name: 'Икры (передняя)',
-                  gto: ['Прыжок', 'Бег 2 км'],
-                  view: 'front', anchor: [78, 490] },
-                { num: 4,  id: 'core',         name: 'Кор / Косые мышцы',
-                  gto: ['Рывок гири', 'Подтягивания'],
-                  view: 'front', anchor: [100, 225] },
-                { num: 5,  id: 'delts',        name: 'Дельты (передняя)',
-                  gto: ['Отжимания', 'Рывок гири'],
-                  view: 'front', anchor: [78, 125] },
-                { num: 6,  id: 'triceps',      name: 'Трицепс',
-                  gto: ['Отжимания'],
-                  view: 'front', anchor: [34, 210] },
-                { num: 7,  id: 'forearms',     name: 'Предплечья',
-                  gto: ['Рывок гири (расширенный тест — кистевой динамометр)'],
-                  view: 'front', anchor: [32, 307] },
-                { num: 8,  id: 'adductors',    name: 'Приводящие',
-                  gto: ['Прыжок в сторону (расширенный тест)'],
-                  view: 'front', anchor: [100, 378] },
-
-                /* --- BACK view ---------------------------------------------- */
-                { num: 9,  id: 'lats',         name: 'Широчайшие',
-                  gto: ['Подтягивания'],
-                  view: 'back',  anchor: [72, 205] },
-                { num: 10, id: 'lowback',      name: 'Поясница',
-                  gto: ['Наклон вперёд стоя', 'Бег 2 км'],
-                  view: 'back',  anchor: [100, 273] },
-                { num: 11, id: 'traps',        name: 'Трапеции',
-                  gto: ['Подтягивания'],
-                  view: 'back',  anchor: [100, 125] },
-                { num: 12, id: 'hamstrings',   name: 'Бицепс бедра',
-                  gto: ['Наклон вперёд стоя', 'Бег'],
-                  view: 'back',  anchor: [80, 395] },
-                { num: 13, id: 'glutes-back',  name: 'Ягодицы (задняя)',
-                  gto: ['Прыжок в длину с места', 'Бег 30 м'],
-                  view: 'back',  anchor: [76, 325] },
-                { num: 14, id: 'calves-back',  name: 'Икры (задняя / икроножная)',
-                  gto: ['Прыжок', 'Бег 2 км'],
-                  view: 'back',  anchor: [76, 490] },
+                { num: 1, id: 'quads', name: 'Квадрицепсы', view: 'front', anchor: [186, 400],
+                  role: 'Разгибание колена, взрывной толчок, передвижение в стойке',
+                  tests: [
+                    { key: 'run30', label: 'Бег 30 м', normText: '≤ 4,3 с', type: 'time', norm: 4.3 },
+                    { key: 'longJump', label: 'Прыжок в длину с места', normText: '≥ 230 см', type: 'higher', norm: 230 },
+                  ] },
+                { num: 2, id: 'glutes-front', name: 'Ягодицы (передняя)', view: 'front', anchor: [206, 286],
+                  role: 'Разгибание бедра, мощь толчка, стабилизация таза при ударе',
+                  tests: [
+                    { key: 'longJump', label: 'Прыжок в длину с места', normText: '≥ 230 см', type: 'higher', norm: 230 },
+                    { key: 'run30', label: 'Бег 30 м', normText: '≤ 4,3 с', type: 'time', norm: 4.3 },
+                  ] },
+                { num: 3, id: 'calves-front', name: 'Икры (передняя)', view: 'front', anchor: [180, 510],
+                  role: 'Финальный толчок стопы, работа на носках, выносливость передвижения',
+                  tests: [
+                    { key: 'longJump', label: 'Прыжок в длину с места', normText: '≥ 230 см', type: 'higher', norm: 230 },
+                    { key: 'run3k', label: 'Бег 3 км', normText: '≤ 12:00', type: 'time', norm: 720 },
+                  ] },
+                { num: 4, id: 'core', name: 'Кор / косые', view: 'front', anchor: [192, 204],
+                  role: 'Передача усилия от ног к рукам, ротация корпуса в ударе, защита от нокдауна',
+                  tests: [
+                    { key: 'snatch', label: 'Рывок гири 16 кг', normText: '≥ 40 (золото)', type: 'higher', norm: 40 },
+                    { key: 'pullups', label: 'Подтягивания', normText: '≥ 15', type: 'higher', norm: 15 },
+                  ] },
+                { num: 5, id: 'delts', name: 'Дельты (передняя)', view: 'front', anchor: [222, 150],
+                  role: 'Удержание гарды весь бой, подъём рук в ударе, защита головы',
+                  tests: [
+                    { key: 'pushups', label: 'Отжимания', normText: '≥ 44 (золото)', type: 'higher', norm: 44 },
+                    { key: 'snatch', label: 'Рывок гири 16 кг', normText: '≥ 40', type: 'higher', norm: 40 },
+                  ] },
+                { num: 6, id: 'triceps', name: 'Трицепс', view: 'front', anchor: [258, 212],
+                  role: 'Разгибание руки в ударе, скорость выброса, жёсткость в момент контакта',
+                  tests: [
+                    { key: 'pushups', label: 'Отжимания', normText: '≥ 44 (золото)', type: 'higher', norm: 44 },
+                  ] },
+                { num: 7, id: 'forearms', name: 'Предплечья', view: 'front', anchor: [278, 332],
+                  role: 'Жёсткость кулака при ударе, выносливость гарды, контроль захвата',
+                  tests: [
+                    { key: 'snatch', label: 'Рывок гири 16 кг', normText: '≥ 40', type: 'higher', norm: 40 },
+                    { key: 'dynam', label: 'Кистевой динамометр (расширенный тест)', normText: '≥ 55 кг', type: 'higher', norm: 55 },
+                  ] },
+                { num: 8, id: 'adductors', name: 'Приводящие', view: 'front', anchor: [144, 346],
+                  role: 'Устойчивость стойки при боковых шагах, сайд-степ, смена направления',
+                  tests: [
+                    { key: 'longJump', label: 'Прыжок в длину с места', normText: '≥ 230 см', type: 'higher', norm: 230 },
+                    { key: 'sideJump', label: 'Прыжок в сторону (расширенный тест)', normText: '—', type: 'optional' },
+                  ] },
+                { num: 9, id: 'lats', name: 'Широчайшие', view: 'back', anchor: [200, 200],
+                  role: 'Тяга руки назад, скорость возврата после удара, мощь хука',
+                  tests: [
+                    { key: 'pullups', label: 'Подтягивания', normText: '≥ 15 (золото)', type: 'higher', norm: 15 },
+                  ] },
+                { num: 10, id: 'lowback', name: 'Поясница', view: 'back', anchor: [160, 288],
+                  role: 'Стабилизация позвоночника, передача усилия, нырки и уклоны',
+                  tests: [
+                    { key: 'toe', label: 'Наклон вперёд стоя', normText: '≥ +13 см (золото)', type: 'higher', norm: 13 },
+                    { key: 'run3k', label: 'Бег 3 км', normText: '≤ 12:00', type: 'time', norm: 720 },
+                  ] },
+                { num: 11, id: 'traps', name: 'Трапеции', view: 'back', anchor: [160, 150],
+                  role: 'Защита шеи, поглощение ударов в голову, стабилизация лопаток',
+                  tests: [
+                    { key: 'pullups', label: 'Подтягивания', normText: '≥ 15', type: 'higher', norm: 15 },
+                  ] },
+                { num: 12, id: 'hamstrings', name: 'Бицепс бедра', view: 'back', anchor: [186, 400],
+                  role: 'Торможение при смене направления, нырки, гибкость задней цепи',
+                  tests: [
+                    { key: 'toe', label: 'Наклон вперёд стоя', normText: '≥ +13 см (золото)', type: 'higher', norm: 13 },
+                    { key: 'run3k', label: 'Бег 3 км', normText: '≤ 12:00', type: 'time', norm: 720 },
+                  ] },
+                { num: 13, id: 'glutes-back', name: 'Ягодицы (задняя)', view: 'back', anchor: [186, 298],
+                  role: 'Разгибание бедра, мощь толчка, стабилизация таза при ударе',
+                  tests: [
+                    { key: 'longJump', label: 'Прыжок в длину с места', normText: '≥ 230 см', type: 'higher', norm: 230 },
+                    { key: 'run30', label: 'Бег 30 м', normText: '≤ 4,3 с', type: 'time', norm: 4.3 },
+                  ] },
+                { num: 14, id: 'calves-back', name: 'Икры (задняя)', view: 'back', anchor: [180, 510],
+                  role: 'Финальный толчок стопы, работа на носках, выносливость передвижения',
+                  tests: [
+                    { key: 'longJump', label: 'Прыжок в длину с места', normText: '≥ 230 см', type: 'higher', norm: 230 },
+                    { key: 'run3k', label: 'Бег 3 км', normText: '≤ 12:00', type: 'time', norm: 720 },
+                  ] },
             ];
 
-            /* Fast lookup: id → muscle meta. */
             const BY_ID = MUSCLES.reduce((acc, m) => { acc[m.id] = m; return acc; }, {});
 
-            /* Demo values — spec from the brief. Both glutes/calves IDs share
-               a single source value because anatomically they are the same
-               muscle seen from different angles. */
-            const DEMO_PERCENTS = {
-                quads: 82,
-                'glutes-front': 88, 'glutes-back': 88,
-                'calves-front': 74, 'calves-back': 74,
-                core: 65, delts: 78, triceps: 71, forearms: 55, adductors: 60,
-                lats: 85, lowback: 59, traps: 68, hamstrings: 65,
+            /* Демо: строки в localStorage → средний % ≈ картине развития. */
+            const DEMO_STORAGE = {
+                quads:         { run30: '4,9', longJump: '200' },
+                'glutes-front': { longJump: '220', run30: '4,4' },
+                'glutes-back':  { longJump: '220', run30: '4,4' },
+                'calves-front': { longJump: '200', run3k: '12:30' },
+                'calves-back':  { longJump: '200', run3k: '12:30' },
+                core:          { snatch: '35', pullups: '12' },
+                delts:         { pushups: '40', snatch: '36' },
+                triceps:       { pushups: '40' },
+                forearms:      { snatch: '36', dynam: '48' },
+                adductors:     { longJump: '195', sideJump: '1,8' },
+                lats:          { pullups: '14' },
+                lowback:       { toe: '9', run3k: '13:00' },
+                traps:         { pullups: '12' },
+                hamstrings:    { toe: '9', run3k: '13:00' },
             };
 
-            const NUM_R = 10;  // radius of numbered disc in SVG units
-
-            let tooltip, tooltipClose, tooltipNum, tooltipName,
-                tooltipValue, tooltipStatus, tooltipGto;
-            let demoBtn, resetBtn, demoHint;
+            let mapView, screenEl, backBtn, titleEl, numEl, pillEl, roleEl, tbody;
             let activeEl = null;
+            let currentMuscle = null;
             let built = false;
             let demoOn = false;
+            let demoBtn, resetBtn, demoHint;
 
             function createSvgEl(tag, attrs) {
                 const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
-                if (attrs) {
-                    for (const k in attrs) el.setAttribute(k, attrs[k]);
-                }
+                if (attrs) for (const k in attrs) el.setAttribute(k, attrs[k]);
                 return el;
             }
 
-            /* Paint every muscle path by its current data-percent. Called on
-               initial render and every time the user toggles demo/reset. */
-            function applyMuscleColors() {
-                const paths = document.querySelectorAll('.anatomy-svg .muscle');
-                paths.forEach((p) => {
-                    const pct = parseFloat(p.getAttribute('data-percent')) || 0;
-                    p.setAttribute('fill', colorFor(pct));
+            function storageKey(muscleId, testKey) {
+                return LS + muscleId + '_' + testKey;
+            }
+
+            function getStored(muscleId, testKey) {
+                try { return localStorage.getItem(storageKey(muscleId, testKey)) || ''; }
+                catch (e) { return ''; }
+            }
+            function setStored(muscleId, testKey, val) {
+                try { localStorage.setItem(storageKey(muscleId, testKey), val); }
+                catch (e) { /* ignore */ }
+            }
+
+            function clearAllStorageForTests() {
+                MUSCLES.forEach((m) => {
+                    m.tests.forEach((t) => {
+                        try { localStorage.removeItem(storageKey(m.id, t.key)); } catch (e) { /* */ }
+                    });
                 });
             }
 
-            /* Write a new pct into every <path> in a muscle group. */
+            function parseResultRaw(s, test) {
+                const t = (s || '').trim();
+                if (!t) return null;
+                if (test.type === 'optional') return null;
+                if (test.type === 'time') {
+                    if (/^\d{1,2}:\d{1,2}([.,]\d+)?$/.test(t) || /^\d{1,2}:\d{2}$/.test(t)) {
+                        const p = t.replace(',', '.').split(':');
+                        if (p.length >= 2) {
+                            return parseInt(p[0], 10) * 60 + parseFloat(p[1]) || 0;
+                        }
+                    }
+                    return parseFloat(t.replace(',', '.').replace(/[^\d.+-]/g, '')) || 0;
+                }
+                if (test.type === 'higher') {
+                    return parseFloat(t.replace(',', '.').replace(/^\+/, '')) || 0;
+                }
+                return null;
+            }
+
+            function computePctResult(test, num) {
+                if (test.type === 'optional' || test.norm == null) return null;
+                if (num == null || isNaN(num) || num <= 0) return null;
+                if (test.type === 'time') {
+                    return Math.min(100, (test.norm / num) * 100);
+                }
+                return Math.min(100, (num / test.norm) * 100);
+            }
+
+            function averageForMuscle(m) {
+                const pcts = [];
+                m.tests.forEach((t) => {
+                    if (t.type === 'optional') return;
+                    const raw = getStored(m.id, t.key);
+                    const n = parseResultRaw(raw, t);
+                    const p = computePctResult(t, n);
+                    if (p != null) pcts.push(p);
+                });
+                if (pcts.length === 0) return 0;
+                return pcts.reduce((a, b) => a + b, 0) / pcts.length;
+            }
+
+            function formatPct(p) {
+                if (p == null) return '—';
+                return Math.round(p) + ' %';
+            }
+
+            function applyMuscleColors() {
+                document.querySelectorAll('.anatomy-svg .muscle-point[data-muscle]').forEach((g) => {
+                    const pct = parseFloat(g.getAttribute('data-percent')) || 0;
+                    const hit = g.querySelector('.muscle-point__hit');
+                    if (hit) hit.setAttribute('fill', mapPointColor(pct));
+                });
+            }
+
             function setPercent(id, pct) {
-                const paths = document.querySelectorAll(
-                    '.anatomy-svg .muscle[data-muscle="' + id + '"]'
-                );
-                paths.forEach((p) => p.setAttribute('data-percent', String(pct)));
+                const v = String(Math.round(pct * 10) / 10);
+                document.querySelectorAll(
+                    '.anatomy-svg .muscle-point[data-muscle="' + id + '"]'
+                ).forEach((g) => g.setAttribute('data-percent', v));
+            }
+
+            function refreshMapFromStorage() {
+                MUSCLES.forEach((m) => setPercent(m.id, averageForMuscle(m)));
+                applyMuscleColors();
+            }
+
+            function setActiveGroup(id) {
+                document.querySelectorAll('.anatomy-svg .muscle-point.is-active')
+                    .forEach((el) => el.classList.remove('is-active'));
+                document.querySelectorAll(
+                    '.anatomy-svg .muscle-point[data-muscle="' + id + '"]'
+                ).forEach((el) => el.classList.add('is-active'));
+            }
+
+            function clearActiveGroup() {
+                document.querySelectorAll('.anatomy-svg .muscle-point.is-active')
+                    .forEach((el) => el.classList.remove('is-active'));
+            }
+
+            function updateScreenPill(m) {
+                if (!pillEl) return;
+                const avg = averageForMuscle(m);
+                const s = statusFor(avg);
+                pillEl.className = 'muscle-pill ' + s.cls;
+                pillEl.textContent = s.text + (avg > 0 ? ' (' + formatPct(avg) + ')' : '');
+            }
+
+            function buildGtoTable(m) {
+                while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+                m.tests.forEach((t) => {
+                    const tr = document.createElement('tr');
+                    const ntd = document.createElement('td');
+                    ntd.textContent = t.label;
+                    tr.appendChild(ntd);
+                    const normTd = document.createElement('td');
+                    normTd.textContent = t.normText;
+                    tr.appendChild(normTd);
+                    const inpTd = document.createElement('td');
+                    const inp = document.createElement('input');
+                    inp.className = 'muscle-gto__input';
+                    inp.type = 'text';
+                    inp.setAttribute('data-mid', m.id);
+                    inp.setAttribute('data-tk', t.key);
+                    inp.value = getStored(m.id, t.key);
+                    inp.setAttribute('aria-label', t.label + ', твой результат');
+                    if (t.type === 'time') {
+                        inp.placeholder = '4,3 или 12:00';
+                    } else if (t.type === 'higher') {
+                        inp.placeholder = t.key === 'toe' ? 'см' : (t.key === 'dynam' ? 'кг' : '');
+                    } else {
+                        inp.placeholder = 'оценка';
+                    }
+                    inp.addEventListener('input', onResultInput);
+                    inpTd.appendChild(inp);
+                    tr.appendChild(inpTd);
+                    const pctTd = document.createElement('td');
+                    pctTd.className = 'muscle-gto__pct';
+                    tr.appendChild(pctTd);
+                    tr.dataset.testKey = t.key;
+                    tbody.appendChild(tr);
+                    updateRowPct(m, t, tr, inp.value);
+                });
+            }
+
+            function onResultInput(ev) {
+                const inp = ev.target;
+                const mid = inp.getAttribute('data-mid');
+                const tk  = inp.getAttribute('data-tk');
+                if (!mid || !tk) return;
+                setStored(mid, tk, inp.value);
+                const m = BY_ID[mid];
+                if (!m) return;
+                const tr = inp.closest('tr');
+                const t = m.tests.find((x) => x.key === tk);
+                if (t && tr) updateRowPct(m, t, tr, inp.value);
+                updateScreenPill(m);
+                updateNumBadge();
+                setPercent(m.id, averageForMuscle(m));
+                applyMuscleColors();
+            }
+
+            function updateRowPct(m, t, tr, raw) {
+                const cell = tr.querySelector('.muscle-gto__pct');
+                if (!cell) return;
+                if (t.type === 'optional') {
+                    cell.textContent = '—';
+                    return;
+                }
+                const n = parseResultRaw(raw, t);
+                const p = computePctResult(t, n);
+                cell.textContent = p == null ? '—' : (Math.round(p) + ' %');
+            }
+
+            function openMuscleScreen(m, anchor) {
+                currentMuscle = m;
+                if (mapView) mapView.hidden = true;
+                if (screenEl) {
+                    screenEl.hidden = false;
+                }
+                if (activeEl) activeEl.classList.remove('is-active');
+                activeEl = anchor;
+                if (activeEl && activeEl.classList) activeEl.classList.add('is-active');
+                setActiveGroup(m.id);
+                if (titleEl) titleEl.textContent = m.name;
+                if (roleEl) roleEl.textContent = m.role;
+                buildGtoTable(m);
+                updateNumBadge();
+                updateScreenPill(m);
+            }
+
+            function updateNumBadge() {
+                if (!numEl || !currentMuscle) return;
+                const ap = averageForMuscle(currentMuscle);
+                numEl.textContent = String(currentMuscle.num);
+                numEl.style.background = ap > 0 ? colorFor(ap) : '#888888';
+            }
+
+            function closeMuscleScreen() {
+                if (screenEl) screenEl.hidden = true;
+                if (mapView) mapView.hidden = false;
+                if (activeEl && activeEl.classList) activeEl.classList.remove('is-active');
+                activeEl = null;
+                currentMuscle = null;
+                clearActiveGroup();
+                refreshMapFromStorage();
             }
 
             function buildNumbers() {
@@ -4728,68 +4976,57 @@
                 if (!frontG || !backG) return;
                 while (frontG.firstChild) frontG.removeChild(frontG.firstChild);
                 while (backG.firstChild)  backG.removeChild(backG.firstChild);
-
                 MUSCLES.forEach((m) => {
                     const parent = m.view === 'front' ? frontG : backG;
                     const grp = createSvgEl('g', {
-                        class: 'muscle-number',
+                        class: 'muscle-point',
                         'data-num':    String(m.num),
                         'data-muscle': m.id,
-                        tabindex: 0,
-                        role: 'button',
+                        'data-percent': '0',
+                        transform: 'translate(' + m.anchor[0] + ' ' + m.anchor[1] + ')',
+                        tabindex: 0, role: 'button',
                         'aria-label': m.num + '. ' + m.name,
                     });
                     const c = createSvgEl('circle', {
-                        class: 'muscle-number__circle',
-                        cx: m.anchor[0], cy: m.anchor[1], r: NUM_R,
+                        class: 'muscle-point__hit',
+                        cx: 0, cy: 0, r: 10,
                     });
                     const t = createSvgEl('text', {
-                        class: 'muscle-number__text',
-                        x: m.anchor[0], y: m.anchor[1] + 0.5,
+                        class: 'muscle-point__text',
+                        x: 0, y: 0,
                     });
                     t.textContent = String(m.num);
                     grp.appendChild(c);
                     grp.appendChild(t);
-
-                    grp.addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        openTooltip(m, grp);
-                    });
+                    function go() { openMuscleScreen(m, grp); }
+                    grp.addEventListener('click', (ev) => { ev.stopPropagation(); go(); });
                     grp.addEventListener('keydown', (ev) => {
-                        if (ev.key === 'Enter' || ev.key === ' ') {
-                            ev.preventDefault();
-                            openTooltip(m, grp);
-                        }
+                        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); go(); }
                     });
                     parent.appendChild(grp);
                 });
             }
 
-            /* Wire muscle-path clicks (click on the painted shape itself). */
-            function bindMusclePathClicks() {
-                const paths = document.querySelectorAll('.anatomy-svg .muscle');
-                paths.forEach((p) => {
-                    p.addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        const id = p.getAttribute('data-muscle');
-                        const m = BY_ID[id];
-                        if (m) openTooltip(m, p);
-                    });
-                });
-            }
-
             function applyDemo() {
                 demoOn = true;
-                for (const id in DEMO_PERCENTS) setPercent(id, DEMO_PERCENTS[id]);
-                applyMuscleColors();
+                clearAllStorageForTests();
+                for (const mid in DEMO_STORAGE) {
+                    const o = DEMO_STORAGE[mid];
+                    for (const k in o) setStored(mid, k, o[k]);
+                }
+                refreshMapFromStorage();
+                if (currentMuscle && screenEl && !screenEl.hidden) {
+                    buildGtoTable(currentMuscle);
+                    updateScreenPill(currentMuscle);
+                    updateNumBadge();
+                }
                 updateDemoButtons();
             }
             function resetDemo() {
                 demoOn = false;
-                MUSCLES.forEach((m) => setPercent(m.id, 0));
-                applyMuscleColors();
+                clearAllStorageForTests();
+                closeMuscleScreen();
                 updateDemoButtons();
-                closeTooltip();
             }
             function updateDemoButtons() {
                 if (demoBtn)  demoBtn.hidden  = demoOn;
@@ -4799,137 +5036,41 @@
 
             function render() {
                 if (built) return;
-                const root = document.getElementById('muscle-anatomy');
-                if (!root) return;
-
-                /* One-time DOM build. */
+                if (!document.getElementById('muscle-anatomy')) return;
                 buildNumbers();
-                bindMusclePathClicks();
-                applyMuscleColors();
-
-                /* Cache tooltip refs. */
-                tooltip       = document.getElementById('muscle-tooltip');
-                tooltipClose  = document.getElementById('muscle-tooltip-close');
-                tooltipNum    = document.getElementById('muscle-tooltip-num');
-                tooltipName   = document.getElementById('muscle-tooltip-name');
-                tooltipValue  = document.getElementById('muscle-tooltip-value');
-                tooltipStatus = document.getElementById('muscle-tooltip-status');
-                tooltipGto    = document.getElementById('muscle-tooltip-gto-list');
-
-                if (tooltipClose) tooltipClose.addEventListener('click', closeTooltip);
-
-                /* Demo toggle wiring. */
+                mapView  = document.getElementById('anatomy-views');
+                screenEl = document.getElementById('muscle-screen');
+                backBtn  = document.getElementById('muscle-back-btn');
+                titleEl  = document.getElementById('muscle-screen-title');
+                numEl    = document.getElementById('muscle-screen-num');
+                pillEl   = document.getElementById('muscle-screen-pill');
+                roleEl   = document.getElementById('muscle-screen-role');
+                tbody    = document.getElementById('muscle-gto-tbody');
+                if (backBtn) backBtn.addEventListener('click', closeMuscleScreen);
+                document.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Escape' && screenEl && !screenEl.hidden) {
+                        ev.preventDefault();
+                        closeMuscleScreen();
+                    }
+                });
                 demoBtn  = document.getElementById('muscle-demo-btn');
                 resetBtn = document.getElementById('muscle-reset-btn');
                 demoHint = document.getElementById('muscle-demo-hint');
                 if (demoBtn)  demoBtn.addEventListener('click',  applyDemo);
                 if (resetBtn) resetBtn.addEventListener('click', resetDemo);
                 updateDemoButtons();
-
-                /* Dismiss tooltip when clicking outside. */
-                document.addEventListener('click', (ev) => {
-                    if (!tooltip || tooltip.hidden) return;
-                    if (tooltip.contains(ev.target)) return;
-                    if (ev.target.closest('.muscle-number')) return;
-                    if (ev.target.closest('.anatomy-svg .muscle')) return;
-                    closeTooltip();
-                });
-                document.addEventListener('keydown', (ev) => {
-                    if (ev.key === 'Escape') closeTooltip();
-                });
-                window.addEventListener('resize', closeTooltip);
-                window.addEventListener('scroll', closeTooltip, true);
-
+                refreshMapFromStorage();
                 built = true;
             }
 
-            function openTooltip(muscle, anchorEl) {
-                if (!tooltip) return;
-
-                /* Clear previous active highlight (on any shape or number). */
-                if (activeEl) activeEl.classList.remove('is-active');
-                activeEl = anchorEl;
-                if (anchorEl.classList) anchorEl.classList.add('is-active');
-
-                /* Also highlight every muscle path in the group so the user
-                   sees which shape corresponds to the clicked number. */
-                document.querySelectorAll('.anatomy-svg .muscle.is-active')
-                    .forEach((el) => el.classList.remove('is-active'));
-                document.querySelectorAll(
-                    '.anatomy-svg .muscle[data-muscle="' + muscle.id + '"]'
-                ).forEach((el) => el.classList.add('is-active'));
-
-                /* Pull current pct from the first path in this group (the
-                   source of truth after applyMuscleColors). */
-                const firstPath = document.querySelector(
-                    '.anatomy-svg .muscle[data-muscle="' + muscle.id + '"]'
-                );
-                const pct = firstPath
-                    ? (parseFloat(firstPath.getAttribute('data-percent')) || 0)
-                    : 0;
-
-                const fill   = colorFor(pct);
-                const status = statusFor(pct);
-
-                tooltipNum.textContent    = String(muscle.num);
-                tooltipNum.style.background = pct > 0 ? fill : '#888888';
-                tooltipName.textContent   = muscle.name;
-                tooltipValue.textContent  = pct > 0 ? (pct + '%') : '— тест не сдан';
-                tooltipStatus.className   = 'muscle-tooltip__status ' + status.cls;
-                tooltipStatus.textContent = status.text;
-
-                /* GTO list. */
-                while (tooltipGto.firstChild) tooltipGto.removeChild(tooltipGto.firstChild);
-                muscle.gto.forEach((g) => {
-                    const li = document.createElement('li');
-                    li.textContent = g;
-                    tooltipGto.appendChild(li);
-                });
-
-                /* Show, measure, then position. */
-                tooltip.hidden = false;
-                tooltip.style.visibility = 'hidden';
-                tooltip.style.left = '0px';
-                tooltip.style.top  = '0px';
-
-                const rect = anchorEl.getBoundingClientRect();
-                const tw = tooltip.offsetWidth;
-                const th = tooltip.offsetHeight;
-                const gap = 12;
-                const vw = window.innerWidth;
-                const vh = window.innerHeight;
-
-                let top  = rect.top - th - gap;
-                if (top < 8) top = rect.bottom + gap;
-                if (top + th > vh - 8) top = Math.max(8, vh - th - 8);
-
-                let left = rect.left + (rect.width / 2) - (tw / 2);
-                if (left < 8) left = 8;
-                if (left + tw > vw - 8) left = vw - tw - 8;
-
-                tooltip.style.left = left + 'px';
-                tooltip.style.top  = top  + 'px';
-                tooltip.style.visibility = '';
-            }
-
-            function closeTooltip() {
-                if (!tooltip) return;
-                tooltip.hidden = true;
-                if (activeEl && activeEl.classList) {
-                    activeEl.classList.remove('is-active');
-                    activeEl = null;
-                }
-                document.querySelectorAll('.anatomy-svg .muscle.is-active')
-                    .forEach((el) => el.classList.remove('is-active'));
-            }
-
             return {
-                render:             render,
-                close:              closeTooltip,
-                applyMuscleColors:  applyMuscleColors,
-                setPercent:         setPercent,
-                applyDemo:          applyDemo,
-                resetDemo:          resetDemo,
+                render:            render,
+                close:             closeMuscleScreen,
+                applyMuscleColors: applyMuscleColors,
+                setPercent:        setPercent,
+                applyDemo:         applyDemo,
+                resetDemo:         resetDemo,
+                refreshMap:        refreshMapFromStorage,
             };
         })();
 
@@ -5356,6 +5497,83 @@
             function isPositive(n) {
                 return Number.isFinite(n) && n > 0;
             }
+        }
+    })();
+    </script>
+
+    <!-- ==========================================================
+         MM3 — Muscle Map layer (screen 3).
+         Clones the rendered skeleton from screen 2 into the two
+         muscle-map slots and wires up hover/click on the muscle
+         marker circles. Does not touch any existing logic.
+         ========================================================== -->
+    <script>
+    (function () {
+        'use strict';
+
+        function cloneSkeletonIntoSlots() {
+            const source = document.getElementById('skeleton');
+            if (!source || !source.children.length) return false;
+
+            const slots = document.querySelectorAll('.mm3-skeleton-slot');
+            if (!slots.length) return true;
+
+            slots.forEach((slot) => {
+                while (slot.firstChild) slot.removeChild(slot.firstChild);
+                Array.from(source.children).forEach((child) => {
+                    const clone = child.cloneNode(true);
+                    if (clone.removeAttribute) clone.removeAttribute('id');
+                    if (clone.querySelectorAll) {
+                        clone.querySelectorAll('[id]').forEach((el) => el.removeAttribute('id'));
+                    }
+                    slot.appendChild(clone);
+                });
+            });
+            return true;
+        }
+
+        function attachMarkerHandlers() {
+            const dots = document.querySelectorAll('.mm3-dot');
+            dots.forEach((dot) => {
+                dot.setAttribute('tabindex', '0');
+                dot.setAttribute('role', 'button');
+                const name = dot.getAttribute('data-muscle') || '';
+                dot.setAttribute('aria-label', name);
+
+                dot.addEventListener('click', () => {
+                    const norm = dot.getAttribute('data-norm') || '';
+                    const url  = 'muscle_detail.html'
+                               + '?muscle=' + encodeURIComponent(name)
+                               + '&norm='   + encodeURIComponent(norm);
+                    window.location.href = url;
+                });
+                dot.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter' || ev.key === ' ') {
+                        ev.preventDefault();
+                        dot.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                    }
+                });
+            });
+        }
+
+        function boot() {
+            attachMarkerHandlers();
+            if (cloneSkeletonIntoSlots()) return;
+
+            /* Skeleton not yet populated by screen-2 init — retry briefly. */
+            let tries = 0;
+            const timer = setInterval(() => {
+                tries += 1;
+                if (cloneSkeletonIntoSlots() || tries >= 40) {
+                    clearInterval(timer);
+                }
+            }, 50);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', boot);
+        } else {
+            boot();
         }
     })();
     </script>
