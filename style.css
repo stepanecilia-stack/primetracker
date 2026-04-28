@@ -1066,19 +1066,22 @@ table th {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
     margin-bottom: 32px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .profile-container .section-button {
     background: #ffffff !important;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
-    padding: 32px;
+    padding: 24px 16px;
     text-align: center;
     cursor: pointer;
     transition: all 250ms ease;
     color: #1a1a1a !important;
     display: block;
     text-decoration: none;
+    box-sizing: border-box;
 }
 
 .profile-container .section-button:hover {
@@ -1101,18 +1104,16 @@ table th {
 }
 
 .profile-container .section-button-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 0;
     color: inherit;
+    line-height: 1.3;
 }
 
+/* СКРЫВАЕМ ПОДЗАГОЛОВКИ */
 .profile-container .section-button-subtitle {
-    display: none; /* СКРЫТО */
-}
-
-.profile-container .section-button.active .section-button-subtitle {
-    color: rgba(255, 255, 255, 0.8);
+    display: none !important;
 }
 
 /* Блок рекомендаций - полная ширина */
@@ -1204,6 +1205,11 @@ table th {
         flex-direction: column;
     }
 
+    /* УМЕНЬШАЕМ PADDING КОНТЕЙНЕРА */
+    .profile-container {
+        padding: 16px 12px;
+    }
+
     .sections-grid {
         grid-template-columns: 1fr;
     }
@@ -1218,17 +1224,33 @@ table th {
     }
 }
 
-/* МОБИЛЬНЫЙ ≤480px - 2 КОЛОНКИ */
+/* МОБИЛЬНЫЙ ≤480px - СТРОГО 2 КОЛОНКИ */
 @media (max-width: 480px) {
+    /* УМЕНЬШАЕМ PADDING ЕЩЕ БОЛЬШЕ */
+    .profile-container,
+    #page-student-view {
+        padding: 16px 8px;
+    }
+
+    /* 2 КОЛОНКИ С ЯВНЫМ РАЗМЕРОМ */
     .profile-container .sections-grid,
     #page-student-view .sections-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0;
+        margin-left: 0;
+        margin-right: 0;
     }
     
     .profile-container .section-button,
     #page-student-view .section-button {
-        padding: 20px 12px;
+        padding: 16px 8px;
+        box-sizing: border-box;
+        min-width: 0;
+        overflow: hidden;
     }
     
     .profile-container .section-button-icon,
@@ -1239,70 +1261,23 @@ table th {
     
     .profile-container .section-button-title,
     #page-student-view .section-button-title {
-        font-size: 14px;
-        line-height: 1.3;
+        font-size: 13px;
+        line-height: 1.2;
+        word-wrap: break-word;
+    }
+
+    /* СКРЫВАЕМ ПОДЗАГОЛОВКИ НА МОБИЛЬНОМ */
+    .section-button-subtitle {
+        display: none !important;
+    }
+
+    /* Секции и рекомендации на полную ширину */
+    .section,
+    .recommendations-section {
+        padding: 16px;
     }
 }
-@media (max-width: 768px) {
-    h1 { font-size: 24px; }
-    h2 { font-size: 20px; }
-    
-    .metrics-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .dashboard-header,
-    .profile-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 16px;
-    }
-    
-    .header-actions {
-        width: 100%;
-        flex-direction: column;
-    }
-    
-    .header-actions button {
-        width: 100%;
-    }
-    
-    .athletes-list {
-        grid-template-columns: 1fr;
-    }
-    
-    .form-actions {
-        flex-direction: column-reverse;
-    }
-    
-    .skill-item {
-        grid-template-columns: 1fr;
-    }
-    
-    .skill-item input {
-        width: 100%;
-    }
-    
-    .norms-info {
-        grid-template-columns: 1fr;
-    }
 
-    .profile-actions {
-        flex-direction: column;
-    }
-
-    .sections-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .silhouette-container {
-        flex-direction: column;
-    }
-
-    .silhouette-wrapper {
-        flex-direction: column;
-        align-items: center;
-    }
     /* Profile section buttons (светлая тема) */
 .profile-container .sections-grid {
     display: grid;
