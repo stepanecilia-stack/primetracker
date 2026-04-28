@@ -1004,27 +1004,30 @@ const Router = {
     },
 
     initAddAthletePage() {
-        const form = document.getElementById('form-add-athlete');
-        form.onsubmit = (e) => {
-            e.preventDefault();
-            const formData = {
-                firstName: document.getElementById('first-name').value,
-                lastName: document.getElementById('last-name').value,
-                age: document.getElementById('age').value,
-                gender: document.querySelector('input[name="gender"]:checked').value
-            };
-            const athlete = Athletes.create(formData);
-            if (athlete) {
-                this.navigate('anthropometry', { id: athlete.id });
-            } else {
-                alert('Ошибка создания спортсмена');
-            }
+    const form = document.getElementById('form-add-athlete');
+    form.onsubmit = (e) => {
+        e.preventDefault();
+        const formData = {
+            firstName: document.getElementById('first-name').value,
+            lastName: document.getElementById('last-name').value,
+            age: document.getElementById('age').value,
+            gender: document.querySelector('input[name="gender"]:checked').value
         };
-        document.getElementById('btn-back-add').onclick = () => this.navigate('dashboard');
-        document.getElementById('btn-cancel-add').onclick = () => {
-            if (confirm('Отменить?')) this.navigate('dashboard');
-        };
-    },
+        const athlete = Athletes.create(formData);
+        if (athlete) {
+            // ДОБАВЛЕНО: Сохраняем ID нового спортсмена
+            localStorage.setItem('currentAthleteId', athlete.id);
+            this.navigate('anthropometry', { id: athlete.id });
+        } else {
+            alert('Ошибка создания спортсмена');
+        }
+    };
+    document.getElementById('btn-back-add').onclick = () => this.navigate('dashboard');
+    document.getElementById('btn-cancel-add').onclick = () => {
+        if (confirm('Отменить?')) this.navigate('dashboard');
+    };
+},
+
 
     initAnthropometryPage(athleteId) {
         if (!athleteId) {
@@ -1139,84 +1142,88 @@ const Router = {
     },
 
     initProfilePage(athleteId) {
-        if (!athleteId) {
-            alert('Спортсмен не найден');
-            this.navigate('dashboard');
-            return;
-        }
+    if (!athleteId) {
+        alert('Спортсмен не найден');
+        this.navigate('dashboard');
+        return;
+    }
 
-        this.currentAthleteId = athleteId;
-        const profile = Athletes.getProfile(athleteId);
+    this.currentAthleteId = athleteId;
+    // ДОБАВЛЕНО: Сохраняем ID для anthropometry.html
+    localStorage.setItem('currentAthleteId', athleteId);
+    
+    const profile = Athletes.getProfile(athleteId);
 
-        if (!profile) {
-            alert('Спортсмен не найден');
-            this.navigate('dashboard');
-            return;
-        }
+    if (!profile) {
+        alert('Спортсмен не найден');
+        this.navigate('dashboard');
+        return;
+    }
 
-        const genderText = profile.gender === 'M' ? 'М' : 'Ж';
-        document.getElementById('profile-athlete-name').textContent = `${profile.firstName} ${profile.lastName}`;
-        document.getElementById('profile-athlete-meta').textContent = `${profile.age} лет, ${genderText}`;
+    const genderText = profile.gender === 'M' ? 'М' : 'Ж';
+    document.getElementById('profile-athlete-name').textContent = `${profile.firstName} ${profile.lastName}`;
+    document.getElementById('profile-athlete-meta').textContent = `${profile.age} лет, ${genderText}`;
 
-        const metrics = profile.metrics || {};
-        document.getElementById('profile-potential').textContent = metrics.potential || '—';
-        document.getElementById('profile-realization').textContent = metrics.realization || '—';
-        document.getElementById('profile-gap').textContent = metrics.gap || '—';
+    const metrics = profile.metrics || {};
+    document.getElementById('profile-potential').textContent = metrics.potential || '—';
+    document.getElementById('profile-realization').textContent = metrics.realization || '—';
+    document.getElementById('profile-gap').textContent = metrics.gap || '—';
 
-        const strengthsList = document.getElementById('profile-strengths');
-        strengthsList.innerHTML = '';
-        if (profile.strengths && profile.strengths.length > 0) {
-            profile.strengths.forEach(strength => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="skill-name">${strength.name}</span><span class="skill-rating">${strength.rating}/10</span>`;
-                strengthsList.appendChild(li);
-            });
-        } else {
-            strengthsList.innerHTML = '<li>Данных пока недостаточно</li>';
-        }
+    const strengthsList = document.getElementById('profile-strengths');
+    strengthsList.innerHTML = '';
+    if (profile.strengths && profile.strengths.length > 0) {
+        profile.strengths.forEach(strength => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="skill-name">${strength.name}</span><span class="skill-rating">${strength.rating}/10</span>`;
+            strengthsList.appendChild(li);
+        });
+    } else {
+        strengthsList.innerHTML = '<li>Данных пока недостаточно</li>';
+    }
 
-        const weaknessesList = document.getElementById('profile-weaknesses');
-        weaknessesList.innerHTML = '';
-        if (profile.weaknesses && profile.weaknesses.length > 0) {
-            profile.weaknesses.forEach(weakness => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="skill-name">${weakness.name}</span><span class="skill-rating">${weakness.rating}/10</span>`;
-                weaknessesList.appendChild(li);
-            });
-        } else {
-            weaknessesList.innerHTML = '<li>Нет критических зон</li>';
-        }
+    const weaknessesList = document.getElementById('profile-weaknesses');
+    weaknessesList.innerHTML = '';
+    if (profile.weaknesses && profile.weaknesses.length > 0) {
+        profile.weaknesses.forEach(weakness => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="skill-name">${weakness.name}</span><span class="skill-rating">${weakness.rating}/10</span>`;
+            weaknessesList.appendChild(li);
+        });
+    } else {
+        weaknessesList.innerHTML = '<li>Нет критических зон</li>';
+    }
 
-        this.initProfileSections(profile);
+    this.initProfileSections(profile);
 
-        const recommendationsDiv = document.getElementById('profile-recommendations');
-        recommendationsDiv.innerHTML = '';
-        if (profile.recommendations && profile.recommendations.length > 0) {
-            profile.recommendations.forEach(rec => {
-                const recDiv = document.createElement('div');
-                recDiv.className = `recommendation ${rec.type}`;
-                recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
-                recommendationsDiv.appendChild(recDiv);
-            });
-        } else {
-            recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
-        }
+    const recommendationsDiv = document.getElementById('profile-recommendations');
+    recommendationsDiv.innerHTML = '';
+    if (profile.recommendations && profile.recommendations.length > 0) {
+        profile.recommendations.forEach(rec => {
+            const recDiv = document.createElement('div');
+            recDiv.className = `recommendation ${rec.type}`;
+            recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
+            recommendationsDiv.appendChild(recDiv);
+        });
+    } else {
+        recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
+    }
 
-        document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
-        document.getElementById('btn-share').onclick = () => {
-            const shareUrl = Share.getShareUrl(athleteId);
-            document.getElementById('share-link').value = shareUrl;
-            document.getElementById('share-modal').classList.remove('hidden');
-        };
-        document.getElementById('btn-copy-link').onclick = () => {
-            document.getElementById('share-link').select();
-            document.execCommand('copy');
-            alert('Ссылка скопирована!');
-        };
-        document.getElementById('btn-close-modal').onclick = () => {
-            document.getElementById('share-modal').classList.add('hidden');
-        };
-    },
+    document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
+    document.getElementById('btn-share').onclick = () => {
+        const shareUrl = Share.getShareUrl(athleteId);
+        document.getElementById('share-link').value = shareUrl;
+        document.getElementById('share-modal').classList.remove('hidden');
+    };
+    document.getElementById('btn-copy-link').onclick = () => {
+        document.getElementById('share-link').select();
+        document.execCommand('copy');
+        alert('Ссылка скопирована!');
+    };
+    document.getElementById('btn-close-modal').onclick = () => {
+        document.getElementById('share-modal').classList.add('hidden');
+    };
+},
+
 
     initProfileSections(profile) {
         const buttons = document.querySelectorAll('.profile-section-btn');

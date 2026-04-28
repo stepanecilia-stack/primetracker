@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Антропометрия | Система оценки боксера</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+    /* ПЕРЕОПРЕДЕЛЕНИЕ ДЛЯ СВЕТЛОЙ ТЕМЫ */
+    body {
+        background-color: #f8f8f8;
+        color: #1a1a2e;
+    }
+
+    .anthropometry-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f8f8;
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #ffffff;
+        color: #1a1a2e;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+        border: 1px solid #e0e0e0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .back-button:hover {
+        background: #f8f8f8;
+        border-color: #0066cc;
+    }
+
+    .athlete-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        color: #ffffff;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .athlete-header h1 {
+        margin: 0;
+        font-size: 32px;
+        color: #ffffff;
+    }
+
+    h2 {
+        color: #1a1a2e;
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        margin-top: 0;
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .metric-card {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+    }
+
+    .metric-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .metric-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+        font-size: 48px;
+        font-weight: 700;
+        color: #667eea;
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+
+    .metric-unit {
+        font-size: 18px;
+        color: #9ca3af;
+        font-weight: 400;
+    }
+
+    .metric-description {
+        font-size: 13px;
+        color: #6b7280;
+        margin-top: 8px;
+        font-weight: 400;
+    }
+
+    .info-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        background: rgba(102, 126, 234, 0.15);
+        border-radius: 50%;
+        font-size: 11px;
+        font-weight: bold;
+        cursor: help;
+        position: relative;
+        color: #667eea;
+        border: 1px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .tooltip {
+        display: none;
+        position: absolute;
+        top: 25px;
+        left: 0;
+        width: 300px;
+        background: #1a1a2e;
+        color: #ffffff;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.5;
+        z-index: 1000;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .info-icon:hover .tooltip,
+    .info-icon.active .tooltip {
+        display: block;
+    }
+
+    .indices-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .index-card {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 28px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .index-title {
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 16px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .index-value {
+        font-size: 48px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #1a1a2e;
+    }
+
+    .index-status {
+        display: inline-block;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .status-blue { background: #3b82f6; color: #fff; }
+    .status-green { background: #10b981; color: #fff; }
+    .status-yellow { background: #f59e0b; color: #1a1a2e; }
+    .status-red { background: #ef4444; color: #fff; }
+
+    .charts-section {
+        margin-bottom: 40px;
+    }
+
+    .chart-container {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .chart-title {
+        color: #1a1a2e;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 24px;
+        margin-top: 0;
+    }
+
+    .add-measurement-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        border: none;
+        padding: 16px 32px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+    }
+
+    .add-measurement-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 32px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        font-size: 24px;
+        margin-bottom: 24px;
+        color: #1a1a2e;
+        margin-top: 0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #1a1a2e;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        background: #ffffff;
+        color: #1a1a2e;
+        font-size: 16px;
+        transition: border-color 0.3s;
+    }
+
+    .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 28px;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #1a1a2e;
+        border: 1px solid #e0e0e0;
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .error-message {
+        background: #ffffff;
+        border: 2px solid #ef4444;
+        color: #1a1a2e;
+        padding: 32px;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .error-message h2 {
+        color: #ef4444;
+        margin-bottom: 12px;
+    }
+
+    .error-message p {
+        color: #6b7280;
+        margin: 0;
+    }
+
+    /* Убираем лишние отступы */
+    canvas {
+        max-height: 300px;
+    }
+
+    @media (max-width: 768px) {
+        .metrics-grid,
+        .indices-section {
+            grid-template-columns: 1fr;
+        }
+        
+        .metric-value {
+            font-size: 36px;
+        }
+        
+        .index-value {
+            font-size: 36px;
+        }
+    }
+</style>
+
+</head>
+<body>
+    <div class="anthropometry-container">
+        <a href="index.html" class="back-button">← Назад</a>
+
+        <div id="app-content"></div>
+    </div>
+
+    <div id="measurementModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header">Новые замеры</h2>
+            <form id="measurementForm">
+                <div class="form-group">
+                    <label for="height">Рост (см)</label>
+                    <input type="number" id="height" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="weight">Вес (кг)</label>
+                    <input type="number" id="weight" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="armspan">Размах рук (см)</label>
+                    <input type="number" id="armspan" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label for="date">Дата</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+    let weightChart, ratioChart;
+
+    // Загрузка данных спортсмена
+    function loadAthlete() {
+        const athleteId = localStorage.getItem('currentAthleteId');
+        
+        if (!athleteId) {
+            document.getElementById('app-content').innerHTML = `
+                <div class="error-message">
+                    <h2>Спортсмен не выбран</h2>
+                    <p>Пожалуйста, вернитесь на главную страницу и выберите спортсмена</p>
+                </div>
+            `;
+            return;
+        }
+
+        // ИСПРАВЛЕНО: используем boxing_athletes вместо athletes
+        const athletes = JSON.parse(localStorage.getItem('boxing_athletes') || '[]');
+        const athlete = athletes.find(a => a.id === athleteId);
+
+        if (!athlete) {
+            document.getElementById('app-content').innerHTML = `
+                <div class="error-message">
+                    <h2>Спортсмен не найден</h2>
+                </div>
+            `;
+            return;
+        }
+
+        renderAthletePage(athlete);
+    }
+
+    // Отрисовка страницы
+    // Отрисовка страницы
+function renderAthletePage(athlete) {
+    const anthropometry = athlete.anthropometry || [];
+    const latest = anthropometry.length > 0 ? anthropometry[anthropometry.length - 1] : null;
+
+    const height = latest?.height || 0;
+    const weight = latest?.weight || 0;
+    const reach = latest?.reach || 0;
+
+    // Расчет индексов
+    const apeIndex = height > 0 ? (reach / height).toFixed(3) : 0;
+    const apeLabel = getApeLabel(apeIndex);
+
+    const bmi = height > 0 ? (weight / Math.pow(height / 100, 2)).toFixed(1) : 0;
+    const bmiStatus = getBMIStatus(bmi);
+
+    document.getElementById('app-content').innerHTML = `
+        <div class="athlete-header">
+            <h1>${athlete.firstName} ${athlete.lastName}</h1>
+        </div>
+
+        <h2>Текущие показатели</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Рост</div>
+                <div class="metric-value">${height} <span class="metric-unit">см</span></div>
+                <div class="metric-description">Рост, см</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Вес</div>
+                <div class="metric-value">${weight} <span class="metric-unit">кг</span></div>
+                <div class="metric-description">Вес, кг</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">
+                    Размах рук
+                    <span class="info-icon" onclick="this.classList.toggle('active')">
+                        i
+                        <span class="tooltip">Стандарт Dactylion-to-Dactylion: замер по кончикам средних пальцев. Пятки и лопатки прижаты к стене, руки строго горизонтально, ладони вперед</span>
+                    </span>
+                </div>
+                <div class="metric-value">${reach} <span class="metric-unit">см</span></div>
+                <div class="metric-description">Размах, см</div>
+            </div>
+        </div>
+
+        <h2>Расчетные индексы</h2>
+        <div class="indices-section">
+            <div class="index-card">
+                <div class="index-title">Ape Index (Размах/Рост)</div>
+                <div class="index-value" style="color: #667eea;">${apeIndex}</div>
+                <div class="index-status status-blue">${apeLabel}</div>
+            </div>
+            <div class="index-card">
+                <div class="index-title">ИМТ (BMI)</div>
+                <div class="index-value" style="color: ${bmiStatus.color};">${bmi}</div>
+                <div class="index-status ${bmiStatus.class}">${bmiStatus.label}</div>
+            </div>
+        </div>
+
+        <h2>Динамика показателей</h2>
+        <div class="charts-section">
+            <div class="chart-container">
+                <div class="chart-title">Динамика веса</div>
+                <canvas id="weightChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Соотношение Рост/Размах</div>
+                <canvas id="ratioChart"></canvas>
+            </div>
+        </div>
+
+        <button class="add-measurement-btn" onclick="openModal()">+ Внести новые замеры</button>
+    `;
+
+    renderCharts(anthropometry);
+}
+
+
+    // Определение категории Ape Index
+    function getApeLabel(apeIndex) {
+        if (apeIndex < 0.98) return 'Короткие рычаги';
+        if (apeIndex >= 0.98 && apeIndex <= 1.02) return 'Средние рычаги';
+        return 'Длинные рычаги';
+    }
+
+    // Определение статуса ИМТ
+    function getBMIStatus(bmi) {
+        if (bmi < 18.5) return { label: 'Дефицит массы', color: '#3b82f6', class: 'status-blue' };
+        if (bmi >= 18.5 && bmi < 25.0) return { label: 'Норма', color: '#10b981', class: 'status-green' };
+        if (bmi >= 25.0 && bmi < 30.0) return { label: 'Перевес', color: '#f59e0b', class: 'status-yellow' };
+        return { label: 'Ожирение', color: '#ef4444', class: 'status-red' };
+    }
+
+    // Отрисовка графиков
+    function renderCharts(anthropometry) {
+        const dates = anthropometry.map(m => m.date || '');
+        const weights = anthropometry.map(m => m.weight || 0);
+        const heights = anthropometry.map(m => m.height || 0);
+        // ИСПРАВЛЕНО: используем reach вместо armspan
+        const reaches = anthropometry.map(m => m.reach || 0);
+
+        // График веса
+        const weightCtx = document.getElementById('weightChart').getContext('2d');
+        if (weightChart) weightChart.destroy();
+        weightChart = new Chart(weightCtx, {
+            type: 'line',
+            data: {
+                labels: dates.length > 0 ? dates : ['Нет данных'],
+                datasets: [{
+                    label: 'Вес (кг)',
+                    data: weights.length > 0 ? weights : [0],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#fff' } }
+                },
+                scales: {
+                    y: { 
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: { 
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+
+        // График соотношения
+        const ratioCtx = document.getElementById('ratioChart').getContext('2d');
+        if (ratioChart) ratioChart.destroy();
+        ratioChart = new Chart(ratioCtx, {
+            type: 'bar',
+            data: {
+                labels: dates.length > 0 ? dates : ['Нет данных'],
+                datasets: [
+                    {
+                        label: 'Рост (см)',
+                        data: heights.length > 0 ? heights : [0],
+                        backgroundColor: 'rgba(102, 126, 234, 0.7)'
+                    },
+                    {
+                        label: 'Размах рук (см)',
+                        data: reaches.length > 0 ? reaches : [0],
+                        backgroundColor: 'rgba(118, 75, 162, 0.7)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { labels: { color: '#fff' } }
+                },
+                scales: {
+                    y: { 
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: { 
+                        ticks: { color: '#fff' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+    }
+
+    // Открытие модального окна
+    function openModal() {
+        document.getElementById('measurementModal').classList.add('active');
+        document.getElementById('date').valueAsDate = new Date();
+    }
+
+    // Закрытие модального окна
+    function closeModal() {
+        document.getElementById('measurementModal').classList.remove('active');
+        document.getElementById('measurementForm').reset();
+    }
+
+    // Сохранение замеров
+    document.getElementById('measurementForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const athleteId = localStorage.getItem('currentAthleteId');
+        // ИСПРАВЛЕНО: используем boxing_athletes вместо athletes
+        const athletes = JSON.parse(localStorage.getItem('boxing_athletes') || '[]');
+        const athleteIndex = athletes.findIndex(a => a.id === athleteId);
+
+        if (athleteIndex === -1) return;
+
+        const newMeasurement = {
+            height: parseFloat(document.getElementById('height').value),
+            weight: parseFloat(document.getElementById('weight').value),
+            // ИСПРАВЛЕНО: сохраняем как reach вместо armspan
+            reach: parseFloat(document.getElementById('armspan').value),
+            date: document.getElementById('date').value
+        };
+
+        // ИСПРАВЛЕНО: используем anthropometry вместо measurements
+        if (!athletes[athleteIndex].anthropometry) {
+            athletes[athleteIndex].anthropometry = [];
+        }
+
+        athletes[athleteIndex].anthropometry.push(newMeasurement);
+        // ИСПРАВЛЕНО: сохраняем в boxing_athletes
+        localStorage.setItem('boxing_athletes', JSON.stringify(athletes));
+
+        closeModal();
+        loadAthlete();
+    });
+
+    // Загрузка при открытии страницы
+    window.addEventListener('DOMContentLoaded', loadAthlete);
+</script>
+</body>
+</html>
