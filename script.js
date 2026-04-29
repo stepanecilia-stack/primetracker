@@ -1,5 +1,8 @@
 'use strict';
 
+// ============================================
+// STORAGE MODULE
+// ============================================
 const Storage = {
     KEYS: {
         USERS: 'boxing_users',
@@ -100,6 +103,7 @@ const Storage = {
     }
 };
 
+// Инициализация хранилища
 if (!Storage.get(Storage.KEYS.USERS)) {
     Storage.setUsers([]);
 }
@@ -107,6 +111,9 @@ if (!Storage.get(Storage.KEYS.ATHLETES)) {
     Storage.setAthletes([]);
 }
 
+// ============================================
+// UTILITIES MODULE
+// ============================================
 const Utils = {
     generateId() {
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -168,9 +175,17 @@ const Utils = {
         }
         
         return { page, params };
+    },
+
+    // Вычисление возраста из года рождения
+    calculateAge(birthYear) {
+        return new Date().getFullYear() - birthYear;
     }
 };
 
+// ============================================
+// SKILLS DATA
+// ============================================
 const SKILLS_DATA = {
     technique: {
         name: "Техника ударов",
@@ -246,21 +261,26 @@ function getSkillById(skillId) {
     return allSkills.find(s => s.id === skillId);
 }
 
+// ============================================
+// CALCULATIONS MODULE
+// ============================================
 const Calculations = {
     calculatePotential(athlete) {
         if (!athlete.anthropometry || athlete.anthropometry.length === 0) return 0;
         const latest = athlete.anthropometry[athlete.anthropometry.length - 1];
         const { height, weight, reach } = latest;
-        const age = athlete.age;
+        const age = Utils.calculateAge(athlete.birthYear); // Используем birthYear
         const gender = athlete.gender;
         let score = 0;
 
+        // Reach ratio
         const reachRatio = reach / height;
         if (reachRatio >= 1.05 && reachRatio <= 1.10) score += 30;
         else if (reachRatio >= 1.0 && reachRatio < 1.05) score += 25;
         else if (reachRatio > 1.10 && reachRatio <= 1.15) score += 25;
         else score += 15;
 
+        // BMI
         const bmi = weight / ((height/100) * (height/100));
         if (gender === 'M') {
             if (bmi >= 22 && bmi <= 25) score += 25;
@@ -274,12 +294,14 @@ const Calculations = {
             else score += 10;
         }
 
+        // Age factor
         if (age >= 10 && age <= 14) score += 20;
         else if (age >= 15 && age <= 17) score += 25;
         else if (age >= 18 && age <= 25) score += 20;
         else if (age >= 26 && age <= 30) score += 15;
         else score += 10;
 
+        // Height factor
         if (gender === 'M') {
             if (height >= 170 && height <= 185) score += 20;
             else if (height >= 160 && height < 170) score += 15;
@@ -359,6 +381,9 @@ const Calculations = {
     }
 };
 
+// ============================================
+// NORMS MODULE
+// ============================================
 const Norms = {
     potentialByAge: {
         '10-14': { min: 60, avg: 75, max: 90 },
@@ -382,9 +407,11 @@ const Norms = {
         return '31+';
     },
     getNorms(athlete) {
-        const ageCategory = this.getAgeCategory(athlete.age);
+        const age = Utils.calculateAge(athlete.birthYear);
+        const ageCategory = this.getAgeCategory(age);
         return {
-            age: athlete.age,
+            birthYear: athlete.birthYear,
+            age: age,
             ageCategory,
             gender: athlete.gender === 'M' ? 'Мужской' : 'Женский',
             potential: this.potentialByAge[ageCategory],
@@ -393,6 +420,9 @@ const Norms = {
     }
 };
 
+// ============================================
+// RECOMMENDATIONS MODULE
+// ============================================
 const Recommendations = {
     generate(athlete) {
         const recommendations = [];
@@ -433,28 +463,44 @@ const Recommendations = {
     }
 };
 
+// ============================================
+// AUTH MODULE
+// ============================================
 const Auth = {
-    register(email, password, name) {
+    register(email, password, firstName, lastName, city) {
+        // Валидация
         if (!Utils.validateEmail(email)) {
             return { success: false, error: 'Некорректный email' };
         }
         if (password.length < 6) {
             return { success: false, error: 'Пароль должен быть не менее 6 символов' };
         }
-        if (!name || name.trim().length === 0) {
+        if (!firstName || firstName.trim().length === 0) {
             return { success: false, error: 'Укажите имя' };
         }
+        if (!lastName || lastName.trim().length === 0) {
+            return { success: false, error: 'Укажите фамилию' };
+        }
+        if (!city || city.trim().length === 0) {
+            return { success: false, error: 'Укажите город' };
+        }
+
         const users = Storage.getUsers();
         if (users.find(u => u.email === email)) {
             return { success: false, error: 'Пользователь с таким email уже существует' };
         }
+
+        // Создание объекта тренера с firstName, lastName, city
         const user = {
             id: Utils.generateId(),
             email: email,
             password: Utils.hashPassword(password),
-            name: name.trim(),
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            city: city.trim(),
             createdAt: new Date().toISOString()
         };
+        
         users.push(user);
         Storage.setUsers(users);
         Storage.setCurrentUser(user.id);
@@ -482,16 +528,25 @@ const Auth = {
     }
 };
 
+// ============================================
+// ATHLETES MODULE
+// ============================================
 const Athletes = {
     create(data) {
         const currentUser = Storage.getCurrentUser();
         if (!currentUser) return null;
+        
+        // Извлекаем год из birthDate и сохраняем как Number
+        const birthYear = Number(new Date(data.birthDate).getFullYear());
+        
+        // Объект ученика с birthDate и birthYear
         const athlete = {
             id: Utils.generateId(),
             coachId: currentUser.id,
             firstName: data.firstName.trim(),
             lastName: data.lastName.trim(),
-            age: parseInt(data.age),
+            birthDate: data.birthDate, // Строка YYYY-MM-DD
+            birthYear: birthYear,       // Число
             gender: data.gender,
             createdAt: new Date().toISOString(),
             anthropometry: [],
@@ -499,6 +554,7 @@ const Athletes = {
             metrics: { potential: 0, realization: 0, gap: 0 },
             shareToken: null
         };
+        
         Storage.addAthlete(athlete);
         return athlete;
     },
@@ -541,6 +597,9 @@ const Athletes = {
     }
 };
 
+// ============================================
+// SHARE MODULE
+// ============================================
 const Share = {
     generateShareToken(athleteId) {
         const token = Utils.generateToken(32);
@@ -565,7 +624,7 @@ const Share = {
             id: athlete.id,
             firstName: athlete.firstName,
             lastName: athlete.lastName,
-            age: athlete.age,
+            birthYear: athlete.birthYear,
             gender: athlete.gender,
             metrics: athlete.metrics,
             anthropometry: athlete.anthropometry,
@@ -576,6 +635,9 @@ const Share = {
     }
 };
 
+// ============================================
+// SILHOUETTE RENDERER MODULE
+// ============================================
 const SilhouetteRenderer = {
     render(height, reach, gender) {
         const minHeight = 150;
@@ -664,6 +726,9 @@ const SilhouetteRenderer = {
     }
 };
 
+// ============================================
+// ROUTER MODULE
+// ============================================
 const Router = {
     currentPage: null,
     currentAthleteId: null,
@@ -724,9 +789,10 @@ const Router = {
             return;
         }
 
+        // Отображение: "[birthYear] г.р."
         const genderText = athleteData.gender === 'M' ? 'М' : 'Ж';
         document.getElementById('student-athlete-name').textContent = `${athleteData.firstName} ${athleteData.lastName}`;
-        document.getElementById('student-athlete-meta').textContent = `${athleteData.age} лет, ${genderText}`;
+        document.getElementById('student-athlete-meta').textContent = `${athleteData.birthYear} г.р., ${genderText}`;
 
         if (athleteData.anthropometry && athleteData.anthropometry.length > 0) {
             const latest = athleteData.anthropometry[athleteData.anthropometry.length - 1];
@@ -908,44 +974,59 @@ const Router = {
         window.location.hash = hash;
     },
 
+    // ============================================
+    // AUTH HANDLERS
+    // ============================================
     setupAuthHandlers() {
         const tabs = document.querySelectorAll('.auth-tabs .tab');
-        const nameGroup = document.getElementById('name-group');
+        const coachFieldsGroup = document.getElementById('coach-fields-group');
         const submitBtn = document.getElementById('auth-submit-btn');
         const authForm = document.getElementById('auth-form');
         const errorMessage = document.getElementById('auth-error');
         
         let currentMode = 'login';
         
+        // Обработчик переключения табов
         tabs.forEach(tab => {
             tab.onclick = () => {
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 currentMode = tab.dataset.tab;
+                
+                // При register показываем поля тренера, при login скрываем
                 if (currentMode === 'register') {
-                    nameGroup.classList.remove('hidden');
+                    coachFieldsGroup.classList.remove('hidden');
                     submitBtn.textContent = 'Зарегистрироваться';
-                    document.getElementById('name').required = true;
+                    document.getElementById('first-name-coach').required = true;
+                    document.getElementById('last-name-coach').required = true;
+                    document.getElementById('city-coach').required = true;
                 } else {
-                    nameGroup.classList.add('hidden');
+                    coachFieldsGroup.classList.add('hidden');
                     submitBtn.textContent = 'Войти';
-                    document.getElementById('name').required = false;
+                    document.getElementById('first-name-coach').required = false;
+                    document.getElementById('last-name-coach').required = false;
+                    document.getElementById('city-coach').required = false;
                 }
+                
                 errorMessage.classList.add('hidden');
                 authForm.reset();
             };
         });
         
+        // Обработчик формы авторизации/регистрации
         authForm.onsubmit = (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            const name = document.getElementById('name').value;
             errorMessage.classList.add('hidden');
             
             let result;
             if (currentMode === 'register') {
-                result = Auth.register(email, password, name);
+                // При регистрации собираем firstName, lastName, city
+                const firstName = document.getElementById('first-name-coach').value;
+                const lastName = document.getElementById('last-name-coach').value;
+                const city = document.getElementById('city-coach').value;
+                result = Auth.register(email, password, firstName, lastName, city);
             } else {
                 result = Auth.login(email, password);
             }
@@ -959,9 +1040,19 @@ const Router = {
         };
     },
 
+    // ============================================
+    // DASHBOARD PAGE
+    // ============================================
     initDashboardPage() {
         const currentUser = Storage.getCurrentUser();
-        document.getElementById('coach-name').textContent = `Тренер: ${currentUser.name}`;
+        
+        // Имя тренера собирается из firstName и lastName
+        const displayName = currentUser.firstName && currentUser.lastName 
+            ? `${currentUser.firstName} ${currentUser.lastName}` 
+            : currentUser.name || currentUser.email;
+        
+        document.getElementById('coach-name').textContent = `Тренер: ${displayName}`;
+        
         const athletesList = document.getElementById('athletes-list');
         const emptyState = document.getElementById('empty-state');
         const athletes = Athletes.getCoachAthletes();
@@ -972,15 +1063,18 @@ const Router = {
         } else {
             emptyState.classList.add('hidden');
             athletesList.innerHTML = '';
+            
             athletes.forEach(athlete => {
                 const card = document.createElement('div');
                 card.className = 'athlete-card';
                 const metrics = athlete.metrics || { potential: 0, realization: 0, gap: 0 };
                 const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+                
+                // Отображение: "[birthYear] г.р."
                 card.innerHTML = `
                     <div class="athlete-info">
                         <h3>${athlete.firstName} ${athlete.lastName}</h3>
-                        <p class="athlete-meta">${athlete.age} лет, ${genderText}</p>
+                        <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText}</p>
                     </div>
                     <div class="athlete-metrics">
                         <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${metrics.potential}</span></div>
@@ -1003,44 +1097,57 @@ const Router = {
         };
     },
 
+    // ============================================
+    // ADD ATHLETE PAGE (ШАГ 1)
+    // ============================================
     initAddAthletePage() {
-    const form = document.getElementById('form-add-athlete');
-    form.onsubmit = (e) => {
-        e.preventDefault();
-        const formData = {
-            firstName: document.getElementById('first-name').value,
-            lastName: document.getElementById('last-name').value,
-            age: document.getElementById('age').value,
-            gender: document.querySelector('input[name="gender"]:checked').value
+        const form = document.getElementById('form-add-athlete');
+        
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            
+            // Читаем данные из формы (включая birthDate)
+            const formData = {
+                firstName: document.getElementById('first-name').value,
+                lastName: document.getElementById('last-name').value,
+                birthDate: document.getElementById('birth-date').value, // Дата в формате YYYY-MM-DD
+                gender: document.querySelector('input[name="gender"]:checked').value
+            };
+            
+            // Athletes.create() извлечёт birthYear из birthDate
+            const athlete = Athletes.create(formData);
+            
+            if (athlete) {
+                localStorage.setItem('currentAthleteId', athlete.id);
+                this.navigate('anthropometry', { id: athlete.id });
+            } else {
+                alert('Ошибка создания спортсмена');
+            }
         };
-        const athlete = Athletes.create(formData);
-        if (athlete) {
-            // ДОБАВЛЕНО: Сохраняем ID нового спортсмена
-            localStorage.setItem('currentAthleteId', athlete.id);
-            this.navigate('anthropometry', { id: athlete.id });
-        } else {
-            alert('Ошибка создания спортсмена');
-        }
-    };
-    document.getElementById('btn-back-add').onclick = () => this.navigate('dashboard');
-    document.getElementById('btn-cancel-add').onclick = () => {
-        if (confirm('Отменить?')) this.navigate('dashboard');
-    };
-},
+        
+        document.getElementById('btn-back-add').onclick = () => this.navigate('dashboard');
+        document.getElementById('btn-cancel-add').onclick = () => {
+            if (confirm('Отменить?')) this.navigate('dashboard');
+        };
+    },
 
-
+    // ============================================
+    // ANTHROPOMETRY PAGE (ШАГ 2)
+    // ============================================
     initAnthropometryPage(athleteId) {
         if (!athleteId) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
             return;
         }
+        
         const athlete = Storage.getAthleteById(athleteId);
         if (!athlete) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
             return;
         }
+        
         document.getElementById('anthro-athlete-name').textContent = `${athlete.firstName} ${athlete.lastName}`;
         document.getElementById('measurement-date').value = Utils.getCurrentDate();
 
@@ -1059,27 +1166,33 @@ const Router = {
                 alert('Ошибка сохранения');
             }
         };
+        
         document.getElementById('btn-back-anthro').onclick = () => this.navigate('dashboard');
         document.getElementById('btn-cancel-anthro').onclick = () => {
             if (confirm('Отменить?')) {
-                Athletes.delete(athleteId);
+                Storage.deleteAthlete(athleteId);
                 this.navigate('dashboard');
             }
         };
     },
 
+    // ============================================
+    // SKILLS PAGE (ШАГ 3)
+    // ============================================
     initSkillsPage(athleteId) {
         if (!athleteId) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
             return;
         }
+        
         const athlete = Storage.getAthleteById(athleteId);
         if (!athlete) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
             return;
         }
+        
         document.getElementById('skills-athlete-name').textContent = `${athlete.firstName} ${athlete.lastName}`;
 
         const skillsContainer = document.getElementById('skills-container');
@@ -1089,6 +1202,7 @@ const Router = {
             const category = SKILLS_DATA[categoryId];
             const categoryDiv = document.createElement('div');
             categoryDiv.className = 'skill-category';
+            
             const categoryTitle = document.createElement('h3');
             categoryTitle.textContent = category.name;
             categoryDiv.appendChild(categoryTitle);
@@ -1096,9 +1210,11 @@ const Router = {
             category.skills.forEach(skill => {
                 const skillDiv = document.createElement('div');
                 skillDiv.className = 'skill-item';
+                
                 const label = document.createElement('label');
                 label.setAttribute('for', `skill-${skill.id}`);
                 label.textContent = skill.name;
+                
                 const input = document.createElement('input');
                 input.type = 'number';
                 input.id = `skill-${skill.id}`;
@@ -1108,10 +1224,12 @@ const Router = {
                 input.required = true;
                 input.dataset.category = categoryId;
                 input.value = 5;
+                
                 skillDiv.appendChild(label);
                 skillDiv.appendChild(input);
                 categoryDiv.appendChild(skillDiv);
             });
+            
             skillsContainer.appendChild(categoryDiv);
         });
 
@@ -1119,13 +1237,16 @@ const Router = {
         form.onsubmit = (e) => {
             e.preventDefault();
             const skills = {};
+            
             form.querySelectorAll('input[type="number"]').forEach(input => {
                 const categoryId = input.dataset.category;
                 const skillId = input.name;
                 const rating = parseInt(input.value);
+                
                 if (!skills[categoryId]) skills[categoryId] = {};
                 skills[categoryId][skillId] = rating;
             });
+            
             if (Athletes.saveSkills(athleteId, skills)) {
                 alert('Спортсмен добавлен!');
                 this.navigate('profile', { id: athleteId });
@@ -1133,6 +1254,7 @@ const Router = {
                 alert('Ошибка сохранения');
             }
         };
+        
         document.getElementById('btn-back-skills').onclick = () => this.navigate('dashboard');
         document.getElementById('btn-back-step-skills').onclick = () => {
             if (confirm('Назад? Оценки будут потеряны.')) {
@@ -1141,89 +1263,95 @@ const Router = {
         };
     },
 
+    // ============================================
+    // PROFILE PAGE
+    // ============================================
     initProfilePage(athleteId) {
-    if (!athleteId) {
-        alert('Спортсмен не найден');
-        this.navigate('dashboard');
-        return;
-    }
+        if (!athleteId) {
+            alert('Спортсмен не найден');
+            this.navigate('dashboard');
+            return;
+        }
 
-    this.currentAthleteId = athleteId;
-    // ДОБАВЛЕНО: Сохраняем ID для anthropometry.html
-    localStorage.setItem('currentAthleteId', athleteId);
-    
-    const profile = Athletes.getProfile(athleteId);
+        this.currentAthleteId = athleteId;
+        localStorage.setItem('currentAthleteId', athleteId);
+        
+        const profile = Athletes.getProfile(athleteId);
 
-    if (!profile) {
-        alert('Спортсмен не найден');
-        this.navigate('dashboard');
-        return;
-    }
+        if (!profile) {
+            alert('Спортсмен не найден');
+            this.navigate('dashboard');
+            return;
+        }
 
-    const genderText = profile.gender === 'M' ? 'М' : 'Ж';
-    document.getElementById('profile-athlete-name').textContent = `${profile.firstName} ${profile.lastName}`;
-    document.getElementById('profile-athlete-meta').textContent = `${profile.age} лет, ${genderText}`;
+        // Отображение: "[birthYear] г.р."
+        const genderText = profile.gender === 'M' ? 'М' : 'Ж';
+        document.getElementById('profile-athlete-name').textContent = `${profile.firstName} ${profile.lastName}`;
+        document.getElementById('profile-athlete-meta').textContent = `${profile.birthYear} г.р., ${genderText}`;
 
-    const metrics = profile.metrics || {};
-    document.getElementById('profile-potential').textContent = metrics.potential || '—';
-    document.getElementById('profile-realization').textContent = metrics.realization || '—';
-    document.getElementById('profile-gap').textContent = metrics.gap || '—';
+        const metrics = profile.metrics || {};
+        document.getElementById('profile-potential').textContent = metrics.potential || '—';
+        document.getElementById('profile-realization').textContent = metrics.realization || '—';
+        document.getElementById('profile-gap').textContent = metrics.gap || '—';
 
-    const strengthsList = document.getElementById('profile-strengths');
-    strengthsList.innerHTML = '';
-    if (profile.strengths && profile.strengths.length > 0) {
-        profile.strengths.forEach(strength => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="skill-name">${strength.name}</span><span class="skill-rating">${strength.rating}/10</span>`;
-            strengthsList.appendChild(li);
-        });
-    } else {
-        strengthsList.innerHTML = '<li>Данных пока недостаточно</li>';
-    }
+        // Сильные стороны
+        const strengthsList = document.getElementById('profile-strengths');
+        strengthsList.innerHTML = '';
+        if (profile.strengths && profile.strengths.length > 0) {
+            profile.strengths.forEach(strength => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="skill-name">${strength.name}</span><span class="skill-rating">${strength.rating}/10</span>`;
+                strengthsList.appendChild(li);
+            });
+        } else {
+            strengthsList.innerHTML = '<li>Данных пока недостаточно</li>';
+        }
 
-    const weaknessesList = document.getElementById('profile-weaknesses');
-    weaknessesList.innerHTML = '';
-    if (profile.weaknesses && profile.weaknesses.length > 0) {
-        profile.weaknesses.forEach(weakness => {
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="skill-name">${weakness.name}</span><span class="skill-rating">${weakness.rating}/10</span>`;
-            weaknessesList.appendChild(li);
-        });
-    } else {
-        weaknessesList.innerHTML = '<li>Нет критических зон</li>';
-    }
+        // Отстающие зоны
+        const weaknessesList = document.getElementById('profile-weaknesses');
+        weaknessesList.innerHTML = '';
+        if (profile.weaknesses && profile.weaknesses.length > 0) {
+            profile.weaknesses.forEach(weakness => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="skill-name">${weakness.name}</span><span class="skill-rating">${weakness.rating}/10</span>`;
+                weaknessesList.appendChild(li);
+            });
+        } else {
+            weaknessesList.innerHTML = '<li>Нет критических зон</li>';
+        }
 
-    this.initProfileSections(profile);
+        this.initProfileSections(profile);
 
-    const recommendationsDiv = document.getElementById('profile-recommendations');
-    recommendationsDiv.innerHTML = '';
-    if (profile.recommendations && profile.recommendations.length > 0) {
-        profile.recommendations.forEach(rec => {
-            const recDiv = document.createElement('div');
-            recDiv.className = `recommendation ${rec.type}`;
-            recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
-            recommendationsDiv.appendChild(recDiv);
-        });
-    } else {
-        recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
-    }
+        // Рекомендации
+        const recommendationsDiv = document.getElementById('profile-recommendations');
+        recommendationsDiv.innerHTML = '';
+        if (profile.recommendations && profile.recommendations.length > 0) {
+            profile.recommendations.forEach(rec => {
+                const recDiv = document.createElement('div');
+                recDiv.className = `recommendation ${rec.type}`;
+                recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
+                recommendationsDiv.appendChild(recDiv);
+            });
+        } else {
+            recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
+        }
 
-    document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
-    document.getElementById('btn-share').onclick = () => {
-        const shareUrl = Share.getShareUrl(athleteId);
-        document.getElementById('share-link').value = shareUrl;
-        document.getElementById('share-modal').classList.remove('hidden');
-    };
-    document.getElementById('btn-copy-link').onclick = () => {
-        document.getElementById('share-link').select();
-        document.execCommand('copy');
-        alert('Ссылка скопирована!');
-    };
-    document.getElementById('btn-close-modal').onclick = () => {
-        document.getElementById('share-modal').classList.add('hidden');
-    };
-},
-
+        // Кнопки
+        document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
+        document.getElementById('btn-share').onclick = () => {
+            const shareUrl = Share.getShareUrl(athleteId);
+            document.getElementById('share-link').value = shareUrl;
+            document.getElementById('share-modal').classList.remove('hidden');
+        };
+        document.getElementById('btn-copy-link').onclick = () => {
+            document.getElementById('share-link').select();
+            document.execCommand('copy');
+            alert('Ссылка скопирована!');
+        };
+        document.getElementById('btn-close-modal').onclick = () => {
+            document.getElementById('share-modal').classList.add('hidden');
+        };
+    },
 
     initProfileSections(profile) {
         const buttons = document.querySelectorAll('.profile-section-btn');
@@ -1397,6 +1525,9 @@ const Router = {
     }
 };
 
+// ============================================
+// INIT
+// ============================================
 document.addEventListener('DOMContentLoaded', () => {
     Router.init();
 });
