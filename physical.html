@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Физическое развитие — Cartel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .norms-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        .norms-table th, .norms-table td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        .norms-table th { background: #f8f9fa; font-weight: bold; }
+        .level-1 { background-color: #e8f5e9; } /* Зеленый - Отлично */
+        .level-2 { background-color: #fff3e0; } /* Оранжевый - Хорошо */
+        .level-3 { background-color: #ffebee; } /* Красный - Удовл */
+        .loading { padding: 20px; text-align: center; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <header class="form-header">
+            <button class="btn btn-back" onclick="window.location.href='index.html'">← Назад</button>
+            <div>
+                <h1>Физическое развитие</h1>
+                <p class="text-secondary">Нормативы и результаты</p>
+            </div>
+        </header>
+
+        <div id="norms-container">
+            <div class="loading">Загрузка нормативов из таблицы...</div>
+        </div>
+    </div>
+
+    <script>
+        // Твоя ссылка на CSV (лист speed)
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=1633594327&single=true&output=csv';
+
+        async function loadNorms() {
+            try {
+                const response = await fetch(SHEET_CSV_URL);
+                const data = await response.text();
+                const rows = data.split('\n').map(row => row.split(','));
+
+                // Убираем заголовок таблицы
+                const contentRows = rows.slice(1);
+
+                let html = '<table class="norms-table">';
+                html += '<thead><tr><th>Тест</th><th>Возраст</th><th>Пол</th><th class="level-1">Отлично</th><th class="level-2">Хорошо</th><th class="level-3">Удовл.</th></tr></thead><tbody>';
+
+                contentRows.forEach(row => {
+                    if (row.length < 5) return; // Пропускаем пустые строки
+                    const [block, testName, age, gender, l1, l2, l3, unit] = row;
+                    html += `<tr>
+                        <td>${testName}</td>
+                        <td>${age}</td>
+                        <td>${gender === 'M' ? 'М' : 'Ж'}</td>
+                        <td class="level-1">${l1} ${unit}</td>
+                        <td class="level-2">${l2} ${unit}</td>
+                        <td class="level-3">${l3} ${unit}</td>
+                    </tr>`;
+                });
+
+                html += '</tbody></table>';
+                document.getElementById('norms-container').innerHTML = html;
+            } catch (error) {
+                document.getElementById('norms-container').innerHTML = '<div class="error-message">Ошибка загрузки данных. Проверьте публикацию таблицы.</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        loadNorms();
+    </script>
+</body>
+</html>
