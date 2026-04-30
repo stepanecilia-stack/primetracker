@@ -159,6 +159,166 @@ const Utils = {
         document.body.style.cursor = 'default';
     }
 };
+// ============================================
+// BOXING BENCHMARKS DATABASE
+// ============================================
+const BOXING_BENCHMARKS = {
+    M: {
+        '13-14': [
+            { weight: 37, idealHeight: 153 },
+            { weight: 40, idealHeight: 156 },
+            { weight: 42, idealHeight: 158 },
+            { weight: 44, idealHeight: 161 },
+            { weight: 46, idealHeight: 164 },
+            { weight: 48, idealHeight: 167 },
+            { weight: 50, idealHeight: 170 },
+            { weight: 52, idealHeight: 172 },
+            { weight: 54, idealHeight: 174 },
+            { weight: 57, idealHeight: 176 },
+            { weight: 60, idealHeight: 178 },
+            { weight: 63, idealHeight: 181 },
+            { weight: 66, idealHeight: 183 },
+            { weight: 70, idealHeight: 185 },
+            { weight: 75, idealHeight: 188 },
+            { weight: 80, idealHeight: 191 },
+            { weight: 90, idealHeight: 194 }
+        ],
+        '15-16': [
+            { weight: 44, idealHeight: 160 },
+            { weight: 46, idealHeight: 162 },
+            { weight: 48, idealHeight: 164 },
+            { weight: 50, idealHeight: 167 },
+            { weight: 52, idealHeight: 170 },
+            { weight: 54, idealHeight: 172 },
+            { weight: 57, idealHeight: 175 },
+            { weight: 60, idealHeight: 177 },
+            { weight: 63, idealHeight: 179 },
+            { weight: 66, idealHeight: 181 },
+            { weight: 70, idealHeight: 183 },
+            { weight: 75, idealHeight: 186 },
+            { weight: 80, idealHeight: 189 },
+            { weight: 90, idealHeight: 192 }
+        ],
+        '17-18': [
+            { weight: 48, idealHeight: 162 },
+            { weight: 51, idealHeight: 165 },
+            { weight: 54, idealHeight: 168 },
+            { weight: 57, idealHeight: 171 },
+            { weight: 60, idealHeight: 174 },
+            { weight: 63.5, idealHeight: 176 },
+            { weight: 67, idealHeight: 178 },
+            { weight: 71, idealHeight: 181 },
+            { weight: 75, idealHeight: 183 },
+            { weight: 80, idealHeight: 186 },
+            { weight: 86, idealHeight: 189 },
+            { weight: 92, idealHeight: 192 },
+            { weight: 100, idealHeight: 195 }
+        ],
+        '19-22': [
+            { weight: 48, idealHeight: 162 },
+            { weight: 51, idealHeight: 165 },
+            { weight: 54, idealHeight: 168 },
+            { weight: 57, idealHeight: 171 },
+            { weight: 60, idealHeight: 174 },
+            { weight: 63.5, idealHeight: 176 },
+            { weight: 67, idealHeight: 178 },
+            { weight: 71, idealHeight: 181 },
+            { weight: 75, idealHeight: 183 },
+            { weight: 80, idealHeight: 186 },
+            { weight: 86, idealHeight: 189 },
+            { weight: 92, idealHeight: 192 },
+            { weight: 100, idealHeight: 195 }
+        ]
+    },
+    F: {
+        '13-14': [
+            { weight: 34, idealHeight: 158 },
+            { weight: 36, idealHeight: 161 },
+            { weight: 38, idealHeight: 163 },
+            { weight: 40, idealHeight: 165 },
+            { weight: 42, idealHeight: 167 },
+            { weight: 44, idealHeight: 169 },
+            { weight: 46, idealHeight: 170 },
+            { weight: 48, idealHeight: 172 },
+            { weight: 51, idealHeight: 174 },
+            { weight: 54, idealHeight: 176 },
+            { weight: 57, idealHeight: 178 },
+            { weight: 60, idealHeight: 180 },
+            { weight: 64, idealHeight: 183 },
+            { weight: 70, idealHeight: 185 }
+        ],
+        '15-16': [
+            { weight: 44, idealHeight: 166 },
+            { weight: 46, idealHeight: 168 },
+            { weight: 48, idealHeight: 169 },
+            { weight: 50, idealHeight: 171 },
+            { weight: 52, idealHeight: 172 },
+            { weight: 54, idealHeight: 173 },
+            { weight: 57, idealHeight: 174 },
+            { weight: 60, idealHeight: 175 },
+            { weight: 63, idealHeight: 176 },
+            { weight: 66, idealHeight: 177 },
+            { weight: 70, idealHeight: 178 },
+            { weight: 75, idealHeight: 180 },
+            { weight: 80, idealHeight: 182 },
+            { weight: 90, idealHeight: 185 }
+        ],
+        '17-18': [
+            { weight: 48, idealHeight: 164 },
+            { weight: 50, idealHeight: 168 },
+            { weight: 52, idealHeight: 170 },
+            { weight: 54, idealHeight: 171 },
+            { weight: 57, idealHeight: 172 },
+            { weight: 60, idealHeight: 173 },
+            { weight: 63, idealHeight: 174 },
+            { weight: 66, idealHeight: 175 },
+            { weight: 70, idealHeight: 176 },
+            { weight: 75, idealHeight: 178 },
+            { weight: 81, idealHeight: 180 },
+            { weight: 90, idealHeight: 183 }
+        ],
+        '19-22': [
+            { weight: 48, idealHeight: 164 },
+            { weight: 50, idealHeight: 168 },
+            { weight: 52, idealHeight: 170 },
+            { weight: 54, idealHeight: 171 },
+            { weight: 57, idealHeight: 172 },
+            { weight: 60, idealHeight: 173 },
+            { weight: 63, idealHeight: 174 },
+            { weight: 66, idealHeight: 175 },
+            { weight: 70, idealHeight: 176 },
+            { weight: 75, idealHeight: 178 },
+            { weight: 81, idealHeight: 180 },
+            { weight: 90, idealHeight: 183 }
+        ]
+    }
+};
+
+// Вспомогательные функции для работы с BOXING_BENCHMARKS
+function getAgeGroup(birthYear) {
+    const age = new Date().getFullYear() - birthYear;
+    if (age >= 13 && age <= 14) return '13-14';
+    if (age >= 15 && age <= 16) return '15-16';
+    if (age >= 17 && age <= 18) return '17-18';
+    if (age >= 19) return '19-22';
+    return null;
+}
+
+function findWeightCategory(gender, ageGroup, weight) {
+    if (!BOXING_BENCHMARKS[gender] || !BOXING_BENCHMARKS[gender][ageGroup]) return null;
+    
+    const categories = BOXING_BENCHMARKS[gender][ageGroup];
+    
+    // Находим ближайшую ВЕРХНЮЮ категорию
+    for (let cat of categories) {
+        if (weight <= cat.weight) {
+            return cat;
+        }
+    }
+    
+    // Если вес больше всех категорий, возвращаем последнюю
+    return categories[categories.length - 1];
+}
 
 // ============================================
 // SKILLS DATA
@@ -244,79 +404,109 @@ function getSkillById(skillId) {
 const Calculations = {
     calculatePotential(athlete) {
         if (!athlete.anthropometry || athlete.anthropometry.length === 0) return 0;
+        
         const latest = athlete.anthropometry[athlete.anthropometry.length - 1];
         const { height, weight, reach } = latest;
-        const age = Utils.calculateAge(athlete.birthYear);
-        const gender = athlete.gender;
-        let score = 0;
-
-        const reachRatio = reach / height;
-        if (reachRatio >= 1.05 && reachRatio <= 1.10) score += 30;
-        else if (reachRatio >= 1.0 && reachRatio < 1.05) score += 25;
-        else if (reachRatio > 1.10 && reachRatio <= 1.15) score += 25;
-        else score += 15;
-
-        const bmi = weight / ((height/100) * (height/100));
-        if (gender === 'M') {
-            if (bmi >= 22 && bmi <= 25) score += 25;
-            else if (bmi >= 20 && bmi < 22) score += 20;
-            else if (bmi > 25 && bmi <= 27) score += 20;
-            else score += 10;
-        } else {
-            if (bmi >= 21 && bmi <= 24) score += 25;
-            else if (bmi >= 19 && bmi < 21) score += 20;
-            else if (bmi > 24 && bmi <= 26) score += 20;
-            else score += 10;
+        
+        const ageGroup = getAgeGroup(athlete.birthYear);
+        if (!ageGroup) return 0;
+        
+        const category = findWeightCategory(athlete.gender, ageGroup, weight);
+        if (!category) return 0;
+        
+        const idealHeight = category.idealHeight;
+        
+        // НОВАЯ ФОРМУЛА
+        let potential = 100;
+        
+        // Штраф за рост: −5% за каждый 1 см ниже idealHeight
+        const heightDiff = idealHeight - height;
+        if (heightDiff > 0) {
+            potential -= heightDiff * 5;
         }
-
-        if (age >= 10 && age <= 14) score += 20;
-        else if (age >= 15 && age <= 17) score += 25;
-        else if (age >= 18 && age <= 25) score += 20;
-        else if (age >= 26 && age <= 30) score += 15;
-        else score += 10;
-
-        if (gender === 'M') {
-            if (height >= 170 && height <= 185) score += 20;
-            else if (height >= 160 && height < 170) score += 15;
-            else if (height > 185 && height <= 195) score += 15;
-            else score += 10;
-        } else {
-            if (height >= 160 && height <= 175) score += 20;
-            else if (height >= 150 && height < 160) score += 15;
-            else if (height > 175 && height <= 180) score += 15;
-            else score += 10;
+        
+        // Штраф за размах: −4% за каждый 1 см отрицательного Ape Index
+        const apeIndex = reach - height;
+        if (apeIndex < 0) {
+            potential -= Math.abs(apeIndex) * 4;
         }
-
-        return Math.min(100, Math.round(score));
+        
+        // Нижний порог: не ниже 10%
+        potential = Math.max(10, potential);
+        
+        return Math.round(potential);
     },
 
     calculateRealization(athlete) {
-        if (!athlete.skills) return 0;
-        const allRatings = [];
-        Object.keys(athlete.skills).forEach(categoryId => {
-            const categorySkills = athlete.skills[categoryId];
-            Object.values(categorySkills).forEach(rating => {
-                if (typeof rating === 'number') allRatings.push(rating);
-            });
+        if (!athlete.skills) return "Нет данных";
+        
+        let atomsSum = 0, atomsCount = 0;
+        let ofpSum = 0, ofpCount = 0;
+        
+        // Технические атомы: technique, defense, tactics
+        ['technique', 'defense', 'tactics'].forEach(cat => {
+            if (athlete.skills[cat]) {
+                Object.values(athlete.skills[cat]).forEach(rating => {
+                    if (typeof rating === 'number') {
+                        atomsSum += rating;
+                        atomsCount++;
+                    }
+                });
+            }
         });
-        if (allRatings.length === 0) return 0;
-        const average = allRatings.reduce((sum, r) => sum + r, 0) / allRatings.length;
-        return Math.round((average / 10) * 100);
+        
+        // ОФП: physical
+        if (athlete.skills.physical) {
+            Object.values(athlete.skills.physical).forEach(rating => {
+                if (typeof rating === 'number') {
+                    ofpSum += rating;
+                    ofpCount++;
+                }
+            });
+        }
+        
+        // Если нет данных ни по атомам, ни по ОФП → "Нет данных"
+        if (atomsCount === 0 || ofpCount === 0) {
+            return "Нет данных";
+        }
+        
+        const avgAtoms = atomsSum / atomsCount;
+        const avgOFP = ofpSum / ofpCount;
+        const avgTotal = (avgAtoms + avgOFP) / 2;
+        
+        // Переводим в проценты (из 10-балльной шкалы)
+        return Math.round((avgTotal / 10) * 100);
     },
 
     calculateGap(potential, realization) {
+        if (realization === "Нет данных") {
+            return "Нет данных";
+        }
         return potential - realization;
     },
 
     async updateAthleteMetrics(athleteId) {
         const athlete = await Storage.getAthleteById(athleteId);
         if (!athlete) return null;
+        
         const potential = this.calculatePotential(athlete);
         const realization = this.calculateRealization(athlete);
         const gap = this.calculateGap(potential, realization);
+        
         const metrics = { potential, realization, gap };
         await Storage.updateAthlete(athleteId, { metrics });
         return metrics;
+    },
+
+    getWeightCategory(athlete) {
+        if (!athlete.anthropometry || athlete.anthropometry.length === 0) return null;
+        
+        const latest = athlete.anthropometry[athlete.anthropometry.length - 1];
+        const ageGroup = getAgeGroup(athlete.birthYear);
+        if (!ageGroup) return null;
+        
+        const category = findWeightCategory(athlete.gender, ageGroup, latest.weight);
+        return category ? `${category.weight} кг` : null;
     },
 
     getStrengths(athlete) {
@@ -1299,121 +1489,99 @@ const Router = {
     },
 
     async initProfilePage(athleteId) {
-        if (!athleteId) {
-            alert('Спортсмен не найден');
-            this.navigate('dashboard');
-            return;
-        }
-
-        this.currentAthleteId = athleteId;
-        localStorage.setItem('currentAthleteId', athleteId);
-        
-        Utils.showLoader();
-        const profile = await Athletes.getProfile(athleteId);
-        Utils.hideLoader();
-
-        if (!profile) {
-            alert('Спортсмен не найден');
-            this.navigate('dashboard');
-            return;
-        }
-
-        const genderText = profile.gender === 'M' ? 'М' : 'Ж';
-        document.getElementById('profile-athlete-name').textContent = `${profile.firstName} ${profile.lastName}`;
-        document.getElementById('profile-athlete-meta').textContent = `${profile.birthYear} г.р., ${genderText}`;
-
-        const metrics = profile.metrics || {};
-        document.getElementById('profile-potential').textContent = metrics.potential || '—';
-        document.getElementById('profile-realization').textContent = metrics.realization || '—';
-        document.getElementById('profile-gap').textContent = metrics.gap || '—';
-
-        const strengthsList = document.getElementById('profile-strengths');
-        strengthsList.innerHTML = '';
-        if (profile.strengths && profile.strengths.length > 0) {
-            profile.strengths.forEach(strength => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="skill-name">${strength.name}</span><span class="skill-rating">${strength.rating}/10</span>`;
-                strengthsList.appendChild(li);
-            });
-        } else {
-            strengthsList.innerHTML = '<li>Данных пока недостаточно</li>';
-        }
-
-        const weaknessesList = document.getElementById('profile-weaknesses');
-        weaknessesList.innerHTML = '';
-        if (profile.weaknesses && profile.weaknesses.length > 0) {
-            profile.weaknesses.forEach(weakness => {
-                const li = document.createElement('li');
-                li.innerHTML = `<span class="skill-name">${weakness.name}</span><span class="skill-rating">${weakness.rating}/10</span>`;
-                weaknessesList.appendChild(li);
-            });
-        } else {
-            weaknessesList.innerHTML = '<li>Нет критических зон</li>';
-        }
-
-        // Генерация кнопок секций с ID спортсмена
-        const sectionsGrid = document.getElementById('profile-sections-grid');
-        if (sectionsGrid) {
-            sectionsGrid.innerHTML = `
-                <a href="anthropometry.html?id=${athleteId}" class="section-button">
-                    <div class="section-button-icon">📏</div>
-                    <div class="section-button-title">Антропометрия</div>
-                    <div class="section-button-subtitle">Параметры и история</div>
-                </a>
-
-                <a href="physical.html?id=${athleteId}" class="section-button">
-                    <div class="section-button-icon">💪</div>
-                    <div class="section-button-title">Физическое развитие</div>
-                    <div class="section-button-subtitle">Сила и выносливость</div>
-                </a>
-
-                <a href="functional.html?id=${athleteId}" class="section-button">
-                    <div class="section-button-icon">⚡</div>
-                    <div class="section-button-title">Функциональная готовность</div>
-                    <div class="section-button-subtitle">Скорость и реакция</div>
-                </a>
-
-                <a href="technical.html?id=${athleteId}" class="section-button">
-                    <div class="section-button-icon">🥊</div>
-                    <div class="section-button-title">Техническая подготовленность</div>
-                    <div class="section-button-subtitle">Навыки и тактика</div>
-                </a>
-            `;
-        }
-
-        const recommendationsDiv = document.getElementById('profile-recommendations');
-        recommendationsDiv.innerHTML = '';
-        if (profile.recommendations && profile.recommendations.length > 0) {
-            profile.recommendations.forEach(rec => {
-                const recDiv = document.createElement('div');
-                recDiv.className = `recommendation ${rec.type}`;
-                recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
-                recommendationsDiv.appendChild(recDiv);
-            });
-        } else {
-            recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
-        }
-
-        document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
-        document.getElementById('btn-share').onclick = async () => {
-            const url = await Share.getShareUrl(athleteId);
-            if (url) {
-                document.getElementById('share-link').value = url;
-                document.getElementById('share-modal').classList.remove('hidden');
-            }
-        };
-
-        document.getElementById('btn-copy-link').onclick = () => {
-            const linkInput = document.getElementById('share-link');
-            linkInput.select();
-            document.execCommand('copy');
-            alert('Ссылка скопирована!');
-        };
-
-        document.getElementById('btn-close-modal').onclick = () => {
-            document.getElementById('share-modal').classList.add('hidden');
-        };
+    if (!athleteId) {
+        alert('Спортсмен не найден');
+        this.navigate('dashboard');
+        return;
     }
+
+    this.currentAthleteId = athleteId;
+    localStorage.setItem('currentAthleteId', athleteId);
+    
+    Utils.showLoader();
+    const profile = await Athletes.getProfile(athleteId);
+    Utils.hideLoader();
+
+    if (!profile) {
+        alert('Спортсмен не найден');
+        this.navigate('dashboard');
+        return;
+    }
+
+    const genderText = profile.gender === 'M' ? 'М' : 'Ж';
+    document.getElementById('profile-athlete-name').textContent = `${profile.firstName} ${profile.lastName}`;
+    document.getElementById('profile-athlete-meta').textContent = `${profile.birthYear} г.р., ${genderText}`;
+
+    const metrics = profile.metrics || {};
+    document.getElementById('profile-potential').textContent = metrics.potential || '—';
+    document.getElementById('profile-realization').textContent = metrics.realization || 'Нет данных';
+    document.getElementById('profile-gap').textContent = metrics.gap || 'Нет данных';
+
+    // УДАЛЕНЫ БЛОКИ profile-strengths и profile-weaknesses
+
+    // Генерация кнопок секций
+    const sectionsGrid = document.getElementById('profile-sections-grid');
+    if (sectionsGrid) {
+        sectionsGrid.innerHTML = `
+            <a href="anthropometry.html?id=${athleteId}" class="section-button">
+                <div class="section-button-icon">📏</div>
+                <div class="section-button-title">Антропометрия</div>
+                <div class="section-button-subtitle">Параметры и история</div>
+            </a>
+            <a href="physical.html?id=${athleteId}" class="section-button">
+                <div class="section-button-icon">💪</div>
+                <div class="section-button-title">Физическое развитие</div>
+                <div class="section-button-subtitle">Сила и выносливость</div>
+            </a>
+            <a href="functional.html?id=${athleteId}" class="section-button">
+                <div class="section-button-icon">⚡</div>
+                <div class="section-button-title">Функциональная готовность</div>
+                <div class="section-button-subtitle">Скорость и реакция</div>
+            </a>
+            <a href="technical.html?id=${athleteId}" class="section-button">
+                <div class="section-button-icon">🥊</div>
+                <div class="section-button-title">Техническая подготовленность</div>
+                <div class="section-button-subtitle">Навыки и тактика</div>
+            </a>
+        `;
+    }
+
+    // Рекомендации
+    const recommendationsDiv = document.getElementById('profile-recommendations');
+    recommendationsDiv.innerHTML = '';
+    if (profile.recommendations && profile.recommendations.length > 0) {
+        profile.recommendations.forEach(rec => {
+            const recDiv = document.createElement('div');
+            recDiv.className = `recommendation ${rec.type}`;
+            recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
+            recommendationsDiv.appendChild(recDiv);
+        });
+    } else {
+        recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
+    }
+
+    // Кнопки
+    document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
+    document.getElementById('btn-share').onclick = async () => {
+        const url = await Share.getShareUrl(athleteId);
+        if (url) {
+            document.getElementById('share-link').value = url;
+            document.getElementById('share-modal').classList.remove('hidden');
+        }
+    };
+
+    document.getElementById('btn-copy-link').onclick = () => {
+        const linkInput = document.getElementById('share-link');
+        linkInput.select();
+        document.execCommand('copy');
+        alert('Ссылка скопирована!');
+    };
+
+    document.getElementById('btn-close-modal').onclick = () => {
+        document.getElementById('share-modal').classList.add('hidden');
+    };
+}
+
 };
 
 // ============================================
