@@ -1,126 +1,106 @@
 'use strict';
 
 // ============================================
-// STORAGE MODULE
+// FIREBASE INITIALIZATION
+// ============================================
+const firebaseConfig = {
+    apiKey: "AIzaSyAxsNe0j6NxMwLDeWrFpvdqRbBHFg5gdiw",
+    authDomain: "cartel-academy.firebaseapp.com",
+    projectId: "cartel-academy",
+    storageBucket: "cartel-academy.firebasestorage.app",
+    messagingSenderId: "988659631950",
+    appId: "1:988659631950:web:ffb7ec4d4b5e0ec440401f"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ============================================
+// STORAGE MODULE (FIREBASE WRAPPER)
 // ============================================
 const Storage = {
-    KEYS: {
-        USERS: 'boxing_users',
-        CURRENT_USER: 'boxing_current_user',
-        ATHLETES: 'boxing_athletes'
+    currentUser: null,
+
+    async getCurrentUser() {
+        if (!auth.currentUser) return null;
+        if (this.currentUser) return this.currentUser;
+        
+        const uid = auth.currentUser.uid;
+        const doc = await db.collection('coaches').doc(uid).get();
+        if (!doc.exists) return null;
+        
+        this.currentUser = {
+            id: uid,
+            ...doc.data()
+        };
+        return this.currentUser;
     },
 
-    get(key) {
-        try {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            console.error('Storage read error:', error);
-            return null;
-        }
-    },
-
-    set(key, value) {
-        try {
-            localStorage.setItem(key, JSON.stringify(value));
-            return true;
-        } catch (error) {
-            console.error('Storage write error:', error);
-            return false;
-        }
-    },
-
-    remove(key) {
-        localStorage.removeItem(key);
-    },
-
-    getUsers() {
-        return this.get(this.KEYS.USERS) || [];
-    },
-
-    setUsers(users) {
-        return this.set(this.KEYS.USERS, users);
-    },
-
-    getCurrentUser() {
-        const userId = this.get(this.KEYS.CURRENT_USER);
-        if (!userId) return null;
-        const users = this.getUsers();
-        return users.find(u => u.id === userId) || null;
-    },
-
-    setCurrentUser(userId) {
-        return this.set(this.KEYS.CURRENT_USER, userId);
+    async setCurrentUserProfile(data) {
+        if (!auth.currentUser) return false;
+        const uid = auth.currentUser.uid;
+        await db.collection('coaches').doc(uid).set(data);
+        this.currentUser = { id: uid, ...data };
+        return true;
     },
 
     logout() {
-        this.remove(this.KEYS.CURRENT_USER);
+        this.currentUser = null;
+        return auth.signOut();
     },
 
-    getAthletes() {
-        return this.get(this.KEYS.ATHLETES) || [];
+    async getCoachAthletes() {
+        if (!auth.currentUser) return [];
+        const snapshot = await db.collection('students')
+            .where('coachId', '==', auth.currentUser.uid)
+            .get();
+        
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
     },
 
-    setAthletes(athletes) {
-        return this.set(this.KEYS.ATHLETES, athletes);
+    async getAthleteById(id) {
+        const doc = await db.collection('students').doc(id).get();
+        if (!doc.exists) return null;
+        return { id: doc.id, ...doc.data() };
     },
 
-    getCoachAthletes() {
-        const currentUser = this.getCurrentUser();
-        if (!currentUser) return [];
-        const athletes = this.getAthletes();
-        return athletes.filter(a => a.coachId === currentUser.id);
+    async getAthleteByToken(token) {
+        const snapshot = await db.collection('students')
+            .where('shareToken', '==', token)
+            .limit(1)
+            .get();
+        
+        if (snapshot.empty) return null;
+        const doc = snapshot.docs[0];
+        return { id: doc.id, ...doc.data() };
     },
 
-    getAthleteById(id) {
-        const athletes = this.getAthletes();
-        return athletes.find(a => a.id === id) || null;
+    async addAthlete(athlete) {
+        const docRef = await db.collection('students').add(athlete);
+        return { id: docRef.id, ...athlete };
     },
 
-    getAthleteByToken(token) {
-        const athletes = this.getAthletes();
-        return athletes.find(a => a.shareToken === token) || null;
+    async updateAthlete(id, updates) {
+        await db.collection('students').doc(id).update(updates);
+        return true;
     },
 
-    addAthlete(athlete) {
-        const athletes = this.getAthletes();
-        athletes.push(athlete);
-        return this.setAthletes(athletes);
-    },
-
-    updateAthlete(id, updates) {
-        const athletes = this.getAthletes();
-        const index = athletes.findIndex(a => a.id === id);
-        if (index === -1) return false;
-        athletes[index] = { ...athletes[index], ...updates };
-        return this.setAthletes(athletes);
-    },
-
-    deleteAthlete(id) {
-        const athletes = this.getAthletes();
-        const filtered = athletes.filter(a => a.id !== id);
-        return this.setAthletes(filtered);
+    async deleteAthlete(id) {
+        await db.collection('students').doc(id).delete();
+        return true;
     }
 };
-
-// Инициализация хранилища
-if (!Storage.get(Storage.KEYS.USERS)) {
-    Storage.setUsers([]);
-}
-if (!Storage.get(Storage.KEYS.ATHLETES)) {
-    Storage.setAthletes([]);
-}
 
 // ============================================
 // UTILITIES MODULE
 // ============================================
 const Utils = {
     generateId() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
+        return db.collection('_').doc().id;
     },
 
     generateToken(length = 32) {
@@ -130,16 +110,6 @@ const Utils = {
             token += chars.charAt(Math.floor(Math.random() * chars.length));
         }
         return token;
-    },
-
-    hashPassword(password) {
-        let hash = 0;
-        for (let i = 0; i < password.length; i++) {
-            const char = password.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
-        return hash.toString();
     },
 
     formatDate(dateString) {
@@ -177,14 +147,21 @@ const Utils = {
         return { page, params };
     },
 
-    // Вычисление возраста из года рождения
     calculateAge(birthYear) {
         return new Date().getFullYear() - birthYear;
+    },
+
+    showLoader() {
+        document.body.style.cursor = 'wait';
+    },
+
+    hideLoader() {
+        document.body.style.cursor = 'default';
     }
 };
 
 // ============================================
-// SKILLS DATA
+// SKILLS DATA (БЕЗ ИЗМЕНЕНИЙ)
 // ============================================
 const SKILLS_DATA = {
     technique: {
@@ -269,18 +246,16 @@ const Calculations = {
         if (!athlete.anthropometry || athlete.anthropometry.length === 0) return 0;
         const latest = athlete.anthropometry[athlete.anthropometry.length - 1];
         const { height, weight, reach } = latest;
-        const age = Utils.calculateAge(athlete.birthYear); // Используем birthYear
+        const age = Utils.calculateAge(athlete.birthYear);
         const gender = athlete.gender;
         let score = 0;
 
-        // Reach ratio
         const reachRatio = reach / height;
         if (reachRatio >= 1.05 && reachRatio <= 1.10) score += 30;
         else if (reachRatio >= 1.0 && reachRatio < 1.05) score += 25;
         else if (reachRatio > 1.10 && reachRatio <= 1.15) score += 25;
         else score += 15;
 
-        // BMI
         const bmi = weight / ((height/100) * (height/100));
         if (gender === 'M') {
             if (bmi >= 22 && bmi <= 25) score += 25;
@@ -294,14 +269,12 @@ const Calculations = {
             else score += 10;
         }
 
-        // Age factor
         if (age >= 10 && age <= 14) score += 20;
         else if (age >= 15 && age <= 17) score += 25;
         else if (age >= 18 && age <= 25) score += 20;
         else if (age >= 26 && age <= 30) score += 15;
         else score += 10;
 
-        // Height factor
         if (gender === 'M') {
             if (height >= 170 && height <= 185) score += 20;
             else if (height >= 160 && height < 170) score += 15;
@@ -335,14 +308,14 @@ const Calculations = {
         return potential - realization;
     },
 
-    updateAthleteMetrics(athleteId) {
-        const athlete = Storage.getAthleteById(athleteId);
+    async updateAthleteMetrics(athleteId) {
+        const athlete = await Storage.getAthleteById(athleteId);
         if (!athlete) return null;
         const potential = this.calculatePotential(athlete);
         const realization = this.calculateRealization(athlete);
         const gap = this.calculateGap(potential, realization);
         const metrics = { potential, realization, gap };
-        Storage.updateAthlete(athleteId, { metrics });
+        await Storage.updateAthlete(athleteId, { metrics });
         return metrics;
     },
 
@@ -464,11 +437,10 @@ const Recommendations = {
 };
 
 // ============================================
-// AUTH MODULE
+// AUTH MODULE (FIREBASE)
 // ============================================
-const Auth = {
-    register(email, password, firstName, lastName, city) {
-        // Валидация
+const AuthModule = {
+    async register(email, password, firstName, lastName, city) {
         if (!Utils.validateEmail(email)) {
             return { success: false, error: 'Некорректный email' };
         }
@@ -485,103 +457,107 @@ const Auth = {
             return { success: false, error: 'Укажите город' };
         }
 
-        const users = Storage.getUsers();
-        if (users.find(u => u.email === email)) {
-            return { success: false, error: 'Пользователь с таким email уже существует' };
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const uid = userCredential.user.uid;
+            
+            const coachData = {
+                email: email,
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                city: city.trim(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            await db.collection('coaches').doc(uid).set(coachData);
+            
+            return { success: true, user: { id: uid, ...coachData } };
+        } catch (error) {
+            let errorMsg = 'Ошибка регистрации';
+            if (error.code === 'auth/email-already-in-use') {
+                errorMsg = 'Пользователь с таким email уже существует';
+            } else if (error.code === 'auth/weak-password') {
+                errorMsg = 'Слишком простой пароль';
+            }
+            return { success: false, error: errorMsg };
         }
-
-        // Создание объекта тренера с firstName, lastName, city
-        const user = {
-            id: Utils.generateId(),
-            email: email,
-            password: Utils.hashPassword(password),
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            city: city.trim(),
-            createdAt: new Date().toISOString()
-        };
-        
-        users.push(user);
-        Storage.setUsers(users);
-        Storage.setCurrentUser(user.id);
-        return { success: true, user };
     },
 
-    login(email, password) {
+    async login(email, password) {
         if (!Utils.validateEmail(email)) {
             return { success: false, error: 'Некорректный email' };
         }
-        const users = Storage.getUsers();
-        const user = users.find(u => u.email === email);
-        if (!user) {
-            return { success: false, error: 'Пользователь не найден' };
+
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+            return { success: true };
+        } catch (error) {
+            let errorMsg = 'Ошибка входа';
+            if (error.code === 'auth/user-not-found') {
+                errorMsg = 'Пользователь не найден';
+            } else if (error.code === 'auth/wrong-password') {
+                errorMsg = 'Неверный пароль';
+            }
+            return { success: false, error: errorMsg };
         }
-        if (user.password !== Utils.hashPassword(password)) {
-            return { success: false, error: 'Неверный пароль' };
-        }
-        Storage.setCurrentUser(user.id);
-        return { success: true, user };
     },
 
-    logout() {
-        Storage.logout();
+    async logout() {
+        await Storage.logout();
     }
 };
 
 // ============================================
-// ATHLETES MODULE
+// ATHLETES MODULE (ASYNC)
 // ============================================
 const Athletes = {
-    create(data) {
-        const currentUser = Storage.getCurrentUser();
-        if (!currentUser) return null;
+    async create(data) {
+        if (!auth.currentUser) return null;
         
-        // Извлекаем год из birthDate и сохраняем как Number
         const birthYear = Number(new Date(data.birthDate).getFullYear());
         
-        // Объект ученика с birthDate и birthYear
         const athlete = {
-            id: Utils.generateId(),
-            coachId: currentUser.id,
+            coachId: auth.currentUser.uid,
             firstName: data.firstName.trim(),
             lastName: data.lastName.trim(),
-            birthDate: data.birthDate, // Строка YYYY-MM-DD
-            birthYear: birthYear,       // Число
+            birthDate: data.birthDate,
+            birthYear: birthYear,
             gender: data.gender,
-            createdAt: new Date().toISOString(),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             anthropometry: [],
             skills: {},
             metrics: { potential: 0, realization: 0, gap: 0 },
             shareToken: null
         };
         
-        Storage.addAthlete(athlete);
-        return athlete;
+        return await Storage.addAthlete(athlete);
     },
 
-    addAnthropometry(athleteId, data) {
-        const athlete = Storage.getAthleteById(athleteId);
+    async addAnthropometry(athleteId, data) {
+        const athlete = await Storage.getAthleteById(athleteId);
         if (!athlete) return false;
+        
         const anthropometry = {
             date: data.date,
             height: parseFloat(data.height),
             weight: parseFloat(data.weight),
             reach: parseFloat(data.reach)
         };
-        athlete.anthropometry.push(anthropometry);
-        Storage.updateAthlete(athleteId, { anthropometry: athlete.anthropometry });
-        Calculations.updateAthleteMetrics(athleteId);
+        
+        const updatedAnthro = [...(athlete.anthropometry || []), anthropometry];
+        await Storage.updateAthlete(athleteId, { anthropometry: updatedAnthro });
+        await Calculations.updateAthleteMetrics(athleteId);
         return true;
     },
 
-    saveSkills(athleteId, skills) {
-        Storage.updateAthlete(athleteId, { skills });
-        Calculations.updateAthleteMetrics(athleteId);
+    async saveSkills(athleteId, skills) {
+        await Storage.updateAthlete(athleteId, { skills });
+        await Calculations.updateAthleteMetrics(athleteId);
         return true;
     },
 
-    getProfile(athleteId) {
-        const athlete = Storage.getAthleteById(athleteId);
+    async getProfile(athleteId) {
+        const athlete = await Storage.getAthleteById(athleteId);
         if (!athlete) return null;
         return {
             ...athlete,
@@ -592,8 +568,8 @@ const Athletes = {
         };
     },
 
-    getCoachAthletes() {
-        return Storage.getCoachAthletes();
+    async getCoachAthletes() {
+        return await Storage.getCoachAthletes();
     }
 };
 
@@ -601,24 +577,24 @@ const Athletes = {
 // SHARE MODULE
 // ============================================
 const Share = {
-    generateShareToken(athleteId) {
+    async generateShareToken(athleteId) {
         const token = Utils.generateToken(32);
-        Storage.updateAthlete(athleteId, { shareToken: token });
+        await Storage.updateAthlete(athleteId, { shareToken: token });
         return token;
     },
 
-    getShareUrl(athleteId) {
-        let athlete = Storage.getAthleteById(athleteId);
+    async getShareUrl(athleteId) {
+        let athlete = await Storage.getAthleteById(athleteId);
         if (!athlete) return null;
         if (!athlete.shareToken) {
-            this.generateShareToken(athleteId);
-            athlete = Storage.getAthleteById(athleteId);
+            await this.generateShareToken(athleteId);
+            athlete = await Storage.getAthleteById(athleteId);
         }
         return `${window.location.origin}${window.location.pathname}#student?token=${athlete.shareToken}`;
     },
 
-    getAthleteByToken(token) {
-        const athlete = Storage.getAthleteByToken(token);
+    async getAthleteByToken(token) {
+        const athlete = await Storage.getAthleteByToken(token);
         if (!athlete) return null;
         return {
             id: athlete.id,
@@ -693,6 +669,7 @@ const SilhouetteRenderer = {
 
     renderRuler(height) {
         const ruler = document.getElementById('height-ruler');
+        if (!ruler) return;
         ruler.innerHTML = '';
         ruler.style.height = `${height}px`;
         for (let cm = 210; cm >= 140; cm -= 10) {
@@ -705,6 +682,7 @@ const SilhouetteRenderer = {
 
     renderReachLine(reach) {
         const reachLine = document.getElementById('reach-line');
+        if (!reachLine) return;
         const minWidth = 150;
         const maxWidth = 400;
         const minReach = 140;
@@ -727,53 +705,64 @@ const SilhouetteRenderer = {
 };
 
 // ============================================
-// ROUTER MODULE
+// ROUTER MODULE (ASYNC)
 // ============================================
 const Router = {
     currentPage: null,
     currentAthleteId: null,
 
     init() {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                const { page } = Utils.getHashParams();
+                if (!page || page === 'auth') {
+                    this.navigate('dashboard');
+                } else {
+                    this.route();
+                }
+            } else {
+                this.navigate('auth');
+            }
+        });
+
         this.setupAuthHandlers();
         window.addEventListener('hashchange', () => this.route());
-        this.route();
     },
 
-    route() {
+    async route() {
         const { page, params } = Utils.getHashParams();
         document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
 
         let targetPage = page || '';
-        const isAuthenticated = Storage.getCurrentUser() !== null;
 
         if (targetPage === 'student') {
-            this.showStudentView(params.token);
+            await this.showStudentView(params.token);
             return;
         }
 
-        if (!isAuthenticated) {
+        if (!auth.currentUser) {
             targetPage = 'auth';
         } else if (targetPage === '' || targetPage === 'auth') {
             targetPage = 'dashboard';
         }
 
-        this.showPage(targetPage, params);
+        await this.showPage(targetPage, params);
         this.currentPage = targetPage;
     },
 
-    showPage(page, params = {}) {
+    async showPage(page, params = {}) {
         const pageElement = document.getElementById(`page-${page}`);
         if (!pageElement) return;
         pageElement.classList.remove('hidden');
 
-        if (page === 'dashboard') this.initDashboardPage();
+        if (page === 'dashboard') await this.initDashboardPage();
         if (page === 'athlete-add') this.initAddAthletePage();
-        if (page === 'anthropometry') this.initAnthropometryPage(params.id);
-        if (page === 'skills') this.initSkillsPage(params.id);
-        if (page === 'profile') this.initProfilePage(params.id);
+        if (page === 'anthropometry') await this.initAnthropometryPage(params.id);
+        if (page === 'skills') await this.initSkillsPage(params.id);
+        if (page === 'profile') await this.initProfilePage(params.id);
     },
 
-    showStudentView(token) {
+    async showStudentView(token) {
         const pageElement = document.getElementById('page-student-view');
         pageElement.classList.remove('hidden');
         document.getElementById('student-error').classList.add('hidden');
@@ -783,13 +772,12 @@ const Router = {
             return;
         }
 
-        const athleteData = Share.getAthleteByToken(token);
+        const athleteData = await Share.getAthleteByToken(token);
         if (!athleteData) {
             document.getElementById('student-error').classList.remove('hidden');
             return;
         }
 
-        // Отображение: "[birthYear] г.р."
         const genderText = athleteData.gender === 'M' ? 'М' : 'Ж';
         document.getElementById('student-athlete-name').textContent = `${athleteData.firstName} ${athleteData.lastName}`;
         document.getElementById('student-athlete-meta').textContent = `${athleteData.birthYear} г.р., ${genderText}`;
@@ -815,7 +803,7 @@ const Router = {
     },
 
     initStudentSections(athleteData) {
-        const buttons = document.querySelectorAll('.section-button');
+        const buttons = document.querySelectorAll('#page-student-view .section-button');
         let activeSection = null;
 
         buttons.forEach(button => {
@@ -832,7 +820,8 @@ const Router = {
 
                 if (activeSection) {
                     document.getElementById(`content-${activeSection}`).classList.add('hidden');
-                    document.querySelector(`[data-section="${activeSection}"]`).classList.remove('active');
+                    const prevBtn = document.querySelector(`[data-section="${activeSection}"]`);
+                    if (prevBtn) prevBtn.classList.remove('active');
                 }
 
                 content.classList.remove('hidden');
@@ -974,9 +963,6 @@ const Router = {
         window.location.hash = hash;
     },
 
-    // ============================================
-    // AUTH HANDLERS
-    // ============================================
     setupAuthHandlers() {
         const tabs = document.querySelectorAll('.auth-tabs .tab');
         const coachFieldsGroup = document.getElementById('coach-fields-group');
@@ -986,14 +972,12 @@ const Router = {
         
         let currentMode = 'login';
         
-        // Обработчик переключения табов
         tabs.forEach(tab => {
             tab.onclick = () => {
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
                 currentMode = tab.dataset.tab;
                 
-                // При register показываем поля тренера, при login скрываем
                 if (currentMode === 'register') {
                     coachFieldsGroup.classList.remove('hidden');
                     submitBtn.textContent = 'Зарегистрироваться';
@@ -1013,23 +997,24 @@ const Router = {
             };
         });
         
-        // Обработчик формы авторизации/регистрации
-        authForm.onsubmit = (e) => {
+        authForm.onsubmit = async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             errorMessage.classList.add('hidden');
+            Utils.showLoader();
             
             let result;
             if (currentMode === 'register') {
-                // При регистрации собираем firstName, lastName, city
                 const firstName = document.getElementById('first-name-coach').value;
                 const lastName = document.getElementById('last-name-coach').value;
                 const city = document.getElementById('city-coach').value;
-                result = Auth.register(email, password, firstName, lastName, city);
+                result = await AuthModule.register(email, password, firstName, lastName, city);
             } else {
-                result = Auth.login(email, password);
+                result = await AuthModule.login(email, password);
             }
+            
+            Utils.hideLoader();
             
             if (result.success) {
                 this.navigate('dashboard');
@@ -1040,22 +1025,19 @@ const Router = {
         };
     },
 
-    // ============================================
-    // DASHBOARD PAGE
-    // ============================================
-    initDashboardPage() {
-        const currentUser = Storage.getCurrentUser();
+    async initDashboardPage() {
+        Utils.showLoader();
         
-        // Имя тренера собирается из firstName и lastName
+        const currentUser = await Storage.getCurrentUser();
         const displayName = currentUser.firstName && currentUser.lastName 
             ? `${currentUser.firstName} ${currentUser.lastName}` 
-            : currentUser.name || currentUser.email;
+            : currentUser.email;
         
         document.getElementById('coach-name').textContent = `Тренер: ${displayName}`;
         
         const athletesList = document.getElementById('athletes-list');
         const emptyState = document.getElementById('empty-state');
-        const athletes = Athletes.getCoachAthletes();
+        const athletes = await Athletes.getCoachAthletes();
 
         if (athletes.length === 0) {
             emptyState.classList.remove('hidden');
@@ -1070,7 +1052,6 @@ const Router = {
                 const metrics = athlete.metrics || { potential: 0, realization: 0, gap: 0 };
                 const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
                 
-                // Отображение: "[birthYear] г.р."
                 card.innerHTML = `
                     <div class="athlete-info">
                         <h3>${athlete.firstName} ${athlete.lastName}</h3>
@@ -1089,33 +1070,32 @@ const Router = {
 
         document.getElementById('btn-add-athlete').onclick = () => this.navigate('athlete-add');
         document.getElementById('btn-add-first').onclick = () => this.navigate('athlete-add');
-        document.getElementById('btn-logout').onclick = () => {
+        document.getElementById('btn-logout').onclick = async () => {
             if (confirm('Вы уверены, что хотите выйти?')) {
-                Auth.logout();
-                this.navigate('auth');
+                await AuthModule.logout();
             }
         };
+        
+        Utils.hideLoader();
     },
 
-    // ============================================
-    // ADD ATHLETE PAGE (ШАГ 1)
-    // ============================================
     initAddAthletePage() {
         const form = document.getElementById('form-add-athlete');
         
-        form.onsubmit = (e) => {
+        form.onsubmit = async (e) => {
             e.preventDefault();
+            Utils.showLoader();
             
-            // Читаем данные из формы (включая birthDate)
             const formData = {
                 firstName: document.getElementById('first-name').value,
                 lastName: document.getElementById('last-name').value,
-                birthDate: document.getElementById('birth-date').value, // Дата в формате YYYY-MM-DD
+                birthDate: document.getElementById('birth-date').value,
                 gender: document.querySelector('input[name="gender"]:checked').value
             };
             
-            // Athletes.create() извлечёт birthYear из birthDate
-            const athlete = Athletes.create(formData);
+            const athlete = await Athletes.create(formData);
+            
+            Utils.hideLoader();
             
             if (athlete) {
                 localStorage.setItem('currentAthleteId', athlete.id);
@@ -1131,17 +1111,17 @@ const Router = {
         };
     },
 
-    // ============================================
-    // ANTHROPOMETRY PAGE (ШАГ 2)
-    // ============================================
-    initAnthropometryPage(athleteId) {
+    async initAnthropometryPage(athleteId) {
         if (!athleteId) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
             return;
         }
         
-        const athlete = Storage.getAthleteById(athleteId);
+        Utils.showLoader();
+        const athlete = await Storage.getAthleteById(athleteId);
+        Utils.hideLoader();
+        
         if (!athlete) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
@@ -1152,15 +1132,21 @@ const Router = {
         document.getElementById('measurement-date').value = Utils.getCurrentDate();
 
         const form = document.getElementById('form-anthropometry');
-        form.onsubmit = (e) => {
+        form.onsubmit = async (e) => {
             e.preventDefault();
+            Utils.showLoader();
+            
             const formData = {
                 height: document.getElementById('height').value,
                 weight: document.getElementById('weight').value,
                 reach: document.getElementById('reach').value,
                 date: document.getElementById('measurement-date').value
             };
-            if (Athletes.addAnthropometry(athleteId, formData)) {
+            
+            const success = await Athletes.addAnthropometry(athleteId, formData);
+            Utils.hideLoader();
+            
+            if (success) {
                 this.navigate('skills', { id: athleteId });
             } else {
                 alert('Ошибка сохранения');
@@ -1168,25 +1154,27 @@ const Router = {
         };
         
         document.getElementById('btn-back-anthro').onclick = () => this.navigate('dashboard');
-        document.getElementById('btn-cancel-anthro').onclick = () => {
+        document.getElementById('btn-cancel-anthro').onclick = async () => {
             if (confirm('Отменить?')) {
-                Storage.deleteAthlete(athleteId);
+                Utils.showLoader();
+                await Storage.deleteAthlete(athleteId);
+                Utils.hideLoader();
                 this.navigate('dashboard');
             }
         };
     },
 
-    // ============================================
-    // SKILLS PAGE (ШАГ 3)
-    // ============================================
-    initSkillsPage(athleteId) {
+    async initSkillsPage(athleteId) {
         if (!athleteId) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
             return;
         }
         
-        const athlete = Storage.getAthleteById(athleteId);
+        Utils.showLoader();
+        const athlete = await Storage.getAthleteById(athleteId);
+        Utils.hideLoader();
+        
         if (!athlete) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
@@ -1234,10 +1222,11 @@ const Router = {
         });
 
         const form = document.getElementById('form-skills');
-        form.onsubmit = (e) => {
+        form.onsubmit = async (e) => {
             e.preventDefault();
-            const skills = {};
+            Utils.showLoader();
             
+            const skills = {};
             form.querySelectorAll('input[type="number"]').forEach(input => {
                 const categoryId = input.dataset.category;
                 const skillId = input.name;
@@ -1247,7 +1236,10 @@ const Router = {
                 skills[categoryId][skillId] = rating;
             });
             
-            if (Athletes.saveSkills(athleteId, skills)) {
+            const success = await Athletes.saveSkills(athleteId, skills);
+            Utils.hideLoader();
+            
+            if (success) {
                 alert('Спортсмен добавлен!');
                 this.navigate('profile', { id: athleteId });
             } else {
@@ -1263,10 +1255,7 @@ const Router = {
         };
     },
 
-    // ============================================
-    // PROFILE PAGE
-    // ============================================
-    initProfilePage(athleteId) {
+    async initProfilePage(athleteId) {
         if (!athleteId) {
             alert('Спортсмен не найден');
             this.navigate('dashboard');
@@ -1276,7 +1265,9 @@ const Router = {
         this.currentAthleteId = athleteId;
         localStorage.setItem('currentAthleteId', athleteId);
         
-        const profile = Athletes.getProfile(athleteId);
+        Utils.showLoader();
+        const profile = await Athletes.getProfile(athleteId);
+        Utils.hideLoader();
 
         if (!profile) {
             alert('Спортсмен не найден');
@@ -1284,7 +1275,6 @@ const Router = {
             return;
         }
 
-        // Отображение: "[birthYear] г.р."
         const genderText = profile.gender === 'M' ? 'М' : 'Ж';
         document.getElementById('profile-athlete-name').textContent = `${profile.firstName} ${profile.lastName}`;
         document.getElementById('profile-athlete-meta').textContent = `${profile.birthYear} г.р., ${genderText}`;
@@ -1294,7 +1284,6 @@ const Router = {
         document.getElementById('profile-realization').textContent = metrics.realization || '—';
         document.getElementById('profile-gap').textContent = metrics.gap || '—';
 
-        // Сильные стороны
         const strengthsList = document.getElementById('profile-strengths');
         strengthsList.innerHTML = '';
         if (profile.strengths && profile.strengths.length > 0) {
@@ -1307,7 +1296,6 @@ const Router = {
             strengthsList.innerHTML = '<li>Данных пока недостаточно</li>';
         }
 
-        // Отстающие зоны
         const weaknessesList = document.getElementById('profile-weaknesses');
         weaknessesList.innerHTML = '';
         if (profile.weaknesses && profile.weaknesses.length > 0) {
@@ -1322,7 +1310,6 @@ const Router = {
 
         this.initProfileSections(profile);
 
-        // Рекомендации
         const recommendationsDiv = document.getElementById('profile-recommendations');
         recommendationsDiv.innerHTML = '';
         if (profile.recommendations && profile.recommendations.length > 0) {
@@ -1336,10 +1323,11 @@ const Router = {
             recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
         }
 
-        // Кнопки
         document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
-        document.getElementById('btn-share').onclick = () => {
-            const shareUrl = Share.getShareUrl(athleteId);
+        document.getElementById('btn-share').onclick = async () => {
+            Utils.showLoader();
+            const shareUrl = await Share.getShareUrl(athleteId);
+            Utils.hideLoader();
             document.getElementById('share-link').value = shareUrl;
             document.getElementById('share-modal').classList.remove('hidden');
         };
