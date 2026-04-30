@@ -1079,19 +1079,33 @@ const Router = {
         Utils.hideLoader();
     },
 
-    initAddAthletePage() {
-        const form = document.getElementById('form-add-athlete');
-        
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            Utils.showLoader();
-            
-            const formData = {
-                firstName: document.getElementById('first-name').value,
-                lastName: document.getElementById('last-name').value,
-                birthDate: document.getElementById('birth-date').value,
-                gender: document.querySelector('input[name="gender"]:checked').value
-            };
+    form.onsubmit = async (e) => {
+    e.preventDefault();
+    
+    // Валидация года рождения
+    const birthYear = parseInt(document.getElementById('birth-year').value);
+    const currentYear = new Date().getFullYear();
+    
+    if (birthYear < 1950 || birthYear > currentYear) {
+        alert(`Укажите корректный год рождения (1950-${currentYear})`);
+        return;
+    }
+    
+    if (birthYear > currentYear - 5) {
+        if (!confirm('Спортсмену меньше 5 лет. Продолжить?')) {
+            return;
+        }
+    }
+    
+    Utils.showLoader();
+    
+    const formData = {
+        firstName: document.getElementById('first-name').value,
+        lastName: document.getElementById('last-name').value,
+        birthYear: birthYear,
+        gender: document.querySelector('input[name="gender"]:checked').value
+    };
+
             
             const athlete = await Athletes.create(formData);
             
@@ -1351,24 +1365,25 @@ const Router = {
                 </a>
             `;
         }
+async create(data) {
+    if (!auth.currentUser) return null;
+    
+    const athlete = {
+        coachId: auth.currentUser.uid,
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        birthYear: parseInt(data.birthYear),
+        gender: data.gender,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        anthropometry: [],
+        skills: {},
+        metrics: { potential: 0, realization: 0, gap: 0 },
+        shareToken: null
+    };
+    
+    return await Storage.addAthlete(athlete);
+},
 
-        document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
-        document.getElementById('btn-share').onclick = async () => {
-            Utils.showLoader();
-            const shareUrl = await Share.getShareUrl(athleteId);
-            Utils.hideLoader();
-            document.getElementById('share-link').value = shareUrl;
-            document.getElementById('share-modal').classList.remove('hidden');
-        };
-        document.getElementById('btn-copy-link').onclick = () => {
-            document.getElementById('share-link').select();
-            document.execCommand('copy');
-            alert('Ссылка скопирована!');
-        };
-        document.getElementById('btn-close-modal').onclick = () => {
-            document.getElementById('share-modal').classList.add('hidden');
-        };
-    },
 
     initProfileSections(profile) {
         const buttons = document.querySelectorAll('.profile-section-btn');
