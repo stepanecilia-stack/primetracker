@@ -1322,6 +1322,35 @@ const Router = {
         } else {
             recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
         }
+                // ДИНАМИЧЕСКАЯ ГЕНЕРАЦИЯ КНОПОК С ID
+        const sectionsGrid = document.getElementById('profile-sections-grid');
+        if (sectionsGrid) {
+            sectionsGrid.innerHTML = `
+                <a href="anthropometry.html?id=${athleteId}" class="section-button">
+                    <div class="section-button-icon">📏</div>
+                    <div class="section-button-title">Антропометрия</div>
+                    <div class="section-button-subtitle">Параметры и история</div>
+                </a>
+
+                <a href="physical.html?id=${athleteId}" class="section-button">
+                    <div class="section-button-icon">💪</div>
+                    <div class="section-button-title">Физическое развитие</div>
+                    <div class="section-button-subtitle">Сила и выносливость</div>
+                </a>
+
+                <a href="functional.html?id=${athleteId}" class="section-button">
+                    <div class="section-button-icon">⚡</div>
+                    <div class="section-button-title">Функциональная готовность</div>
+                    <div class="section-button-subtitle">Скорость и реакция</div>
+                </a>
+
+                <a href="technical.html?id=${athleteId}" class="section-button">
+                    <div class="section-button-icon">🥊</div>
+                    <div class="section-button-title">Техническая подготовленность</div>
+                    <div class="section-button-subtitle">Навыки и тактика</div>
+                </a>
+            `;
+        }
 
         document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
         document.getElementById('btn-share').onclick = async () => {
@@ -1512,10 +1541,265 @@ const Router = {
         }
     }
 };
+// ============================================
+// BOXING BENCHMARKS DATABASE
+// ============================================
+const BOXING_BENCHMARKS = {
+    M: { // Мужчины
+        '13-14': [
+            { weight: 37, idealHeight: 153, archetype: 'Жилистый, «сухие» длинные мышцы.' },
+            { weight: 40, idealHeight: 156, archetype: 'Жилистый, «сухие» длинные мышцы.' },
+            { weight: 42, idealHeight: 158, archetype: 'Легкий атлет, акцент на скорость и прыжок.' },
+            { weight: 44, idealHeight: 161, archetype: 'Сбалансированный, начинает оформляться плечевой пояс.' },
+            { weight: 46, idealHeight: 164, archetype: 'Эталон. Оптимальное сочетание рычага и плотности.' },
+            { weight: 48, idealHeight: 167, archetype: 'Снайпер. Длинные руки, высокая мобильность.' },
+            { weight: 50, idealHeight: 170, archetype: 'Атлетичный. Появляется мощь в ударе за счет спины.' },
+            { weight: 52, idealHeight: 172, archetype: 'Плотный. Хорошо развиты широчайшие и дельты.' },
+            { weight: 54, idealHeight: 174, archetype: 'Универсал. Мощный торс при сохранении роста.' },
+            { weight: 57, idealHeight: 176, archetype: 'Силовик-темповик. «Мясо» на груди и мощные ноги.' },
+            { weight: 60, idealHeight: 178, archetype: 'Пик функционала. Максимальная плотность удара.' },
+            { weight: 63, idealHeight: 181, archetype: 'Крупный атлет. Рост взрослого, сила подростка.' },
+            { weight: 66, idealHeight: 183, archetype: 'Мощный каркас. Доминирование за счет физики.' },
+            { weight: 70, idealHeight: 185, archetype: 'Тяжелоатлетическое сложение. Взрывной прыжок.' },
+            { weight: 75, idealHeight: 188, archetype: 'Гигант с мышечной базой. Редкий, элитный профиль.' },
+            { weight: 80, idealHeight: 191, archetype: 'Будущий супертяж. Огромный размах рук.' },
+            { weight: 90, idealHeight: 194, archetype: 'Абсолютное доминирование. Мощь + Рост.' }
+        ],
+        '15-16': [
+            { weight: 44, idealHeight: 160, archetype: 'Очень сухой, «звенящий» атлет. Предел весогонки.' },
+            { weight: 46, idealHeight: 162, archetype: 'Очень сухой, «звенящий» атлет. Предел весогонки.' },
+            { weight: 48, idealHeight: 164, archetype: 'Снайпер-легкач. Высокая скорость рук.' },
+            { weight: 50, idealHeight: 167, archetype: 'Оформленный атлет. Появляется жесткость в кости.' },
+            { weight: 52, idealHeight: 170, archetype: 'Баланс. Плечи шире таза, сухая талия.' },
+            { weight: 54, idealHeight: 172, archetype: 'Плотный «игровик». Мощные ноги для челнока.' },
+            { weight: 57, idealHeight: 175, archetype: 'Золотая середина. Идеальный рычаг для этого веса.' },
+            { weight: 60, idealHeight: 177, archetype: 'Универсал. Мышцы спины и груди уже отчетливы.' },
+            { weight: 63, idealHeight: 179, archetype: 'Силовик. Тяжелый, акцентированный удар.' },
+            { weight: 66, idealHeight: 181, archetype: 'Атлет с глубоким рельефом. Мощный плечевой пояс.' },
+            { weight: 70, idealHeight: 183, archetype: 'Крупный, сбитый боец. Доминирует за счет массы.' },
+            { weight: 75, idealHeight: 186, archetype: 'Полутяж. Рост взрослого профи, мощный костяк.' },
+            { weight: 80, idealHeight: 189, archetype: 'Тяжеловес. Огромная физическая мощь + ГТО золото.' },
+            { weight: 90, idealHeight: 192, archetype: 'Абсолютка. Массивный скелет, готовый к большим весам.' }
+        ],
+        '17-18': [
+            { weight: 48, idealHeight: 162, archetype: 'Предельно сухой «мухач». Только жилы и кости.' },
+            { weight: 51, idealHeight: 165, archetype: 'Скоростной снайпер. Феноменальная резкость.' },
+            { weight: 54, idealHeight: 168, archetype: 'Техничный «игровик». Идеальный баланс рычагов.' },
+            { weight: 57, idealHeight: 171, archetype: 'Оформленный атлет. Плотный удар, широкие плечи.' },
+            { weight: 60, idealHeight: 174, archetype: 'Классика. Образцовый боксерский силуэт.' },
+            { weight: 63.5, idealHeight: 176, archetype: 'Темповик. Мощный торс, готовый к высокой плотности боя.' },
+            { weight: 67, idealHeight: 178, archetype: 'Силовик. Жесткая кость, тяжелый кулак.' },
+            { weight: 71, idealHeight: 181, archetype: 'Твой типаж. Идеальный рычаг + мужская мощь.' },
+            { weight: 75, idealHeight: 183, archetype: 'Мощный средневес. Доминирование за счет физики.' },
+            { weight: 80, idealHeight: 186, archetype: 'Полутяж. Сбитый, атлетичный, очень опасный.' },
+            { weight: 86, idealHeight: 189, archetype: 'Тяжеловес-атлет. Глубокий рельеф, мощная спина.' },
+            { weight: 92, idealHeight: 192, archetype: 'Крузер. Огромная мощь при сохранении мобильности.' },
+            { weight: 100, idealHeight: 195, archetype: 'Супертяж. Массивный костяк, готовый нести 100+ кг.' }
+        ],
+        '19-22': [
+            { weight: 48, idealHeight: 162, archetype: 'Сухой, жилистый «мухач».' },
+            { weight: 51, idealHeight: 165, archetype: 'Скоростной снайпер.' },
+            { weight: 54, idealHeight: 168, archetype: 'Техничный игровик.' },
+            { weight: 57, idealHeight: 171, archetype: 'Сбалансированный полулегковес.' },
+            { weight: 60, idealHeight: 174, archetype: 'Классический боксерский силуэт.' },
+            { weight: 63.5, idealHeight: 176, archetype: 'Мощный темповик.' },
+            { weight: 67, idealHeight: 178, archetype: 'Силовик с тяжелым ударом.' },
+            { weight: 71, idealHeight: 181, archetype: 'Твой эталон. Идеальный баланс рычага и мощи.' },
+            { weight: 75, idealHeight: 183, archetype: 'Мощный средневес.' },
+            { weight: 80, idealHeight: 186, archetype: 'Атлетичный полутяж.' },
+            { weight: 86, idealHeight: 189, archetype: 'Тяжеловес-атлет.' },
+            { weight: 92, idealHeight: 192, archetype: 'Крузер с огромным размахом.' },
+            { weight: 100, idealHeight: 195, archetype: 'Супертяж-гигант.' }
+        ]
+    },
+    F: { // Женщины
+        '13-14': [
+            { weight: 34, idealHeight: 158, archetype: 'Дистанция. Недосягаемость для атак, работа передней рукой.' },
+            { weight: 36, idealHeight: 161, archetype: 'Дистанция. Недосягаемость для атак, работа передней рукой.' },
+            { weight: 38, idealHeight: 163, archetype: 'Рычаг. Контроль центра ринга за счет длины рук.' },
+            { weight: 40, idealHeight: 165, archetype: 'Тайминг. Встречные удары на входе соперницы в зону.' },
+            { weight: 42, idealHeight: 167, archetype: 'Маневренность. Удержание дальней дистанции весь бой.' },
+            { weight: 44, idealHeight: 169, archetype: 'Геометрия. Удары под углами, которые недоступны низким.' },
+            { weight: 46, idealHeight: 170, archetype: 'Доминирование. Полный контроль пространства ринга.' },
+            { weight: 48, idealHeight: 172, archetype: 'Прессинг. Расстрел с дистанции без входа в клинч.' },
+            { weight: 51, idealHeight: 174, archetype: 'Функционал. Сочетание длины шага и частоты ударов.' },
+            { weight: 54, idealHeight: 176, archetype: 'Резкость. Длинный «хлесткий» джеб, сбивающий атаки.' },
+            { weight: 57, idealHeight: 178, archetype: 'Атлетизм. Использование рычага как рычага силы.' },
+            { weight: 60, idealHeight: 180, archetype: 'Психология. Подавление ростом и объемом атак.' },
+            { weight: 64, idealHeight: 183, archetype: 'Точность. Работа как «высокий снайпер» по этажам.' },
+            { weight: 70, idealHeight: 185, archetype: 'Тотальный контроль. Соперницы просто не дотягиваются.' }
+        ],
+        '15-16': [
+            { weight: 44, idealHeight: 166, archetype: 'Скорость. Максимальный рычаг при сохранении резкости.' },
+            { weight: 46, idealHeight: 168, archetype: 'Скорость. Максимальный рычаг при сохранении резкости.' },
+            { weight: 48, idealHeight: 169, archetype: 'Тайминг. Работа на опережение, контроль дистанции.' },
+            { weight: 50, idealHeight: 171, archetype: 'Линейность. Прямые удары, которые длиннее атак соперниц.' },
+            { weight: 52, idealHeight: 172, archetype: 'Баланс. Устойчивость в ногах + длинный джеб.' },
+            { weight: 54, idealHeight: 173, archetype: 'Жесткость. Появляется «взрыв» в ударе за счет спины.' },
+            { weight: 57, idealHeight: 174, archetype: 'Универсализм. Одинаково эффективна на дистанции и в отходе.' },
+            { weight: 60, idealHeight: 175, archetype: 'Плотность. Мышцы плечевого пояса позволяют «рубиться».' },
+            { weight: 63, idealHeight: 176, archetype: 'Сила. Акцентированные удары, сбивающие защиту.' },
+            { weight: 66, idealHeight: 177, archetype: 'Прессинг. Подавление физикой при сохранении роста.' },
+            { weight: 70, idealHeight: 178, archetype: 'Мощь. Тяжелый удар, работа по корпусу.' },
+            { weight: 75, idealHeight: 180, archetype: 'Доминирование. Сочетание массы и высокого роста.' },
+            { weight: 80, idealHeight: 182, archetype: 'Атлетизм. Мощный костяк, готовый к тяжелым разменам.' },
+            { weight: 90, idealHeight: 185, archetype: 'Абсолютка. Физическое превосходство во всем.' }
+        ],
+        '17-18': [
+            { weight: 48, idealHeight: 164, archetype: 'Резкость. Предельная концентрация силы в сухом теле.' },
+            { weight: 50, idealHeight: 168, archetype: 'Линейная скорость. Быстрый вход-выход на длинных ногах.' },
+            { weight: 52, idealHeight: 170, archetype: 'Контр-атака. Проваливание соперницы и расстрел с дистанции.' },
+            { weight: 54, idealHeight: 171, archetype: 'Техничность. Идеальная координация рычагов и корпуса.' },
+            { weight: 57, idealHeight: 172, archetype: 'Жесткий джеб. Остановка любых атак передней рукой.' },
+            { weight: 60, idealHeight: 173, archetype: 'Универсальность. Работа на всех дистанциях за счет атлетизма.' },
+            { weight: 63, idealHeight: 174, archetype: 'Плотный бой. Силовое доминирование в разменах.' },
+            { weight: 66, idealHeight: 175, archetype: 'Устойчивость. Мощный фундамент (ноги) + длинный удар.' },
+            { weight: 70, idealHeight: 176, archetype: 'Акцент. Тяжелый, «мужской» по силе удар.' },
+            { weight: 75, idealHeight: 178, archetype: 'Физика. Подавление массой при сохранении роста.' },
+            { weight: 81, idealHeight: 180, archetype: 'Мощь. Доминирование за счет объема мышц и рычага.' },
+            { weight: 90, idealHeight: 183, archetype: 'Абсолютка. Максимальный костяк и ударная мощь.' }
+        ],
+        '19-22': [
+            { weight: 48, idealHeight: 164, archetype: 'Скорость и рычаг. Работа на дистанции, недосягаемость.' },
+            { weight: 50, idealHeight: 168, archetype: 'Тайминг. Встречные удары, контроль передней рукой.' },
+            { weight: 52, idealHeight: 170, archetype: 'Линейная мощь. Длинные прямые, пробивающие защиту.' },
+            { weight: 54, idealHeight: 171, archetype: 'Баланс. Идеальное сочетание устойчивости и длины рук.' },
+            { weight: 57, idealHeight: 172, archetype: 'Жесткость. Остановка атак за счет плотности удара.' },
+            { weight: 60, idealHeight: 173, archetype: 'Универсализм. Доминирование на всех дистанциях.' },
+            { weight: 63, idealHeight: 174, archetype: 'Силовой прессинг. Подавление физикой и рычагом.' },
+            { weight: 66, idealHeight: 175, archetype: 'Устойчивость. Мощные ноги (база ГТО) + длинный удар.' },
+            { weight: 70, idealHeight: 176, archetype: 'Акцент. Тяжелый удар, работа по этажам.' },
+            { weight: 75, idealHeight: 178, archetype: 'Атлетизм. Мощный плечевой пояс, доминирование в клинче.' },
+            { weight: 81, idealHeight: 180, archetype: 'Физическая мощь. Подавление массой и ростом.' },
+            { weight: 90, idealHeight: 183, archetype: 'Абсолютка. Максимальный костяк, сокрушительный удар.' }
+        ]
+    }
+};
+
+function getAgeGroup(birthYear) {
+    const age = new Date().getFullYear() - birthYear;
+    if (age >= 13 && age <= 14) return '13-14';
+    if (age >= 15 && age <= 16) return '15-16';
+    if (age >= 17 && age <= 18) return '17-18';
+    if (age >= 19) return '19-22';
+    return null;
+}
+
+function findWeightCategory(gender, ageGroup, weight) {
+    if (!BOXING_BENCHMARKS[gender] || !BOXING_BENCHMARKS[gender][ageGroup]) return null;
+    
+    const categories = BOXING_BENCHMARKS[gender][ageGroup];
+    let closest = categories[0];
+    let minDiff = Math.abs(weight - closest.weight);
+    
+    for (let cat of categories) {
+        const diff = Math.abs(weight - cat.weight);
+        if (diff < minDiff) {
+            minDiff = diff;
+            closest = cat;
+        }
+    }
+    
+    return closest;
+}
+
+function calculateBiometricPotential(height, reach, idealHeight) {
+    const apeIndex = reach - height;
+    const baseCoeff = height / idealHeight;
+    const leverBonus = (apeIndex / 10) * 0.05;
+    const potential = (baseCoeff + leverBonus) * 100;
+    return Math.round(potential * 10) / 10;
+}
+
+function getArchetype(height, idealHeight, weight, gender, ageGroup) {
+    const deviation = height - idealHeight;
+    
+    if (Math.abs(deviation) <= 3) {
+        return {
+            icon: '🟢',
+            name: 'Биометрический Доминант',
+            description: 'Идеальное соответствие роста и веса. Максимальный потенциал для категории.'
+        };
+    }
+    
+    if (deviation >= -7 && deviation < -3) {
+        return {
+            icon: '🟡',
+            name: 'Технический Мастер',
+            description: 'Компактное сложение. Преимущество в скорости и маневренности.'
+        };
+    }
+    
+    if (deviation < -7) {
+        const categories = BOXING_BENCHMARKS[gender][ageGroup];
+        const currentIndex = categories.findIndex(c => Math.abs(c.weight - weight) < 2);
+        
+        if (currentIndex === 0) {
+            return {
+                icon: '🔴',
+                name: 'Компенсатор (Тип Б: Реактивный Штурмовик)',
+                description: 'Минимальный вес для возраста. Компенсация недостатка роста агрессией и плотностью боя.'
+            };
+        } else {
+            return {
+                icon: '🔴',
+                name: 'Компенсатор (Тип А: Инфайтер-Танк)',
+                description: 'Низкий рост для веса. Работа на ближней дистанции, давление корпусом.'
+            };
+        }
+    }
+    
+    return {
+        icon: '⚪',
+        name: 'Нестандартный профиль',
+        description: 'Требуется индивидуальный подход.'
+    };
+}
+
+function calculateKSR(athleteSkills, potential) {
+    if (!athleteSkills || potential === 0) return null;
+    
+    let atomsSum = 0, atomsCount = 0;
+    let ofpSum = 0, ofpCount = 0;
+    
+    // Атомы (техника + защита + тактика)
+    ['technique', 'defense', 'tactics'].forEach(cat => {
+        if (athleteSkills[cat]) {
+            Object.values(athleteSkills[cat]).forEach(rating => {
+                atomsSum += rating;
+                atomsCount++;
+            });
+        }
+    });
+    
+    // ОФП (физические качества)
+    if (athleteSkills.physical) {
+        Object.values(athleteSkills.physical).forEach(rating => {
+            ofpSum += rating;
+            ofpCount++;
+        });
+    }
+    
+    if (atomsCount === 0 || ofpCount === 0) return null;
+    
+    const avgAtoms = atomsSum / atomsCount;
+    const avgOFP = ofpSum / ofpCount;
+    const ksr = (avgAtoms + avgOFP) / (2 * (potential / 100));
+    
+    return Math.round(ksr * 100) / 100;
+}
+
+function interpretKSR(ksr) {
+    if (ksr === null) return { text: 'Недостаточно данных', class: 'status-gray' };
+    if (ksr < 0.8) return { text: 'Недобор мощности', class: 'status-red' };
+    if (ksr >= 0.8 && ksr <= 1.2) return { text: 'Оптимальная реализация', class: 'status-green' };
+    return { text: 'Сверх-реализация', class: 'status-blue' };
+}
 
 // ============================================
 // INIT
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
     Router.init();
+    
 });
