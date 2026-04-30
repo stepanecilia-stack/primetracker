@@ -600,11 +600,24 @@ function findWeightCategory(gender, ageGroup, weight) {
 }
 
 function calculateBiometricPotential(height, reach, idealHeight) {
+    let potential = 100;
+    
+    // Штраф за рост: −5% за каждый 1 см ниже idealHeight
+    const heightDiff = idealHeight - height;
+    if (heightDiff > 0) {
+        potential -= heightDiff * 5;
+    }
+    
+    // Штраф за размах: −4% за каждый 1 см отрицательного Ape Index
     const apeIndex = reach - height;
-    const baseCoeff = height / idealHeight;
-    const leverBonus = (apeIndex / 10) * 0.05;
-    const potential = (baseCoeff + leverBonus) * 100;
-    return Math.round(potential * 10) / 10;
+    if (apeIndex < 0) {
+        potential -= Math.abs(apeIndex) * 4;
+    }
+    
+    // Нижний порог: не ниже 10%
+    potential = Math.max(10, potential);
+    
+    return Math.round(potential);
 }
 
 function getArchetype(height, idealHeight, weight, gender, ageGroup) {
@@ -678,9 +691,9 @@ function calculateKSR(athleteSkills, potential) {
     
     const avgAtoms = atomsSum / atomsCount;
     const avgOFP = ofpSum / ofpCount;
-    const ksr = (avgAtoms + avgOFP) / (2 * (potential / 100));
+    const realization = Math.round(((avgAtoms + avgOFP) / 2 / 10) * 100);
     
-    return Math.round(ksr * 100) / 100;
+    return realization;
 }
 
 function interpretKSR(ksr) {
