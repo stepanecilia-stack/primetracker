@@ -19,38 +19,37 @@
         </div>
         
         <form id="auth-form" class="auth-form">
-    <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" required>
-    </div>
-    
-    <div class="form-group">
-        <label for="password">Пароль</label>
-        <input type="password" id="password" required>
-    </div>
-    
-    <div id="coach-fields-group" class="hidden">
-        <div class="form-group">
-            <label for="first-name-coach">Имя *</label>
-            <input type="text" id="first-name-coach">
-        </div>
-        
-        <div class="form-group">
-            <label for="last-name-coach">Фамилия *</label>
-            <input type="text" id="last-name-coach">
-        </div>
-        
-        <div class="form-group">
-            <label for="city-coach">Город *</label>
-            <input type="text" id="city-coach">
-        </div>
-    </div>
-    
-    <button type="submit" class="btn btn-primary" id="auth-submit-btn">Войти</button>
-    
-    <div id="auth-error" class="error-message hidden"></div>
-</form>
-
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" required>
+            </div>
+            
+            <div id="coach-fields-group" class="hidden">
+                <div class="form-group">
+                    <label for="first-name-coach">Имя *</label>
+                    <input type="text" id="first-name-coach">
+                </div>
+                
+                <div class="form-group">
+                    <label for="last-name-coach">Фамилия *</label>
+                    <input type="text" id="last-name-coach">
+                </div>
+                
+                <div class="form-group">
+                    <label for="city-coach">Город *</label>
+                    <input type="text" id="city-coach">
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" id="auth-submit-btn">Войти</button>
+            
+            <div id="auth-error" class="error-message hidden"></div>
+        </form>
     </div>
 
     <!-- DASHBOARD PAGE -->
@@ -85,41 +84,40 @@
         </header>
         
         <form id="form-add-athlete" class="athlete-form">
-    <div class="form-group">
-        <label for="first-name">Имя *</label>
-        <input type="text" id="first-name" required>
-    </div>
-    
-    <div class="form-group">
-        <label for="last-name">Фамилия *</label>
-        <input type="text" id="last-name" required>
-    </div>
-    
-    <div class="form-group">
-        <label for="birth-year">Год рождения *</label>
-        <input type="number" id="birth-year" min="1950" max="2026" placeholder="Например: 2010" required>
-    </div>
-    
-    <div class="form-group">
-        <label>Пол *</label>
-        <div class="radio-group">
-            <label>
-                <input type="radio" name="gender" value="M" required checked>
-                Мужской
-            </label>
-            <label>
-                <input type="radio" name="gender" value="F">
-                Женский
-            </label>
-        </div>
-    </div>
-    
-    <div class="form-actions">
-        <button type="button" class="btn btn-secondary" id="btn-cancel-add">Отмена</button>
-        <button type="submit" class="btn btn-primary">Далее →</button>
-    </div>
-</form>
-
+            <div class="form-group">
+                <label for="first-name">Имя *</label>
+                <input type="text" id="first-name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="last-name">Фамилия *</label>
+                <input type="text" id="last-name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="birth-year">Год рождения *</label>
+                <input type="number" id="birth-year" min="1950" max="2026" placeholder="Например: 2010" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Пол *</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="gender" value="M" required checked>
+                        Мужской
+                    </label>
+                    <label>
+                        <input type="radio" name="gender" value="F">
+                        Женский
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="btn-cancel-add">Отмена</button>
+                <button type="submit" class="btn btn-primary">Далее →</button>
+            </div>
+        </form>
     </div>
 
     <!-- ANTHROPOMETRY PAGE -->
@@ -219,19 +217,16 @@
                 </div>
             </div>
         </section>
-        
-     
-        <!-- 4 кнопки-раздела (генерируются динамически) -->
+
+        <!-- 4 кнопки навигации -->
         <div class="sections-grid" id="profile-sections-grid"></div>
 
-        <!-- ВЫНЕСЕНО ЗА ПРЕДЕЛЫ GRID -->
+        <!-- Рекомендации тренеру -->
         <section class="section recommendations-section">
             <h2>Рекомендации тренеру</h2>
             <div id="profile-recommendations" class="recommendations"></div>
         </section>
-
     </div>
-
 
     <!-- STUDENT VIEW PAGE -->
     <div id="page-student-view" class="hidden">
@@ -332,11 +327,10 @@
     </div>
 
     <!-- Firebase SDK v9 (compat mode) -->
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-<script src="script.js"></script>
-
+    <script src="script.js"></script>
 </body>
 </html>

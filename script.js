@@ -159,6 +159,7 @@ const Utils = {
         document.body.style.cursor = 'default';
     }
 };
+
 // ============================================
 // BOXING BENCHMARKS DATABASE
 // ============================================
@@ -294,7 +295,9 @@ const BOXING_BENCHMARKS = {
     }
 };
 
-// Вспомогательные функции для работы с BOXING_BENCHMARKS
+// ============================================
+// BENCHMARK HELPER FUNCTIONS
+// ============================================
 function getAgeGroup(birthYear) {
     const age = new Date().getFullYear() - birthYear;
     if (age >= 13 && age <= 14) return '13-14';
@@ -324,7 +327,6 @@ function findWeightCategory(gender, ageGroup, weight) {
         idealHeight: lastCat.idealHeight
     };
 }
-
 
 // ============================================
 // SKILLS DATA
@@ -422,7 +424,7 @@ const Calculations = {
         
         const idealHeight = category.idealHeight;
         
-        // НОВАЯ ФОРМУЛА
+        // ✅ НОВАЯ ФОРМУЛА
         let potential = 100;
         
         // Штраф за рост: −5% за каждый 1 см ниже idealHeight
@@ -596,7 +598,12 @@ const Recommendations = {
     generate(athlete) {
         const recommendations = [];
         const metrics = athlete.metrics || {};
-        const gap = metrics.gap || 0;
+        const gap = metrics.gap;
+
+        // Проверяем, есть ли числовое значение разрыва
+        if (gap === "Нет данных" || gap === undefined) {
+            return recommendations;
+        }
 
         if (gap > 20) {
             recommendations.push({
@@ -610,7 +617,7 @@ const Recommendations = {
                 title: 'Есть резервы для роста',
                 text: `Разрыв ${gap} баллов указывает на нереализованный потенциал.`
             });
-        } else if (gap < 5) {
+        } else if (gap >= 0 && gap < 5) {
             recommendations.push({
                 type: 'success',
                 title: 'Отличная реализация потенциала',
@@ -912,7 +919,6 @@ const Router = {
     authInitialized: false,
 
     init() {
-        // КРИТИЧНО: Ждем onAuthStateChanged ПЕРЕД роутингом
         auth.onAuthStateChanged(user => {
             console.log('Auth state changed:', user ? user.email : 'No user');
             
@@ -925,16 +931,13 @@ const Router = {
             const { page } = Utils.getHashParams();
             
             if (user) {
-                // Пользователь авторизован
                 if (!page || page === 'auth') {
                     this.navigate('dashboard');
                 } else {
                     this.route();
                 }
             } else {
-                // Пользователь НЕ авторизован
                 if (page === 'student') {
-                    // Разрешаем просмотр ученика без авторизации
                     this.route();
                 } else {
                     this.showAuthPage();
@@ -1240,7 +1243,6 @@ const Router = {
             Utils.hideLoader();
             
             if (result.success) {
-                // ✅ ИСПРАВЛЕНО: Router.navigate вместо this.navigate
                 Router.navigate('dashboard');
             } else {
                 errorMessage.textContent = result.error;
@@ -1250,68 +1252,65 @@ const Router = {
     },
 
     async initDashboardPage() {
-    Utils.showLoader();
-    
-    const currentUser = await Storage.getCurrentUser();
-    const displayName = currentUser.firstName && currentUser.lastName 
-        ? `${currentUser.firstName} ${currentUser.lastName}` 
-        : currentUser.email;
-    
-    document.getElementById('coach-name').textContent = `Тренер: ${displayName}`;
-    
-    const athletesList = document.getElementById('athletes-list');
-    const emptyState = document.getElementById('empty-state');
-    const athletes = await Athletes.getCoachAthletes();
-
-    if (athletes.length === 0) {
-        emptyState.classList.remove('hidden');
-        athletesList.innerHTML = '';
-    } else {
-        emptyState.classList.add('hidden');
-        athletesList.innerHTML = '';
+        Utils.showLoader();
         
-        // ✅ ИСПРАВЛЕНО: Пересчитываем метрики для каждого спортсмена
-        for (const athlete of athletes) {
-            // Вычисляем актуальные метрики
-            const potential = Calculations.calculatePotential(athlete);
-            const realization = Calculations.calculateRealization(athlete);
-            const gap = Calculations.calculateGap(potential, realization);
-            
-            const card = document.createElement('div');
-            card.className = 'athlete-card';
-            const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
-            
-            // Форматируем отображение
-            const realizationDisplay = realization === "Нет данных" ? "Нет данных" : realization;
-            const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
-            
-            card.innerHTML = `
-                <div class="athlete-info">
-                    <h3>${athlete.firstName} ${athlete.lastName}</h3>
-                    <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText}</p>
-                </div>
-                <div class="athlete-metrics">
-                    <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}</span></div>
-                    <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
-                    <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
-                </div>
-            `;
-            card.onclick = () => this.navigate('profile', { id: athlete.id });
-            athletesList.appendChild(card);
-        }
-    }
+        const currentUser = await Storage.getCurrentUser();
+        const displayName = currentUser.firstName && currentUser.lastName 
+            ? `${currentUser.firstName} ${currentUser.lastName}` 
+            : currentUser.email;
+        
+        document.getElementById('coach-name').textContent = `Тренер: ${displayName}`;
+        
+        const athletesList = document.getElementById('athletes-list');
+        const emptyState = document.getElementById('empty-state');
+        const athletes = await Athletes.getCoachAthletes();
 
-    document.getElementById('btn-add-athlete').onclick = () => this.navigate('athlete-add');
-    document.getElementById('btn-add-first').onclick = () => this.navigate('athlete-add');
-    document.getElementById('btn-logout').onclick = async () => {
-        if (confirm('Вы уверены, что хотите выйти?')) {
-            await AuthModule.logout();
+        if (athletes.length === 0) {
+            emptyState.classList.remove('hidden');
+            athletesList.innerHTML = '';
+        } else {
+            emptyState.classList.add('hidden');
+            athletesList.innerHTML = '';
+            
+            // ✅ ИСПРАВЛЕНО БАГ 2: Пересчитываем метрики на лету
+            for (const athlete of athletes) {
+                const potential = Calculations.calculatePotential(athlete);
+                const realization = Calculations.calculateRealization(athlete);
+                const gap = Calculations.calculateGap(potential, realization);
+                
+                const card = document.createElement('div');
+                card.className = 'athlete-card';
+                const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+                
+                const realizationDisplay = realization === "Нет данных" ? "Нет данных" : realization;
+                const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
+                
+                card.innerHTML = `
+                    <div class="athlete-info">
+                        <h3>${athlete.firstName} ${athlete.lastName}</h3>
+                        <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText}</p>
+                    </div>
+                    <div class="athlete-metrics">
+                        <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}</span></div>
+                        <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
+                        <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
+                    </div>
+                `;
+                card.onclick = () => this.navigate('profile', { id: athlete.id });
+                athletesList.appendChild(card);
+            }
         }
-    };
-    
-    Utils.hideLoader();
-}
 
+        document.getElementById('btn-add-athlete').onclick = () => this.navigate('athlete-add');
+        document.getElementById('btn-add-first').onclick = () => this.navigate('athlete-add');
+        document.getElementById('btn-logout').onclick = async () => {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                await AuthModule.logout();
+            }
+        };
+        
+        Utils.hideLoader();
+    },
 
     initAddAthletePage() {
         const form = document.getElementById('form-add-athlete');
@@ -1505,116 +1504,115 @@ const Router = {
     },
 
     async initProfilePage(athleteId) {
-    if (!athleteId) {
-        alert('Спортсмен не найден');
-        this.navigate('dashboard');
-        return;
-    }
+        if (!athleteId) {
+            alert('Спортсмен не найден');
+            this.navigate('dashboard');
+            return;
+        }
 
-    this.currentAthleteId = athleteId;
-    localStorage.setItem('currentAthleteId', athleteId);
-    
-    Utils.showLoader();
-    const athlete = await Storage.getAthleteById(athleteId);
-    Utils.hideLoader();
-
-    if (!athlete) {
-        alert('Спортсмен не найден');
-        this.navigate('dashboard');
-        return;
-    }
-
-    const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
-    document.getElementById('profile-athlete-name').textContent = `${athlete.firstName} ${athlete.lastName}`;
-    document.getElementById('profile-athlete-meta').textContent = `${athlete.birthYear} г.р., ${genderText}`;
-
-    // ✅ ИСПРАВЛЕНО: Вычисляем актуальные метрики
-    const potential = Calculations.calculatePotential(athlete);
-    const realization = Calculations.calculateRealization(athlete);
-    const gap = Calculations.calculateGap(potential, realization);
-    
-    // Форматируем отображение
-    const realizationDisplay = realization === "Нет данных" ? "Нет данных" : realization;
-    const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
-
-    document.getElementById('profile-potential').textContent = potential || '—';
-    document.getElementById('profile-realization').textContent = realizationDisplay;
-    document.getElementById('profile-gap').textContent = gapDisplay;
-
-    // Генерация кнопок секций
-    const sectionsGrid = document.getElementById('profile-sections-grid');
-    if (sectionsGrid) {
-        sectionsGrid.innerHTML = `
-            <a href="anthropometry.html?id=${athleteId}" class="section-button">
-                <div class="section-button-icon">📏</div>
-                <div class="section-button-title">Антропометрия</div>
-                <div class="section-button-subtitle">Параметры и история</div>
-            </a>
-            <a href="physical.html?id=${athleteId}" class="section-button">
-                <div class="section-button-icon">💪</div>
-                <div class="section-button-title">Физическое развитие</div>
-                <div class="section-button-subtitle">Сила и выносливость</div>
-            </a>
-            <a href="functional.html?id=${athleteId}" class="section-button">
-                <div class="section-button-icon">⚡</div>
-                <div class="section-button-title">Функциональная готовность</div>
-                <div class="section-button-subtitle">Скорость и реакция</div>
-            </a>
-            <a href="technical.html?id=${athleteId}" class="section-button">
-                <div class="section-button-icon">🥊</div>
-                <div class="section-button-title">Техническая подготовленность</div>
-                <div class="section-button-subtitle">Навыки и тактика</div>
-            </a>
-        `;
-    }
-
-    // Рекомендации (если есть данные для их генерации)
-    const recommendationsDiv = document.getElementById('profile-recommendations');
-    recommendationsDiv.innerHTML = '';
-    
-    if (realization !== "Нет данных") {
-        const recommendations = Recommendations.generate({
-            ...athlete,
-            metrics: { potential, realization, gap }
-        });
+        this.currentAthleteId = athleteId;
+        localStorage.setItem('currentAthleteId', athleteId);
         
-        if (recommendations.length > 0) {
-            recommendations.forEach(rec => {
-                const recDiv = document.createElement('div');
-                recDiv.className = `recommendation ${rec.type}`;
-                recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
-                recommendationsDiv.appendChild(recDiv);
+        Utils.showLoader();
+        const athlete = await Storage.getAthleteById(athleteId);
+        Utils.hideLoader();
+
+        if (!athlete) {
+            alert('Спортсмен не найден');
+            this.navigate('dashboard');
+            return;
+        }
+
+        const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+        document.getElementById('profile-athlete-name').textContent = `${athlete.firstName} ${athlete.lastName}`;
+        document.getElementById('profile-athlete-meta').textContent = `${athlete.birthYear} г.р., ${genderText}`;
+
+        // ✅ ИСПРАВЛЕНО БАГ 2: Вычисляем актуальные метрики
+        const potential = Calculations.calculatePotential(athlete);
+        const realization = Calculations.calculateRealization(athlete);
+        const gap = Calculations.calculateGap(potential, realization);
+        
+        const realizationDisplay = realization === "Нет данных" ? "Нет данных" : realization;
+        const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
+
+        document.getElementById('profile-potential').textContent = potential || '—';
+        document.getElementById('profile-realization').textContent = realizationDisplay;
+        document.getElementById('profile-gap').textContent = gapDisplay;
+
+        // ✅ ИСПРАВЛЕНО БАГ 3: Удалены блоки strengths и weaknesses
+
+        // Генерация кнопок секций
+        const sectionsGrid = document.getElementById('profile-sections-grid');
+        if (sectionsGrid) {
+            sectionsGrid.innerHTML = `
+                <a href="anthropometry.html?id=${athleteId}" class="section-button">
+                    <div class="section-button-icon">📏</div>
+                    <div class="section-button-title">Антропометрия</div>
+                    <div class="section-button-subtitle">Параметры и история</div>
+                </a>
+                <a href="physical.html?id=${athleteId}" class="section-button">
+                    <div class="section-button-icon">💪</div>
+                    <div class="section-button-title">Физическое развитие</div>
+                    <div class="section-button-subtitle">Сила и выносливость</div>
+                </a>
+                <a href="functional.html?id=${athleteId}" class="section-button">
+                    <div class="section-button-icon">⚡</div>
+                    <div class="section-button-title">Функциональная готовность</div>
+                    <div class="section-button-subtitle">Скорость и реакция</div>
+                </a>
+                <a href="technical.html?id=${athleteId}" class="section-button">
+                    <div class="section-button-icon">🥊</div>
+                    <div class="section-button-title">Техническая подготовленность</div>
+                    <div class="section-button-subtitle">Навыки и тактика</div>
+                </a>
+            `;
+        }
+
+        // Рекомендации
+        const recommendationsDiv = document.getElementById('profile-recommendations');
+        recommendationsDiv.innerHTML = '';
+        
+        if (realization !== "Нет данных") {
+            const recommendations = Recommendations.generate({
+                ...athlete,
+                metrics: { potential, realization, gap }
             });
+            
+            if (recommendations.length > 0) {
+                recommendations.forEach(rec => {
+                    const recDiv = document.createElement('div');
+                    recDiv.className = `recommendation ${rec.type}`;
+                    recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
+                    recommendationsDiv.appendChild(recDiv);
+                });
+            } else {
+                recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
+            }
         } else {
-            recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
+            recommendationsDiv.innerHTML = '<p>Для формирования рекомендаций необходимо внести оценки по ОФП и техническим навыкам</p>';
         }
-    } else {
-        recommendationsDiv.innerHTML = '<p>Для формирования рекомендаций необходимо внести оценки по ОФП и техническим навыкам</p>';
+
+        // Кнопки
+        document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
+        document.getElementById('btn-share').onclick = async () => {
+            const url = await Share.getShareUrl(athleteId);
+            if (url) {
+                document.getElementById('share-link').value = url;
+                document.getElementById('share-modal').classList.remove('hidden');
+            }
+        };
+
+        document.getElementById('btn-copy-link').onclick = () => {
+            const linkInput = document.getElementById('share-link');
+            linkInput.select();
+            document.execCommand('copy');
+            alert('Ссылка скопирована!');
+        };
+
+        document.getElementById('btn-close-modal').onclick = () => {
+            document.getElementById('share-modal').classList.add('hidden');
+        };
     }
-
-    // Кнопки
-    document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
-    document.getElementById('btn-share').onclick = async () => {
-        const url = await Share.getShareUrl(athleteId);
-        if (url) {
-            document.getElementById('share-link').value = url;
-            document.getElementById('share-modal').classList.remove('hidden');
-        }
-    };
-
-    document.getElementById('btn-copy-link').onclick = () => {
-        const linkInput = document.getElementById('share-link');
-        linkInput.select();
-        document.execCommand('copy');
-        alert('Ссылка скопирована!');
-    };
-
-    document.getElementById('btn-close-modal').onclick = () => {
-        document.getElementById('share-modal').classList.add('hidden');
-    };
-}
-
-
 };
 
 // ============================================

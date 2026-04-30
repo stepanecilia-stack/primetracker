@@ -420,7 +420,7 @@
     </div>
 
     <script>
-// Инициализация Firebase (используем те же настройки)
+// Инициализация Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAxsNe0j6NxMwLDeWrFpvdqRbBHFg5gdiw",
     authDomain: "cartel-academy.firebaseapp.com",
@@ -586,7 +586,7 @@ function findWeightCategory(gender, ageGroup, weight) {
     
     const categories = BOXING_BENCHMARKS[gender][ageGroup];
     
-    // ✅ ИСПРАВЛЕНО: Ищем ВВЕРХ (ceiling)
+    // ✅ ИСПРАВЛЕНО: Ищем ВВЕРХ (ceiling), не ближайшее
     for (let cat of categories) {
         if (weight <= cat.weight) {
             return cat;
@@ -601,7 +601,6 @@ function findWeightCategory(gender, ageGroup, weight) {
         archetype: lastCat.archetype || 'Абсолютная категория'
     };
 }
-
 
 function calculateBiometricPotential(height, reach, idealHeight) {
     let potential = 100;
@@ -702,8 +701,8 @@ function calculateKSR(athleteSkills, potential) {
 
 function interpretKSR(ksr) {
     if (ksr === null) return { text: 'Недостаточно данных', class: 'status-blue' };
-    if (ksr < 0.8) return { text: 'Недобор мощности', class: 'status-red' };
-    if (ksr >= 0.8 && ksr <= 1.2) return { text: 'Оптимальная реализация', class: 'status-green' };
+    if (ksr < 80) return { text: 'Недобор мощности', class: 'status-red' };
+    if (ksr >= 80 && ksr <= 120) return { text: 'Оптимальная реализация', class: 'status-green' };
     return { text: 'Сверх-реализация', class: 'status-blue' };
 }
 
@@ -732,7 +731,6 @@ function loadAthlete() {
         return;
     }
 
-    // Используем onAuthStateChanged для корректной работы с Firebase
     firebase.auth().onAuthStateChanged(user => {
         if (user) {
             loadAthleteFromFirebase(athleteId);
@@ -847,8 +845,8 @@ function renderAthletePage(athlete) {
                             <div style="font-size: 42px; font-weight: 700; color: #4ade80;">${potential}%</div>
                         </div>
                         <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 8px;">
-                            <div style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">КСР (Коэфф. реализации)</div>
-                            <div style="font-size: 42px; font-weight: 700; color: ${ksrStatus.class === 'status-green' ? '#4ade80' : ksrStatus.class === 'status-red' ? '#ef4444' : '#60a5fa'};">${ksr !== null ? ksr : '—'}</div>
+                            <div style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">Реализация (КСР)</div>
+                            <div style="font-size: 42px; font-weight: 700; color: ${ksrStatus.class === 'status-green' ? '#4ade80' : ksrStatus.class === 'status-red' ? '#ef4444' : '#60a5fa'};">${ksr !== null ? ksr + '%' : '—'}</div>
                             <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">${ksrStatus.text}</div>
                         </div>
                     </div>
@@ -1042,7 +1040,6 @@ document.getElementById('measurementForm').addEventListener('submit', async func
         date: document.getElementById('date').value
     };
 
-    // Если есть Firebase, сохраняем туда
     if (firebase.apps.length > 0 && firebase.auth().currentUser) {
         try {
             const athleteRef = firebase.firestore().collection('students').doc(athleteId);
@@ -1058,7 +1055,6 @@ document.getElementById('measurementForm').addEventListener('submit', async func
         }
     }
     
-    // Также сохраняем в localStorage (для синхронизации)
     const athletes = JSON.parse(localStorage.getItem('boxing_athletes') || '[]');
     const athleteIndex = athletes.findIndex(a => a.id === athleteId);
 
