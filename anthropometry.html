@@ -7,13 +7,11 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Firebase SDK (КРИТИЧНО!) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
     <style>
-    /* ПЕРЕОПРЕДЕЛЕНИЕ ДЛЯ СВЕТЛОЙ ТЕМЫ */
     body {
         background-color: #f8f8f8;
         color: #1a1a2e;
@@ -420,7 +418,6 @@
     </div>
 
     <script>
-// Инициализация Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyAxsNe0j6NxMwLDeWrFpvdqRbBHFg5gdiw",
     authDomain: "cartel-academy.firebaseapp.com",
@@ -434,9 +431,6 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-// ============================================
-// BOXING BENCHMARKS DATABASE
-// ============================================
 const BOXING_BENCHMARKS = {
     M: {
         '13-14': [
@@ -569,9 +563,6 @@ const BOXING_BENCHMARKS = {
     }
 };
 
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
 function getAgeGroup(birthYear) {
     const age = new Date().getFullYear() - birthYear;
     if (age >= 13 && age <= 14) return '13-14';
@@ -586,14 +577,12 @@ function findWeightCategory(gender, ageGroup, weight) {
     
     const categories = BOXING_BENCHMARKS[gender][ageGroup];
     
-    // ✅ ИСПРАВЛЕНО: Ищем ВВЕРХ (ceiling), не ближайшее
     for (let cat of categories) {
         if (weight <= cat.weight) {
             return cat;
         }
     }
     
-    // Если вес больше всех категорий
     const lastCat = categories[categories.length - 1];
     return {
         weight: `${lastCat.weight}+`,
@@ -605,19 +594,16 @@ function findWeightCategory(gender, ageGroup, weight) {
 function calculateBiometricPotential(height, reach, idealHeight) {
     let potential = 100;
     
-    // Штраф за рост: −5% за каждый 1 см ниже idealHeight
     const heightDiff = idealHeight - height;
     if (heightDiff > 0) {
         potential -= heightDiff * 5;
     }
     
-    // Штраф за размах: −4% за каждый 1 см отрицательного Ape Index
     const apeIndex = reach - height;
     if (apeIndex < 0) {
         potential -= Math.abs(apeIndex) * 4;
     }
     
-    // Нижний порог: не ниже 10%
     potential = Math.max(10, potential);
     
     return Math.round(potential);
@@ -668,8 +654,9 @@ function getArchetype(height, idealHeight, weight, gender, ageGroup) {
     };
 }
 
-function calculateKSR(athleteSkills, potential) {
-    if (!athleteSkills || potential === 0) return null;
+// ✅ ИСПРАВЛЕНО: Проверка наличия данных
+function calculateKSR(athleteSkills) {
+    if (!athleteSkills) return null;
     
     let atomsSum = 0, atomsCount = 0;
     let ofpSum = 0, ofpCount = 0;
@@ -690,6 +677,7 @@ function calculateKSR(athleteSkills, potential) {
         });
     }
     
+    // ✅ СТРОГАЯ ПРОВЕРКА: Если нет ОФП ИЛИ атомов → null
     if (atomsCount === 0 || ofpCount === 0) return null;
     
     const avgAtoms = atomsSum / atomsCount;
@@ -699,16 +687,6 @@ function calculateKSR(athleteSkills, potential) {
     return realization;
 }
 
-function interpretKSR(ksr) {
-    if (ksr === null) return { text: 'Недостаточно данных', class: 'status-blue' };
-    if (ksr < 80) return { text: 'Недобор мощности', class: 'status-red' };
-    if (ksr >= 80 && ksr <= 120) return { text: 'Оптимальная реализация', class: 'status-green' };
-    return { text: 'Сверх-реализация', class: 'status-blue' };
-}
-
-// ============================================
-// MAIN APP LOGIC
-// ============================================
 let weightChart, ratioChart;
 
 function loadAthlete() {
@@ -799,8 +777,24 @@ function renderAthletePage(athlete) {
             const apeIndexValue = reach - height;
             const potential = calculateBiometricPotential(height, reach, category.idealHeight);
             const archetype = getArchetype(height, category.idealHeight, weight, athlete.gender, ageGroup);
-            const ksr = calculateKSR(athlete.skills, potential);
-            const ksrStatus = interpretKSR(ksr);
+            
+            // ✅ ИСПРАВЛЕНО: КСР вычисляется БЕЗ потенциала в параметрах
+            const ksr = calculateKSR(athlete.skills);
+            
+            // ✅ ИСПРАВЛЕНО: Показываем КСР только если есть данные
+            const ksrBlockHTML = ksr !== null ? `
+                <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 8px;">
+                    <div style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">Реализация (КСР)</div>
+                    <div style="font-size: 42px; font-weight: 700; color: #4ade80;">${ksr}%</div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">На основе оценок навыков</div>
+                </div>
+            ` : `
+                <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 8px;">
+                    <div style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">Реализация (КСР)</div>
+                    <div style="font-size: 24px; font-weight: 700; color: #9ca3af;">Нет данных</div>
+                    <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">Требуются оценки по ОФП и техническим навыкам</div>
+                </div>
+            `;
             
             biometricHTML = `
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 32px; border-radius: 12px; margin-top: 32px; color: #fff;">
@@ -844,11 +838,7 @@ function renderAthletePage(athlete) {
                             <div style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">Антропометрический Потенциал</div>
                             <div style="font-size: 42px; font-weight: 700; color: #4ade80;">${potential}%</div>
                         </div>
-                        <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 8px;">
-                            <div style="font-size: 13px; opacity: 0.8; margin-bottom: 8px;">Реализация (КСР)</div>
-                            <div style="font-size: 42px; font-weight: 700; color: ${ksrStatus.class === 'status-green' ? '#4ade80' : ksrStatus.class === 'status-red' ? '#ef4444' : '#60a5fa'};">${ksr !== null ? ksr + '%' : '—'}</div>
-                            <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">${ksrStatus.text}</div>
-                        </div>
+                        ${ksrBlockHTML}
                     </div>
 
                     <div style="background: rgba(255,255,255,0.15); padding: 20px; border-radius: 8px; border-left: 4px solid #fbbf24;">
