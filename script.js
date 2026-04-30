@@ -161,7 +161,7 @@ const Utils = {
 };
 
 // ============================================
-// SKILLS DATA (БЕЗ ИЗМЕНЕНИЙ)
+// SKILLS DATA
 // ============================================
 const SKILLS_DATA = {
     technique: {
@@ -473,6 +473,7 @@ const AuthModule = {
             
             return { success: true, user: { id: uid, ...coachData } };
         } catch (error) {
+            console.error('Firebase register error:', error);
             let errorMsg = 'Ошибка регистрации';
             if (error.code === 'auth/email-already-in-use') {
                 errorMsg = 'Пользователь с таким email уже существует';
@@ -492,11 +493,16 @@ const AuthModule = {
             await auth.signInWithEmailAndPassword(email, password);
             return { success: true };
         } catch (error) {
+            console.error('Firebase login error:', error);
             let errorMsg = 'Ошибка входа';
             if (error.code === 'auth/user-not-found') {
                 errorMsg = 'Пользователь не найден';
             } else if (error.code === 'auth/wrong-password') {
                 errorMsg = 'Неверный пароль';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMsg = 'Некорректный email';
+            } else if (error.code === 'auth/invalid-credential') {
+                errorMsg = 'Неверный email или пароль';
             }
             return { success: false, error: errorMsg };
         }
@@ -514,14 +520,11 @@ const Athletes = {
     async create(data) {
         if (!auth.currentUser) return null;
         
-        const birthYear = Number(new Date(data.birthDate).getFullYear());
-        
         const athlete = {
             coachId: auth.currentUser.uid,
             firstName: data.firstName.trim(),
             lastName: data.lastName.trim(),
-            birthDate: data.birthDate,
-            birthYear: birthYear,
+            birthYear: parseInt(data.birthYear),
             gender: data.gender,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             anthropometry: [],
@@ -710,23 +713,44 @@ const SilhouetteRenderer = {
 const Router = {
     currentPage: null,
     currentAthleteId: null,
+    authInitialized: false,
 
     init() {
+        // КРИТИЧНО: Ждем onAuthStateChanged ПЕРЕД роутингом
         auth.onAuthStateChanged(user => {
+            console.log('Auth state changed:', user ? user.email : 'No user');
+            
+            if (!this.authInitialized) {
+                this.authInitialized = true;
+                this.setupAuthHandlers();
+                window.addEventListener('hashchange', () => this.route());
+            }
+            
+            const { page } = Utils.getHashParams();
+            
             if (user) {
-                const { page } = Utils.getHashParams();
+                // Пользователь авторизован
                 if (!page || page === 'auth') {
                     this.navigate('dashboard');
                 } else {
                     this.route();
                 }
             } else {
-                this.navigate('auth');
+                // Пользователь НЕ авторизован
+                if (page === 'student') {
+                    // Разрешаем просмотр ученика без авторизации
+                    this.route();
+                } else {
+                    this.showAuthPage();
+                }
             }
         });
+    },
 
-        this.setupAuthHandlers();
-        window.addEventListener('hashchange', () => this.route());
+    showAuthPage() {
+        document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
+        document.getElementById('page-auth').classList.remove('hidden');
+        this.currentPage = 'auth';
     },
 
     async route() {
@@ -741,8 +765,11 @@ const Router = {
         }
 
         if (!auth.currentUser) {
-            targetPage = 'auth';
-        } else if (targetPage === '' || targetPage === 'auth') {
+            this.showAuthPage();
+            return;
+        }
+
+        if (targetPage === '' || targetPage === 'auth') {
             targetPage = 'dashboard';
         }
 
@@ -1017,7 +1044,8 @@ const Router = {
             Utils.hideLoader();
             
             if (result.success) {
-                this.navigate('dashboard');
+                // ✅ ИСПРАВЛЕНО: Router.navigate вместо this.navigate
+                Router.navigate('dashboard');
             } else {
                 errorMessage.textContent = result.error;
                 errorMessage.classList.remove('hidden');
@@ -1079,33 +1107,34 @@ const Router = {
         Utils.hideLoader();
     },
 
-    form.onsubmit = async (e) => {
-    e.preventDefault();
-    
-    // Валидация года рождения
-    const birthYear = parseInt(document.getElementById('birth-year').value);
-    const currentYear = new Date().getFullYear();
-    
-    if (birthYear < 1950 || birthYear > currentYear) {
-        alert(`Укажите корректный год рождения (1950-${currentYear})`);
-        return;
-    }
-    
-    if (birthYear > currentYear - 5) {
-        if (!confirm('Спортсмену меньше 5 лет. Продолжить?')) {
-            return;
-        }
-    }
-    
-    Utils.showLoader();
-    
-    const formData = {
-        firstName: document.getElementById('first-name').value,
-        lastName: document.getElementById('last-name').value,
-        birthYear: birthYear,
-        gender: document.querySelector('input[name="gender"]:checked').value
-    };
-
+    initAddAthletePage() {
+        const form = document.getElementById('form-add-athlete');
+        
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const birthYear = parseInt(document.getElementById('birth-year').value);
+            const currentYear = new Date().getFullYear();
+            
+            if (birthYear < 1950 || birthYear > currentYear) {
+                alert(`Укажите корректный год рождения (1950-${currentYear})`);
+                return;
+            }
+            
+            if (birthYear > currentYear - 5) {
+                if (!confirm('Спортсмену меньше 5 лет. Продолжить?')) {
+                    return;
+                }
+            }
+            
+            Utils.showLoader();
+            
+            const formData = {
+                firstName: document.getElementById('first-name').value,
+                lastName: document.getElementById('last-name').value,
+                birthYear: birthYear,
+                gender: document.querySelector('input[name="gender"]:checked').value
+            };
             
             const athlete = await Athletes.create(formData);
             
@@ -1322,21 +1351,7 @@ const Router = {
             weaknessesList.innerHTML = '<li>Нет критических зон</li>';
         }
 
-        this.initProfileSections(profile);
-
-        const recommendationsDiv = document.getElementById('profile-recommendations');
-        recommendationsDiv.innerHTML = '';
-        if (profile.recommendations && profile.recommendations.length > 0) {
-            profile.recommendations.forEach(rec => {
-                const recDiv = document.createElement('div');
-                recDiv.className = `recommendation ${rec.type}`;
-                recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
-                recommendationsDiv.appendChild(recDiv);
-            });
-        } else {
-            recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
-        }
-                // ДИНАМИЧЕСКАЯ ГЕНЕРАЦИЯ КНОПОК С ID
+        // Генерация кнопок секций с ID спортсмена
         const sectionsGrid = document.getElementById('profile-sections-grid');
         if (sectionsGrid) {
             sectionsGrid.innerHTML = `
@@ -1365,456 +1380,45 @@ const Router = {
                 </a>
             `;
         }
-async create(data) {
-    if (!auth.currentUser) return null;
-    
-    const athlete = {
-        coachId: auth.currentUser.uid,
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        birthYear: parseInt(data.birthYear),
-        gender: data.gender,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        anthropometry: [],
-        skills: {},
-        metrics: { potential: 0, realization: 0, gap: 0 },
-        shareToken: null
-    };
-    
-    return await Storage.addAthlete(athlete);
-},
 
-
-    initProfileSections(profile) {
-        const buttons = document.querySelectorAll('.profile-section-btn');
-        let activeSection = null;
-
-        buttons.forEach(button => {
-            button.onclick = () => {
-                const section = button.dataset.section;
-                const content = document.getElementById(`profile-content-${section}`);
-
-                if (activeSection === section) {
-                    content.classList.add('hidden');
-                    button.classList.remove('active');
-                    activeSection = null;
-                    return;
-                }
-
-                if (activeSection) {
-                    document.getElementById(`profile-content-${activeSection}`).classList.add('hidden');
-                    const prevBtn = document.querySelector(`.profile-section-btn[data-section="${activeSection}"]`);
-                    if (prevBtn) prevBtn.classList.remove('active');
-                }
-
-                content.classList.remove('hidden');
-                button.classList.add('active');
-                activeSection = section;
-                this.fillProfileSectionContent(section, profile);
-                content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            };
-        });
-    },
-
-    fillProfileSectionContent(section, profile) {
-        const container = document.getElementById(`profile-${section}-data`);
-        container.innerHTML = '';
-
-        if (section === 'anthropometry') {
-            if (!profile.anthropometry || profile.anthropometry.length === 0) {
-                container.innerHTML = '<p style="color: #999;">Данные не внесены</p>';
-                return;
-            }
-
-            const latest = profile.anthropometry[profile.anthropometry.length - 1];
-            const heightM = latest.height / 100;
-            const bmi = (latest.weight / (heightM * heightM)).toFixed(1);
-
-            container.innerHTML = `
-                <h3 style="color: #0066cc; margin-bottom: 16px;">Текущие показатели</h3>
-                <div class="data-row"><span class="data-row-label">Рост</span><span class="data-row-value">${latest.height} см</span></div>
-                <div class="data-row"><span class="data-row-label">Вес</span><span class="data-row-value">${latest.weight} кг</span></div>
-                <div class="data-row"><span class="data-row-label">Размах</span><span class="data-row-value">${latest.reach} см</span></div>
-                <div class="data-row"><span class="data-row-label">ИМТ</span><span class="data-row-value">${bmi}</span></div>
-                <div class="data-row"><span class="data-row-label">Дата</span><span class="data-row-value">${Utils.formatDate(latest.date)}</span></div>
-            `;
-
-            if (profile.anthropometry.length > 1) {
-                const history = document.createElement('div');
-                history.style.marginTop = '24px';
-                history.innerHTML = '<h3 style="color: #0066cc; margin-bottom: 16px;">История</h3>';
-                const table = document.createElement('table');
-                table.innerHTML = '<thead><tr><th>Дата</th><th>Рост</th><th>Вес</th><th>Размах</th></tr></thead><tbody></tbody>';
-                const tbody = table.querySelector('tbody');
-                profile.anthropometry.forEach(entry => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `<td>${Utils.formatDate(entry.date)}</td><td>${entry.height} см</td><td>${entry.weight} кг</td><td>${entry.reach} см</td>`;
-                    tbody.appendChild(row);
-                });
-                history.appendChild(table);
-                container.appendChild(history);
-            }
-        }
-
-        if (section === 'physical') {
-            if (!profile.skills || !profile.skills.physical) {
-                container.innerHTML = '<p style="color: #999;">Данные не внесены</p>';
-                return;
-            }
-            const physical = profile.skills.physical;
-            SKILLS_DATA.physical.skills.forEach(skill => {
-                const rating = physical[skill.id] || 0;
-                const row = document.createElement('div');
-                row.className = 'data-row';
-                row.innerHTML = `<span class="data-row-label">${skill.name}</span><span class="data-row-value">${rating}/10</span>`;
-                container.appendChild(row);
+        const recommendationsDiv = document.getElementById('profile-recommendations');
+        recommendationsDiv.innerHTML = '';
+        if (profile.recommendations && profile.recommendations.length > 0) {
+            profile.recommendations.forEach(rec => {
+                const recDiv = document.createElement('div');
+                recDiv.className = `recommendation ${rec.type}`;
+                recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
+                recommendationsDiv.appendChild(recDiv);
             });
-        }
-
-        if (section === 'functional') {
-            if (!profile.skills || !profile.skills.physical) {
-                container.innerHTML = '<p style="color: #999;">Данные не внесены</p>';
-                return;
-            }
-            const physical = profile.skills.physical;
-            ['reaction', 'coordination', 'flexibility'].forEach(skillId => {
-                const skillData = SKILLS_DATA.physical.skills.find(s => s.id === skillId);
-                if (!skillData) return;
-                const rating = physical[skillId] || 0;
-                const row = document.createElement('div');
-                row.className = 'data-row';
-                row.innerHTML = `<span class="data-row-label">${skillData.name}</span><span class="data-row-value">${rating}/10</span>`;
-                container.appendChild(row);
-            });
-
-            if (profile.skills.footwork) {
-                const title = document.createElement('h3');
-                title.textContent = 'Работа ног';
-                title.style.marginTop = '24px';
-                title.style.color = '#0066cc';
-                container.appendChild(title);
-                const footwork = profile.skills.footwork;
-                SKILLS_DATA.footwork.skills.forEach(skill => {
-                    const rating = footwork[skill.id] || 0;
-                    const row = document.createElement('div');
-                    row.className = 'data-row';
-                    row.innerHTML = `<span class="data-row-label">${skill.name}</span><span class="data-row-value">${rating}/10</span>`;
-                    container.appendChild(row);
-                });
-            }
-        }
-
-        if (section === 'technical') {
-            if (!profile.skills) {
-                container.innerHTML = '<p style="color: #999;">Данные не внесены</p>';
-                return;
-            }
-
-            if (profile.skills.technique) {
-                const title = document.createElement('h3');
-                title.textContent = 'Техника ударов';
-                title.style.color = '#0066cc';
-                container.appendChild(title);
-                SKILLS_DATA.technique.skills.forEach(skill => {
-                    const rating = profile.skills.technique[skill.id] || 0;
-                    const row = document.createElement('div');
-                    row.className = 'data-row';
-                    row.innerHTML = `<span class="data-row-label">${skill.name}</span><span class="data-row-value">${rating}/10</span>`;
-                    container.appendChild(row);
-                });
-            }
-
-            if (profile.skills.defense) {
-                const title = document.createElement('h3');
-                title.textContent = 'Защита';
-                title.style.marginTop = '24px';
-                title.style.color = '#0066cc';
-                container.appendChild(title);
-                SKILLS_DATA.defense.skills.forEach(skill => {
-                    const rating = profile.skills.defense[skill.id] || 0;
-                    const row = document.createElement('div');
-                    row.className = 'data-row';
-                    row.innerHTML = `<span class="data-row-label">${skill.name}</span><span class="data-row-value">${rating}/10</span>`;
-                    container.appendChild(row);
-                });
-            }
-
-            if (profile.skills.tactics) {
-                const title = document.createElement('h3');
-                title.textContent = 'Тактика';
-                title.style.marginTop = '24px';
-                title.style.color = '#0066cc';
-                container.appendChild(title);
-                SKILLS_DATA.tactics.skills.forEach(skill => {
-                    const rating = profile.skills.tactics[skill.id] || 0;
-                    const row = document.createElement('div');
-                    row.className = 'data-row';
-                    row.innerHTML = `<span class="data-row-label">${skill.name}</span><span class="data-row-value">${rating}/10</span>`;
-                    container.appendChild(row);
-                });
-            }
-        }
-    }
-};
-// ============================================
-// BOXING BENCHMARKS DATABASE
-// ============================================
-const BOXING_BENCHMARKS = {
-    M: { // Мужчины
-        '13-14': [
-            { weight: 37, idealHeight: 153, archetype: 'Жилистый, «сухие» длинные мышцы.' },
-            { weight: 40, idealHeight: 156, archetype: 'Жилистый, «сухие» длинные мышцы.' },
-            { weight: 42, idealHeight: 158, archetype: 'Легкий атлет, акцент на скорость и прыжок.' },
-            { weight: 44, idealHeight: 161, archetype: 'Сбалансированный, начинает оформляться плечевой пояс.' },
-            { weight: 46, idealHeight: 164, archetype: 'Эталон. Оптимальное сочетание рычага и плотности.' },
-            { weight: 48, idealHeight: 167, archetype: 'Снайпер. Длинные руки, высокая мобильность.' },
-            { weight: 50, idealHeight: 170, archetype: 'Атлетичный. Появляется мощь в ударе за счет спины.' },
-            { weight: 52, idealHeight: 172, archetype: 'Плотный. Хорошо развиты широчайшие и дельты.' },
-            { weight: 54, idealHeight: 174, archetype: 'Универсал. Мощный торс при сохранении роста.' },
-            { weight: 57, idealHeight: 176, archetype: 'Силовик-темповик. «Мясо» на груди и мощные ноги.' },
-            { weight: 60, idealHeight: 178, archetype: 'Пик функционала. Максимальная плотность удара.' },
-            { weight: 63, idealHeight: 181, archetype: 'Крупный атлет. Рост взрослого, сила подростка.' },
-            { weight: 66, idealHeight: 183, archetype: 'Мощный каркас. Доминирование за счет физики.' },
-            { weight: 70, idealHeight: 185, archetype: 'Тяжелоатлетическое сложение. Взрывной прыжок.' },
-            { weight: 75, idealHeight: 188, archetype: 'Гигант с мышечной базой. Редкий, элитный профиль.' },
-            { weight: 80, idealHeight: 191, archetype: 'Будущий супертяж. Огромный размах рук.' },
-            { weight: 90, idealHeight: 194, archetype: 'Абсолютное доминирование. Мощь + Рост.' }
-        ],
-        '15-16': [
-            { weight: 44, idealHeight: 160, archetype: 'Очень сухой, «звенящий» атлет. Предел весогонки.' },
-            { weight: 46, idealHeight: 162, archetype: 'Очень сухой, «звенящий» атлет. Предел весогонки.' },
-            { weight: 48, idealHeight: 164, archetype: 'Снайпер-легкач. Высокая скорость рук.' },
-            { weight: 50, idealHeight: 167, archetype: 'Оформленный атлет. Появляется жесткость в кости.' },
-            { weight: 52, idealHeight: 170, archetype: 'Баланс. Плечи шире таза, сухая талия.' },
-            { weight: 54, idealHeight: 172, archetype: 'Плотный «игровик». Мощные ноги для челнока.' },
-            { weight: 57, idealHeight: 175, archetype: 'Золотая середина. Идеальный рычаг для этого веса.' },
-            { weight: 60, idealHeight: 177, archetype: 'Универсал. Мышцы спины и груди уже отчетливы.' },
-            { weight: 63, idealHeight: 179, archetype: 'Силовик. Тяжелый, акцентированный удар.' },
-            { weight: 66, idealHeight: 181, archetype: 'Атлет с глубоким рельефом. Мощный плечевой пояс.' },
-            { weight: 70, idealHeight: 183, archetype: 'Крупный, сбитый боец. Доминирует за счет массы.' },
-            { weight: 75, idealHeight: 186, archetype: 'Полутяж. Рост взрослого профи, мощный костяк.' },
-            { weight: 80, idealHeight: 189, archetype: 'Тяжеловес. Огромная физическая мощь + ГТО золото.' },
-            { weight: 90, idealHeight: 192, archetype: 'Абсолютка. Массивный скелет, готовый к большим весам.' }
-        ],
-        '17-18': [
-            { weight: 48, idealHeight: 162, archetype: 'Предельно сухой «мухач». Только жилы и кости.' },
-            { weight: 51, idealHeight: 165, archetype: 'Скоростной снайпер. Феноменальная резкость.' },
-            { weight: 54, idealHeight: 168, archetype: 'Техничный «игровик». Идеальный баланс рычагов.' },
-            { weight: 57, idealHeight: 171, archetype: 'Оформленный атлет. Плотный удар, широкие плечи.' },
-            { weight: 60, idealHeight: 174, archetype: 'Классика. Образцовый боксерский силуэт.' },
-            { weight: 63.5, idealHeight: 176, archetype: 'Темповик. Мощный торс, готовый к высокой плотности боя.' },
-            { weight: 67, idealHeight: 178, archetype: 'Силовик. Жесткая кость, тяжелый кулак.' },
-            { weight: 71, idealHeight: 181, archetype: 'Твой типаж. Идеальный рычаг + мужская мощь.' },
-            { weight: 75, idealHeight: 183, archetype: 'Мощный средневес. Доминирование за счет физики.' },
-            { weight: 80, idealHeight: 186, archetype: 'Полутяж. Сбитый, атлетичный, очень опасный.' },
-            { weight: 86, idealHeight: 189, archetype: 'Тяжеловес-атлет. Глубокий рельеф, мощная спина.' },
-            { weight: 92, idealHeight: 192, archetype: 'Крузер. Огромная мощь при сохранении мобильности.' },
-            { weight: 100, idealHeight: 195, archetype: 'Супертяж. Массивный костяк, готовый нести 100+ кг.' }
-        ],
-        '19-22': [
-            { weight: 48, idealHeight: 162, archetype: 'Сухой, жилистый «мухач».' },
-            { weight: 51, idealHeight: 165, archetype: 'Скоростной снайпер.' },
-            { weight: 54, idealHeight: 168, archetype: 'Техничный игровик.' },
-            { weight: 57, idealHeight: 171, archetype: 'Сбалансированный полулегковес.' },
-            { weight: 60, idealHeight: 174, archetype: 'Классический боксерский силуэт.' },
-            { weight: 63.5, idealHeight: 176, archetype: 'Мощный темповик.' },
-            { weight: 67, idealHeight: 178, archetype: 'Силовик с тяжелым ударом.' },
-            { weight: 71, idealHeight: 181, archetype: 'Твой эталон. Идеальный баланс рычага и мощи.' },
-            { weight: 75, idealHeight: 183, archetype: 'Мощный средневес.' },
-            { weight: 80, idealHeight: 186, archetype: 'Атлетичный полутяж.' },
-            { weight: 86, idealHeight: 189, archetype: 'Тяжеловес-атлет.' },
-            { weight: 92, idealHeight: 192, archetype: 'Крузер с огромным размахом.' },
-            { weight: 100, idealHeight: 195, archetype: 'Супертяж-гигант.' }
-        ]
-    },
-    F: { // Женщины
-        '13-14': [
-            { weight: 34, idealHeight: 158, archetype: 'Дистанция. Недосягаемость для атак, работа передней рукой.' },
-            { weight: 36, idealHeight: 161, archetype: 'Дистанция. Недосягаемость для атак, работа передней рукой.' },
-            { weight: 38, idealHeight: 163, archetype: 'Рычаг. Контроль центра ринга за счет длины рук.' },
-            { weight: 40, idealHeight: 165, archetype: 'Тайминг. Встречные удары на входе соперницы в зону.' },
-            { weight: 42, idealHeight: 167, archetype: 'Маневренность. Удержание дальней дистанции весь бой.' },
-            { weight: 44, idealHeight: 169, archetype: 'Геометрия. Удары под углами, которые недоступны низким.' },
-            { weight: 46, idealHeight: 170, archetype: 'Доминирование. Полный контроль пространства ринга.' },
-            { weight: 48, idealHeight: 172, archetype: 'Прессинг. Расстрел с дистанции без входа в клинч.' },
-            { weight: 51, idealHeight: 174, archetype: 'Функционал. Сочетание длины шага и частоты ударов.' },
-            { weight: 54, idealHeight: 176, archetype: 'Резкость. Длинный «хлесткий» джеб, сбивающий атаки.' },
-            { weight: 57, idealHeight: 178, archetype: 'Атлетизм. Использование рычага как рычага силы.' },
-            { weight: 60, idealHeight: 180, archetype: 'Психология. Подавление ростом и объемом атак.' },
-            { weight: 64, idealHeight: 183, archetype: 'Точность. Работа как «высокий снайпер» по этажам.' },
-            { weight: 70, idealHeight: 185, archetype: 'Тотальный контроль. Соперницы просто не дотягиваются.' }
-        ],
-        '15-16': [
-            { weight: 44, idealHeight: 166, archetype: 'Скорость. Максимальный рычаг при сохранении резкости.' },
-            { weight: 46, idealHeight: 168, archetype: 'Скорость. Максимальный рычаг при сохранении резкости.' },
-            { weight: 48, idealHeight: 169, archetype: 'Тайминг. Работа на опережение, контроль дистанции.' },
-            { weight: 50, idealHeight: 171, archetype: 'Линейность. Прямые удары, которые длиннее атак соперниц.' },
-            { weight: 52, idealHeight: 172, archetype: 'Баланс. Устойчивость в ногах + длинный джеб.' },
-            { weight: 54, idealHeight: 173, archetype: 'Жесткость. Появляется «взрыв» в ударе за счет спины.' },
-            { weight: 57, idealHeight: 174, archetype: 'Универсализм. Одинаково эффективна на дистанции и в отходе.' },
-            { weight: 60, idealHeight: 175, archetype: 'Плотность. Мышцы плечевого пояса позволяют «рубиться».' },
-            { weight: 63, idealHeight: 176, archetype: 'Сила. Акцентированные удары, сбивающие защиту.' },
-            { weight: 66, idealHeight: 177, archetype: 'Прессинг. Подавление физикой при сохранении роста.' },
-            { weight: 70, idealHeight: 178, archetype: 'Мощь. Тяжелый удар, работа по корпусу.' },
-            { weight: 75, idealHeight: 180, archetype: 'Доминирование. Сочетание массы и высокого роста.' },
-            { weight: 80, idealHeight: 182, archetype: 'Атлетизм. Мощный костяк, готовый к тяжелым разменам.' },
-            { weight: 90, idealHeight: 185, archetype: 'Абсолютка. Физическое превосходство во всем.' }
-        ],
-        '17-18': [
-            { weight: 48, idealHeight: 164, archetype: 'Резкость. Предельная концентрация силы в сухом теле.' },
-            { weight: 50, idealHeight: 168, archetype: 'Линейная скорость. Быстрый вход-выход на длинных ногах.' },
-            { weight: 52, idealHeight: 170, archetype: 'Контр-атака. Проваливание соперницы и расстрел с дистанции.' },
-            { weight: 54, idealHeight: 171, archetype: 'Техничность. Идеальная координация рычагов и корпуса.' },
-            { weight: 57, idealHeight: 172, archetype: 'Жесткий джеб. Остановка любых атак передней рукой.' },
-            { weight: 60, idealHeight: 173, archetype: 'Универсальность. Работа на всех дистанциях за счет атлетизма.' },
-            { weight: 63, idealHeight: 174, archetype: 'Плотный бой. Силовое доминирование в разменах.' },
-            { weight: 66, idealHeight: 175, archetype: 'Устойчивость. Мощный фундамент (ноги) + длинный удар.' },
-            { weight: 70, idealHeight: 176, archetype: 'Акцент. Тяжелый, «мужской» по силе удар.' },
-            { weight: 75, idealHeight: 178, archetype: 'Физика. Подавление массой при сохранении роста.' },
-            { weight: 81, idealHeight: 180, archetype: 'Мощь. Доминирование за счет объема мышц и рычага.' },
-            { weight: 90, idealHeight: 183, archetype: 'Абсолютка. Максимальный костяк и ударная мощь.' }
-        ],
-        '19-22': [
-            { weight: 48, idealHeight: 164, archetype: 'Скорость и рычаг. Работа на дистанции, недосягаемость.' },
-            { weight: 50, idealHeight: 168, archetype: 'Тайминг. Встречные удары, контроль передней рукой.' },
-            { weight: 52, idealHeight: 170, archetype: 'Линейная мощь. Длинные прямые, пробивающие защиту.' },
-            { weight: 54, idealHeight: 171, archetype: 'Баланс. Идеальное сочетание устойчивости и длины рук.' },
-            { weight: 57, idealHeight: 172, archetype: 'Жесткость. Остановка атак за счет плотности удара.' },
-            { weight: 60, idealHeight: 173, archetype: 'Универсализм. Доминирование на всех дистанциях.' },
-            { weight: 63, idealHeight: 174, archetype: 'Силовой прессинг. Подавление физикой и рычагом.' },
-            { weight: 66, idealHeight: 175, archetype: 'Устойчивость. Мощные ноги (база ГТО) + длинный удар.' },
-            { weight: 70, idealHeight: 176, archetype: 'Акцент. Тяжелый удар, работа по этажам.' },
-            { weight: 75, idealHeight: 178, archetype: 'Атлетизм. Мощный плечевой пояс, доминирование в клинче.' },
-            { weight: 81, idealHeight: 180, archetype: 'Физическая мощь. Подавление массой и ростом.' },
-            { weight: 90, idealHeight: 183, archetype: 'Абсолютка. Максимальный костяк, сокрушительный удар.' }
-        ]
-    }
-};
-
-function getAgeGroup(birthYear) {
-    const age = new Date().getFullYear() - birthYear;
-    if (age >= 13 && age <= 14) return '13-14';
-    if (age >= 15 && age <= 16) return '15-16';
-    if (age >= 17 && age <= 18) return '17-18';
-    if (age >= 19) return '19-22';
-    return null;
-}
-
-function findWeightCategory(gender, ageGroup, weight) {
-    if (!BOXING_BENCHMARKS[gender] || !BOXING_BENCHMARKS[gender][ageGroup]) return null;
-    
-    const categories = BOXING_BENCHMARKS[gender][ageGroup];
-    let closest = categories[0];
-    let minDiff = Math.abs(weight - closest.weight);
-    
-    for (let cat of categories) {
-        const diff = Math.abs(weight - cat.weight);
-        if (diff < minDiff) {
-            minDiff = diff;
-            closest = cat;
-        }
-    }
-    
-    return closest;
-}
-
-function calculateBiometricPotential(height, reach, idealHeight) {
-    const apeIndex = reach - height;
-    const baseCoeff = height / idealHeight;
-    const leverBonus = (apeIndex / 10) * 0.05;
-    const potential = (baseCoeff + leverBonus) * 100;
-    return Math.round(potential * 10) / 10;
-}
-
-function getArchetype(height, idealHeight, weight, gender, ageGroup) {
-    const deviation = height - idealHeight;
-    
-    if (Math.abs(deviation) <= 3) {
-        return {
-            icon: '🟢',
-            name: 'Биометрический Доминант',
-            description: 'Идеальное соответствие роста и веса. Максимальный потенциал для категории.'
-        };
-    }
-    
-    if (deviation >= -7 && deviation < -3) {
-        return {
-            icon: '🟡',
-            name: 'Технический Мастер',
-            description: 'Компактное сложение. Преимущество в скорости и маневренности.'
-        };
-    }
-    
-    if (deviation < -7) {
-        const categories = BOXING_BENCHMARKS[gender][ageGroup];
-        const currentIndex = categories.findIndex(c => Math.abs(c.weight - weight) < 2);
-        
-        if (currentIndex === 0) {
-            return {
-                icon: '🔴',
-                name: 'Компенсатор (Тип Б: Реактивный Штурмовик)',
-                description: 'Минимальный вес для возраста. Компенсация недостатка роста агрессией и плотностью боя.'
-            };
         } else {
-            return {
-                icon: '🔴',
-                name: 'Компенсатор (Тип А: Инфайтер-Танк)',
-                description: 'Низкий рост для веса. Работа на ближней дистанции, давление корпусом.'
-            };
+            recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
         }
-    }
-    
-    return {
-        icon: '⚪',
-        name: 'Нестандартный профиль',
-        description: 'Требуется индивидуальный подход.'
-    };
-}
 
-function calculateKSR(athleteSkills, potential) {
-    if (!athleteSkills || potential === 0) return null;
-    
-    let atomsSum = 0, atomsCount = 0;
-    let ofpSum = 0, ofpCount = 0;
-    
-    // Атомы (техника + защита + тактика)
-    ['technique', 'defense', 'tactics'].forEach(cat => {
-        if (athleteSkills[cat]) {
-            Object.values(athleteSkills[cat]).forEach(rating => {
-                atomsSum += rating;
-                atomsCount++;
-            });
-        }
-    });
-    
-    // ОФП (физические качества)
-    if (athleteSkills.physical) {
-        Object.values(athleteSkills.physical).forEach(rating => {
-            ofpSum += rating;
-            ofpCount++;
-        });
-    }
-    
-    if (atomsCount === 0 || ofpCount === 0) return null;
-    
-    const avgAtoms = atomsSum / atomsCount;
-    const avgOFP = ofpSum / ofpCount;
-    const ksr = (avgAtoms + avgOFP) / (2 * (potential / 100));
-    
-    return Math.round(ksr * 100) / 100;
-}
+        document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
+        document.getElementById('btn-share').onclick = async () => {
+            const url = await Share.getShareUrl(athleteId);
+            if (url) {
+                document.getElementById('share-link').value = url;
+                document.getElementById('share-modal').classList.remove('hidden');
+            }
+        };
 
-function interpretKSR(ksr) {
-    if (ksr === null) return { text: 'Недостаточно данных', class: 'status-gray' };
-    if (ksr < 0.8) return { text: 'Недобор мощности', class: 'status-red' };
-    if (ksr >= 0.8 && ksr <= 1.2) return { text: 'Оптимальная реализация', class: 'status-green' };
-    return { text: 'Сверх-реализация', class: 'status-blue' };
-}
+        document.getElementById('btn-copy-link').onclick = () => {
+            const linkInput = document.getElementById('share-link');
+            linkInput.select();
+            document.execCommand('copy');
+            alert('Ссылка скопирована!');
+        };
+
+        document.getElementById('btn-close-modal').onclick = () => {
+            document.getElementById('share-modal').classList.add('hidden');
+        };
+    }
+};
 
 // ============================================
 // INIT
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
     Router.init();
-    
 });
