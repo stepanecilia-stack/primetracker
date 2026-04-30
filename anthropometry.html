@@ -585,19 +585,23 @@ function findWeightCategory(gender, ageGroup, weight) {
     if (!BOXING_BENCHMARKS[gender] || !BOXING_BENCHMARKS[gender][ageGroup]) return null;
     
     const categories = BOXING_BENCHMARKS[gender][ageGroup];
-    let closest = categories[0];
-    let minDiff = Math.abs(weight - closest.weight);
     
+    // ✅ ИСПРАВЛЕНО: Ищем ВВЕРХ (ceiling)
     for (let cat of categories) {
-        const diff = Math.abs(weight - cat.weight);
-        if (diff < minDiff) {
-            minDiff = diff;
-            closest = cat;
+        if (weight <= cat.weight) {
+            return cat;
         }
     }
     
-    return closest;
+    // Если вес больше всех категорий
+    const lastCat = categories[categories.length - 1];
+    return {
+        weight: `${lastCat.weight}+`,
+        idealHeight: lastCat.idealHeight,
+        archetype: lastCat.archetype || 'Абсолютная категория'
+    };
 }
+
 
 function calculateBiometricPotential(height, reach, idealHeight) {
     let potential = 100;

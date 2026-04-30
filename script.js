@@ -309,16 +309,22 @@ function findWeightCategory(gender, ageGroup, weight) {
     
     const categories = BOXING_BENCHMARKS[gender][ageGroup];
     
-    // Находим ближайшую ВЕРХНЮЮ категорию
+    // ✅ ИСПРАВЛЕНО: Ищем ВВЕРХ (ceiling), не ближайшее
+    // Находим первую категорию, где верхняя граница >= текущему весу
     for (let cat of categories) {
         if (weight <= cat.weight) {
             return cat;
         }
     }
     
-    // Если вес больше всех категорий, возвращаем последнюю
-    return categories[categories.length - 1];
+    // Если вес больше всех категорий, возвращаем последнюю + маркер
+    const lastCat = categories[categories.length - 1];
+    return {
+        weight: `${lastCat.weight}+`,
+        idealHeight: lastCat.idealHeight
+    };
 }
+
 
 // ============================================
 // SKILLS DATA
@@ -1244,58 +1250,68 @@ const Router = {
     },
 
     async initDashboardPage() {
-        Utils.showLoader();
-        
-        const currentUser = await Storage.getCurrentUser();
-        const displayName = currentUser.firstName && currentUser.lastName 
-            ? `${currentUser.firstName} ${currentUser.lastName}` 
-            : currentUser.email;
-        
-        document.getElementById('coach-name').textContent = `Тренер: ${displayName}`;
-        
-        const athletesList = document.getElementById('athletes-list');
-        const emptyState = document.getElementById('empty-state');
-        const athletes = await Athletes.getCoachAthletes();
+    Utils.showLoader();
+    
+    const currentUser = await Storage.getCurrentUser();
+    const displayName = currentUser.firstName && currentUser.lastName 
+        ? `${currentUser.firstName} ${currentUser.lastName}` 
+        : currentUser.email;
+    
+    document.getElementById('coach-name').textContent = `Тренер: ${displayName}`;
+    
+    const athletesList = document.getElementById('athletes-list');
+    const emptyState = document.getElementById('empty-state');
+    const athletes = await Athletes.getCoachAthletes();
 
-        if (athletes.length === 0) {
-            emptyState.classList.remove('hidden');
-            athletesList.innerHTML = '';
-        } else {
-            emptyState.classList.add('hidden');
-            athletesList.innerHTML = '';
+    if (athletes.length === 0) {
+        emptyState.classList.remove('hidden');
+        athletesList.innerHTML = '';
+    } else {
+        emptyState.classList.add('hidden');
+        athletesList.innerHTML = '';
+        
+        // ✅ ИСПРАВЛЕНО: Пересчитываем метрики для каждого спортсмена
+        for (const athlete of athletes) {
+            // Вычисляем актуальные метрики
+            const potential = Calculations.calculatePotential(athlete);
+            const realization = Calculations.calculateRealization(athlete);
+            const gap = Calculations.calculateGap(potential, realization);
             
-            athletes.forEach(athlete => {
-                const card = document.createElement('div');
-                card.className = 'athlete-card';
-                const metrics = athlete.metrics || { potential: 0, realization: 0, gap: 0 };
-                const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
-                
-                card.innerHTML = `
-                    <div class="athlete-info">
-                        <h3>${athlete.firstName} ${athlete.lastName}</h3>
-                        <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText}</p>
-                    </div>
-                    <div class="athlete-metrics">
-                        <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${metrics.potential}</span></div>
-                        <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${metrics.realization}</span></div>
-                        <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${metrics.gap}</span></div>
-                    </div>
-                `;
-                card.onclick = () => this.navigate('profile', { id: athlete.id });
-                athletesList.appendChild(card);
-            });
+            const card = document.createElement('div');
+            card.className = 'athlete-card';
+            const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+            
+            // Форматируем отображение
+            const realizationDisplay = realization === "Нет данных" ? "Нет данных" : realization;
+            const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
+            
+            card.innerHTML = `
+                <div class="athlete-info">
+                    <h3>${athlete.firstName} ${athlete.lastName}</h3>
+                    <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText}</p>
+                </div>
+                <div class="athlete-metrics">
+                    <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}</span></div>
+                    <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
+                    <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
+                </div>
+            `;
+            card.onclick = () => this.navigate('profile', { id: athlete.id });
+            athletesList.appendChild(card);
         }
+    }
 
-        document.getElementById('btn-add-athlete').onclick = () => this.navigate('athlete-add');
-        document.getElementById('btn-add-first').onclick = () => this.navigate('athlete-add');
-        document.getElementById('btn-logout').onclick = async () => {
-            if (confirm('Вы уверены, что хотите выйти?')) {
-                await AuthModule.logout();
-            }
-        };
-        
-        Utils.hideLoader();
-    },
+    document.getElementById('btn-add-athlete').onclick = () => this.navigate('athlete-add');
+    document.getElementById('btn-add-first').onclick = () => this.navigate('athlete-add');
+    document.getElementById('btn-logout').onclick = async () => {
+        if (confirm('Вы уверены, что хотите выйти?')) {
+            await AuthModule.logout();
+        }
+    };
+    
+    Utils.hideLoader();
+}
+
 
     initAddAthletePage() {
         const form = document.getElementById('form-add-athlete');
@@ -1499,25 +1515,31 @@ const Router = {
     localStorage.setItem('currentAthleteId', athleteId);
     
     Utils.showLoader();
-    const profile = await Athletes.getProfile(athleteId);
+    const athlete = await Storage.getAthleteById(athleteId);
     Utils.hideLoader();
 
-    if (!profile) {
+    if (!athlete) {
         alert('Спортсмен не найден');
         this.navigate('dashboard');
         return;
     }
 
-    const genderText = profile.gender === 'M' ? 'М' : 'Ж';
-    document.getElementById('profile-athlete-name').textContent = `${profile.firstName} ${profile.lastName}`;
-    document.getElementById('profile-athlete-meta').textContent = `${profile.birthYear} г.р., ${genderText}`;
+    const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+    document.getElementById('profile-athlete-name').textContent = `${athlete.firstName} ${athlete.lastName}`;
+    document.getElementById('profile-athlete-meta').textContent = `${athlete.birthYear} г.р., ${genderText}`;
 
-    const metrics = profile.metrics || {};
-    document.getElementById('profile-potential').textContent = metrics.potential || '—';
-    document.getElementById('profile-realization').textContent = metrics.realization || 'Нет данных';
-    document.getElementById('profile-gap').textContent = metrics.gap || 'Нет данных';
+    // ✅ ИСПРАВЛЕНО: Вычисляем актуальные метрики
+    const potential = Calculations.calculatePotential(athlete);
+    const realization = Calculations.calculateRealization(athlete);
+    const gap = Calculations.calculateGap(potential, realization);
+    
+    // Форматируем отображение
+    const realizationDisplay = realization === "Нет данных" ? "Нет данных" : realization;
+    const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
 
-    // УДАЛЕНЫ БЛОКИ profile-strengths и profile-weaknesses
+    document.getElementById('profile-potential').textContent = potential || '—';
+    document.getElementById('profile-realization').textContent = realizationDisplay;
+    document.getElementById('profile-gap').textContent = gapDisplay;
 
     // Генерация кнопок секций
     const sectionsGrid = document.getElementById('profile-sections-grid');
@@ -1546,18 +1568,28 @@ const Router = {
         `;
     }
 
-    // Рекомендации
+    // Рекомендации (если есть данные для их генерации)
     const recommendationsDiv = document.getElementById('profile-recommendations');
     recommendationsDiv.innerHTML = '';
-    if (profile.recommendations && profile.recommendations.length > 0) {
-        profile.recommendations.forEach(rec => {
-            const recDiv = document.createElement('div');
-            recDiv.className = `recommendation ${rec.type}`;
-            recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
-            recommendationsDiv.appendChild(recDiv);
+    
+    if (realization !== "Нет данных") {
+        const recommendations = Recommendations.generate({
+            ...athlete,
+            metrics: { potential, realization, gap }
         });
+        
+        if (recommendations.length > 0) {
+            recommendations.forEach(rec => {
+                const recDiv = document.createElement('div');
+                recDiv.className = `recommendation ${rec.type}`;
+                recDiv.innerHTML = `<h4>${rec.title}</h4><p>${rec.text}</p>`;
+                recommendationsDiv.appendChild(recDiv);
+            });
+        } else {
+            recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
+        }
     } else {
-        recommendationsDiv.innerHTML = '<p>Рекомендаций пока нет</p>';
+        recommendationsDiv.innerHTML = '<p>Для формирования рекомендаций необходимо внести оценки по ОФП и техническим навыкам</p>';
     }
 
     // Кнопки
@@ -1581,6 +1613,7 @@ const Router = {
         document.getElementById('share-modal').classList.add('hidden');
     };
 }
+
 
 };
 
