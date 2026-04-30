@@ -312,8 +312,7 @@ function findWeightCategory(gender, ageGroup, weight) {
     
     const categories = BOXING_BENCHMARKS[gender][ageGroup];
     
-    // ✅ СТРОГОЕ ПРАВИЛО: Ищем ВВЕРХ (ceiling)
-    // Находим первую категорию, где верхняя граница >= текущему весу
+    // ✅ Ищем ВВЕРХ (ceiling) - первую категорию, где верхняя граница >= текущему весу
     for (let cat of categories) {
         if (weight <= cat.weight) {
             return cat;
@@ -424,7 +423,7 @@ const Calculations = {
         
         const idealHeight = category.idealHeight;
         
-        // ✅ ЖЕСТКАЯ ФОРМУЛА
+        // ✅ ЖЕСТКАЯ ФОРМУЛА (как требуется)
         let potential = 100;
         
         // Штраф за рост: −5% за каждый 1 см ниже idealHeight
@@ -991,7 +990,6 @@ const Router = {
         if (page === 'dashboard') await this.initDashboardPage();
         if (page === 'athlete-add') this.initAddAthletePage();
         if (page === 'anthropometry') await this.initAnthropometryPage(params.id);
-        if (page === 'skills') await this.initSkillsPage(params.id);
         if (page === 'profile') await this.initProfilePage(params.id);
     },
 
@@ -1285,18 +1283,21 @@ const Router = {
                 const realization = Calculations.calculateRealization(athlete);
                 const gap = Calculations.calculateGap(potential, realization);
                 
+                // ✅ ВЕСОВАЯ КАТЕГОРИЯ (по верхней кромке)
+                const weightCategory = Calculations.getWeightCategory(athlete);
+                
                 const card = document.createElement('div');
                 card.className = 'athlete-card';
                 const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
                 
-                // ✅ УДАЛЕНЫ ЗАГЛУШКИ: Только "Нет данных" или число
                 const realizationDisplay = realization === "Нет данных" ? "Нет данных" : `${realization}%`;
                 const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
+                const weightCategoryDisplay = weightCategory || 'Нет данных';
                 
                 card.innerHTML = `
                     <div class="athlete-info">
                         <h3>${athlete.firstName} ${athlete.lastName}</h3>
-                        <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText}</p>
+                        <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
                     </div>
                     <div class="athlete-metrics">
                         <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
@@ -1403,7 +1404,8 @@ const Router = {
             Utils.hideLoader();
             
             if (success) {
-                this.navigate('skills', { id: athleteId });
+                // ✅ ИЗМЕНЕНО: Сразу на профиль, пропускаем страницу skills
+                this.navigate('profile', { id: athleteId });
             } else {
                 alert('Ошибка сохранения');
             }
@@ -1416,97 +1418,6 @@ const Router = {
                 await Storage.deleteAthlete(athleteId);
                 Utils.hideLoader();
                 this.navigate('dashboard');
-            }
-        };
-    },
-
-    async initSkillsPage(athleteId) {
-        if (!athleteId) {
-            alert('Спортсмен не найден');
-            this.navigate('dashboard');
-            return;
-        }
-        
-        Utils.showLoader();
-        const athlete = await Storage.getAthleteById(athleteId);
-        Utils.hideLoader();
-        
-        if (!athlete) {
-            alert('Спортсмен не найден');
-            this.navigate('dashboard');
-            return;
-        }
-        
-        document.getElementById('skills-athlete-name').textContent = `${athlete.firstName} ${athlete.lastName}`;
-
-        const skillsContainer = document.getElementById('skills-container');
-        skillsContainer.innerHTML = '';
-
-        Object.keys(SKILLS_DATA).forEach(categoryId => {
-            const category = SKILLS_DATA[categoryId];
-            const categoryDiv = document.createElement('div');
-            categoryDiv.className = 'skill-category';
-            
-            const categoryTitle = document.createElement('h3');
-            categoryTitle.textContent = category.name;
-            categoryDiv.appendChild(categoryTitle);
-            
-            category.skills.forEach(skill => {
-                const skillDiv = document.createElement('div');
-                skillDiv.className = 'skill-item';
-                
-                const label = document.createElement('label');
-                label.setAttribute('for', `skill-${skill.id}`);
-                label.textContent = skill.name;
-                
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.id = `skill-${skill.id}`;
-                input.name = skill.id;
-                input.min = 1;
-                input.max = 10;
-                input.required = true;
-                input.dataset.category = categoryId;
-                input.value = 5;
-                
-                skillDiv.appendChild(label);
-                skillDiv.appendChild(input);
-                categoryDiv.appendChild(skillDiv);
-            });
-            
-            skillsContainer.appendChild(categoryDiv);
-        });
-
-        const form = document.getElementById('form-skills');
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            Utils.showLoader();
-            
-            const skills = {};
-            form.querySelectorAll('input[type="number"]').forEach(input => {
-                const categoryId = input.dataset.category;
-                const skillId = input.name;
-                const rating = parseInt(input.value);
-                
-                if (!skills[categoryId]) skills[categoryId] = {};
-                skills[categoryId][skillId] = rating;
-            });
-            
-            const success = await Athletes.saveSkills(athleteId, skills);
-            Utils.hideLoader();
-            
-            if (success) {
-                alert('Спортсмен добавлен!');
-                this.navigate('profile', { id: athleteId });
-            } else {
-                alert('Ошибка сохранения');
-            }
-        };
-        
-        document.getElementById('btn-back-skills').onclick = () => this.navigate('dashboard');
-        document.getElementById('btn-back-step-skills').onclick = () => {
-            if (confirm('Назад? Оценки будут потеряны.')) {
-                this.navigate('anthropometry', { id: athleteId });
             }
         };
     },
@@ -1540,7 +1451,6 @@ const Router = {
         const realization = Calculations.calculateRealization(athlete);
         const gap = Calculations.calculateGap(potential, realization);
         
-        // ✅ УДАЛЕНЫ ЗАГЛУШКИ: Только "Нет данных" или число
         const realizationDisplay = realization === "Нет данных" ? "Нет данных" : `${realization}%`;
         const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
 
