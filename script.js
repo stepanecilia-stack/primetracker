@@ -312,7 +312,7 @@ function findWeightCategory(gender, ageGroup, weight) {
     
     const categories = BOXING_BENCHMARKS[gender][ageGroup];
     
-    // ✅ ИСПРАВЛЕНО: Ищем ВВЕРХ (ceiling), не ближайшее
+    // ✅ СТРОГОЕ ПРАВИЛО: Ищем ВВЕРХ (ceiling)
     // Находим первую категорию, где верхняя граница >= текущему весу
     for (let cat of categories) {
         if (weight <= cat.weight) {
@@ -320,7 +320,7 @@ function findWeightCategory(gender, ageGroup, weight) {
         }
     }
     
-    // Если вес больше всех категорий, возвращаем последнюю + маркер
+    // Если вес больше всех категорий
     const lastCat = categories[categories.length - 1];
     return {
         weight: `${lastCat.weight}+`,
@@ -424,7 +424,7 @@ const Calculations = {
         
         const idealHeight = category.idealHeight;
         
-        // ✅ НОВАЯ ФОРМУЛА
+        // ✅ ЖЕСТКАЯ ФОРМУЛА
         let potential = 100;
         
         // Штраф за рост: −5% за каждый 1 см ниже idealHeight
@@ -473,7 +473,7 @@ const Calculations = {
             });
         }
         
-        // Если нет данных ни по атомам, ни по ОФП → "Нет данных"
+        // ✅ СТРОГОЕ ПРАВИЛО: Если нет данных ни по атомам, ни по ОФП → "Нет данных"
         if (atomsCount === 0 || ofpCount === 0) {
             return "Нет данных";
         }
@@ -487,6 +487,7 @@ const Calculations = {
     },
 
     calculateGap(potential, realization) {
+        // ✅ СТРОГОЕ ПРАВИЛО: Если реализация "Нет данных" → разрыв тоже "Нет данных"
         if (realization === "Нет данных") {
             return "Нет данных";
         }
@@ -600,8 +601,8 @@ const Recommendations = {
         const metrics = athlete.metrics || {};
         const gap = metrics.gap;
 
-        // Проверяем, есть ли числовое значение разрыва
-        if (gap === "Нет данных" || gap === undefined) {
+        // ✅ Проверяем, есть ли числовое значение разрыва
+        if (gap === "Нет данных" || gap === undefined || typeof gap !== 'number') {
             return recommendations;
         }
 
@@ -617,7 +618,7 @@ const Recommendations = {
                 title: 'Есть резервы для роста',
                 text: `Разрыв ${gap} баллов указывает на нереализованный потенциал.`
             });
-        } else if (gap >= 0 && gap < 5) {
+        } else if (gap >= 0 && gap <= 5) {
             recommendations.push({
                 type: 'success',
                 title: 'Отличная реализация потенциала',
@@ -732,7 +733,7 @@ const Athletes = {
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
             anthropometry: [],
             skills: {},
-            metrics: { potential: 0, realization: 0, gap: 0 },
+            metrics: { potential: 0, realization: "Нет данных", gap: "Нет данных" },
             shareToken: null
         };
         
@@ -802,13 +803,19 @@ const Share = {
     async getAthleteByToken(token) {
         const athlete = await Storage.getAthleteByToken(token);
         if (!athlete) return null;
+        
+        // ✅ СИНХРОНИЗАЦИЯ: Пересчитываем метрики
+        const potential = Calculations.calculatePotential(athlete);
+        const realization = Calculations.calculateRealization(athlete);
+        const gap = Calculations.calculateGap(potential, realization);
+        
         return {
             id: athlete.id,
             firstName: athlete.firstName,
             lastName: athlete.lastName,
             birthYear: athlete.birthYear,
             gender: athlete.gender,
-            metrics: athlete.metrics,
+            metrics: { potential, realization, gap },
             anthropometry: athlete.anthropometry,
             skills: athlete.skills,
             strengths: Calculations.getStrengths(athlete),
@@ -1272,7 +1279,7 @@ const Router = {
             emptyState.classList.add('hidden');
             athletesList.innerHTML = '';
             
-            // ✅ ИСПРАВЛЕНО БАГ 2: Пересчитываем метрики на лету
+            // ✅ СИНХРОНИЗАЦИЯ: Пересчитываем метрики на лету
             for (const athlete of athletes) {
                 const potential = Calculations.calculatePotential(athlete);
                 const realization = Calculations.calculateRealization(athlete);
@@ -1282,7 +1289,8 @@ const Router = {
                 card.className = 'athlete-card';
                 const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
                 
-                const realizationDisplay = realization === "Нет данных" ? "Нет данных" : realization;
+                // ✅ УДАЛЕНЫ ЗАГЛУШКИ: Только "Нет данных" или число
+                const realizationDisplay = realization === "Нет данных" ? "Нет данных" : `${realization}%`;
                 const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
                 
                 card.innerHTML = `
@@ -1291,7 +1299,7 @@ const Router = {
                         <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText}</p>
                     </div>
                     <div class="athlete-metrics">
-                        <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}</span></div>
+                        <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
                         <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
                         <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
                     </div>
@@ -1527,19 +1535,18 @@ const Router = {
         document.getElementById('profile-athlete-name').textContent = `${athlete.firstName} ${athlete.lastName}`;
         document.getElementById('profile-athlete-meta').textContent = `${athlete.birthYear} г.р., ${genderText}`;
 
-        // ✅ ИСПРАВЛЕНО БАГ 2: Вычисляем актуальные метрики
+        // ✅ СИНХРОНИЗАЦИЯ: Вычисляем актуальные метрики
         const potential = Calculations.calculatePotential(athlete);
         const realization = Calculations.calculateRealization(athlete);
         const gap = Calculations.calculateGap(potential, realization);
         
-        const realizationDisplay = realization === "Нет данных" ? "Нет данных" : realization;
+        // ✅ УДАЛЕНЫ ЗАГЛУШКИ: Только "Нет данных" или число
+        const realizationDisplay = realization === "Нет данных" ? "Нет данных" : `${realization}%`;
         const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
 
-        document.getElementById('profile-potential').textContent = potential || '—';
+        document.getElementById('profile-potential').textContent = `${potential}%`;
         document.getElementById('profile-realization').textContent = realizationDisplay;
         document.getElementById('profile-gap').textContent = gapDisplay;
-
-        // ✅ ИСПРАВЛЕНО БАГ 3: Удалены блоки strengths и weaknesses
 
         // Генерация кнопок секций
         const sectionsGrid = document.getElementById('profile-sections-grid');
