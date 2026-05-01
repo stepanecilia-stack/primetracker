@@ -638,6 +638,7 @@ function closeTestModal() {
 // ✅ СИНХРОНИЗАЦИЯ КСР
 async function recalculateKSR(athleteId) {
     console.log('🔄 Пересчет КСР после сдачи теста...');
+    console.log('═══════════════════════════════════════');
     
     try {
         const doc = await db.collection('students').doc(athleteId).get();
@@ -649,27 +650,67 @@ async function recalculateKSR(athleteId) {
         let functionalScore = 0;
         let technicalScore = 0;
         
-        if (athlete.tests?.physical) {
-            const tests = Object.values(athlete.tests.physical);
-            if (tests.length > 0) {
-                const avg = tests.reduce((sum, t) => sum + t.normalizedScore, 0) / tests.length;
-                physicsScore = avg * 0.333;
-                console.log(`  📊 Физика: ${tests.length} тестов, вклад=${physicsScore.toFixed(1)}`);
-            }
+        // ✅ ВАРИАНТ А: Загружаем доступные тесты из Google Sheets
+        const allNorms = await loadNorms();
+        const physicalNorms = getAthletNorms(allNorms, athlete, 'physical');
+        const functionalNorms = getAthletNorms(allNorms, athlete, 'functional');
+        
+        const totalPhysicalTests = physicalNorms.length;
+        const totalFunctionalTests = functionalNorms.length;
+        
+        // 1. Физика (33.3%) — штраф за несданные тесты
+        if (totalPhysicalTests > 0) {
+            let sumPhysics = 0;
+            let completedPhysics = 0;
+            
+            physicalNorms.forEach(norm => {
+                const testResult = athlete.tests?.physical?.[norm.testId];
+                if (testResult) {
+                    sumPhysics += testResult.normalizedScore || 0;
+                    completedPhysics++;
+                }
+                // Несданные тесты добавляют 0 к сумме
+            });
+            
+            const avgPhysics = sumPhysics / totalPhysicalTests;
+            physicsScore = avgPhysics * 0.333;
+            
+            console.log(`💪 ФИЗИКА:`);
+            console.log(`  Сдано: ${completedPhysics} из ${totalPhysicalTests} тестов`);
+            console.log(`  Сумма баллов: ${sumPhysics}`);
+            console.log(`  Средний балл: ${avgPhysics.toFixed(2)} (штраф за ${totalPhysicalTests - completedPhysics} несданных)`);
+            console.log(`  Вклад в КСР: ${physicsScore.toFixed(2)}`);
         }
         
-        if (athlete.tests?.functional) {
-            const tests = Object.values(athlete.tests.functional);
-            if (tests.length > 0) {
-                const avg = tests.reduce((sum, t) => sum + t.normalizedScore, 0) / tests.length;
-                functionalScore = avg * 0.333;
-                console.log(`  📊 Функционал: ${tests.length} тестов, вклад=${functionalScore.toFixed(1)}`);
-            }
+        // 2. Функционал (33.3%) — штраф за несданные тесты
+        if (totalFunctionalTests > 0) {
+            let sumFunctional = 0;
+            let completedFunctional = 0;
+            
+            functionalNorms.forEach(norm => {
+                const testResult = athlete.tests?.functional?.[norm.testId];
+                if (testResult) {
+                    sumFunctional += testResult.normalizedScore || 0;
+                    completedFunctional++;
+                }
+            });
+            
+            const avgFunctional = sumFunctional / totalFunctionalTests;
+            functionalScore = avgFunctional * 0.333;
+            
+            console.log(`⚡ ФУНКЦИОНАЛ:`);
+            console.log(`  Сдано: ${completedFunctional} из ${totalFunctionalTests} тестов`);
+            console.log(`  Сумма баллов: ${sumFunctional}`);
+            console.log(`  Средний балл: ${avgFunctional.toFixed(2)} (штраф за ${totalFunctionalTests - completedFunctional} несданных)`);
+            console.log(`  Вклад в КСР: ${functionalScore.toFixed(2)}`);
         }
         
-        if (athlete.technicalScore) {
+        // 3. Техника (33.3%)
+        if (athlete.technicalScore && typeof athlete.technicalScore === 'number') {
             technicalScore = ((athlete.technicalScore / 5) * 100) * 0.333;
-            console.log(`  📊 Техника: оценка=${athlete.technicalScore}/5, вклад=${technicalScore.toFixed(1)}`);
+            console.log(`🥊 ТЕХНИКА:`);
+            console.log(`  Оценка: ${athlete.technicalScore}/5`);
+            console.log(`  Вклад в КСР: ${technicalScore.toFixed(2)}`);
         }
         
         const totalScore = physicsScore + functionalScore + technicalScore;
@@ -678,7 +719,9 @@ async function recalculateKSR(athleteId) {
         const potential = athlete.metrics?.potential || 0;
         const gap = realization === "Нет данных" ? "Нет данных" : potential - realization;
         
-        console.log(`✅ Новый КСР: ${realization}, Разрыв: ${gap}`);
+        console.log(`\n🎯 ИТОГОВЫЙ КСР: ${realization}%`);
+        console.log(`📊 Разрыв: ${gap}`);
+        console.log('═══════════════════════════════════════');
         
         await db.collection('students').doc(athleteId).update({
             'metrics.realization': realization,
@@ -691,6 +734,7 @@ async function recalculateKSR(athleteId) {
         console.error('❌ Ошибка пересчета КСР:', error);
     }
 }
+
 
 document.getElementById('testForm').addEventListener('submit', async function(e) {
     e.preventDefault();

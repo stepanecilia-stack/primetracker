@@ -570,51 +570,73 @@ const Calculations = {
         return Math.round(potential);
     },
 
-    // ✅ НОВАЯ ФОРМУЛА КСР (взвешенная сумма 3 категорий)
-    calculateRealization(athlete) {
-        console.log('🧮 Расчет КСР для спортсмена:', athlete.firstName);
-        
-        let physicsScore = 0;
-        let functionalScore = 0;
-        let technicalScore = 0;
-        
-        // 1. Физика (33.3%)
-        if (athlete.tests && athlete.tests.physical) {
-            const physicalTests = Object.values(athlete.tests.physical);
-            if (physicalTests.length > 0) {
-                const avgPhysics = physicalTests.reduce((sum, test) => sum + (test.normalizedScore || 0), 0) / physicalTests.length;
-                physicsScore = avgPhysics * 0.333;
-                console.log(`  Физика: ${physicalTests.length} тестов, средний балл=${avgPhysics.toFixed(1)}, вклад=${physicsScore.toFixed(1)}`);
+    // ✅ ВАРИАНТ А: Штраф за несданные тесты
+async calculateRealization(athlete) {
+    console.log('🧮 Расчет КСР для спортсмена:', athlete.firstName);
+    
+    let physicsScore = 0;
+    let functionalScore = 0;
+    let technicalScore = 0;
+    
+    // 1. Физика (33.3%) — с учетом всех доступных тестов
+    const physicalNorms = await NormsLoader.getNormsForAthlete(athlete, 'physical');
+    const totalPhysicalTests = physicalNorms.length;
+    
+    if (totalPhysicalTests > 0) {
+        let sumPhysics = 0;
+        physicalNorms.forEach(norm => {
+            const testResult = athlete.tests?.physical?.[norm.testId];
+            if (testResult) {
+                sumPhysics += testResult.normalizedScore || 0;
             }
-        }
+            // Если тест не сдан, добавляем 0
+        });
         
-        // 2. Функционал (33.3%)
-        if (athlete.tests && athlete.tests.functional) {
-            const functionalTests = Object.values(athlete.tests.functional);
-            if (functionalTests.length > 0) {
-                const avgFunctional = functionalTests.reduce((sum, test) => sum + (test.normalizedScore || 0), 0) / functionalTests.length;
-                functionalScore = avgFunctional * 0.333;
-                console.log(`  Функционал: ${functionalTests.length} тестов, средний балл=${avgFunctional.toFixed(1)}, вклад=${functionalScore.toFixed(1)}`);
+        const avgPhysics = sumPhysics / totalPhysicalTests;
+        physicsScore = avgPhysics * 0.333;
+        
+        const completedPhysics = Object.keys(athlete.tests?.physical || {}).length;
+        console.log(`  Физика: сдано ${completedPhysics} из ${totalPhysicalTests} тестов, средний балл=${avgPhysics.toFixed(1)}, вклад=${physicsScore.toFixed(1)}`);
+    }
+    
+    // 2. Функционал (33.3%) — с учетом всех доступных тестов
+    const functionalNorms = await NormsLoader.getNormsForAthlete(athlete, 'functional');
+    const totalFunctionalTests = functionalNorms.length;
+    
+    if (totalFunctionalTests > 0) {
+        let sumFunctional = 0;
+        functionalNorms.forEach(norm => {
+            const testResult = athlete.tests?.functional?.[norm.testId];
+            if (testResult) {
+                sumFunctional += testResult.normalizedScore || 0;
             }
-        }
+        });
         
-        // 3. Техника (33.3%)
-        if (athlete.technicalScore && typeof athlete.technicalScore === 'number') {
-            technicalScore = ((athlete.technicalScore / 5) * 100) * 0.333;
-            console.log(`  Техника: оценка=${athlete.technicalScore}/5, вклад=${technicalScore.toFixed(1)}`);
-        }
+        const avgFunctional = sumFunctional / totalFunctionalTests;
+        functionalScore = avgFunctional * 0.333;
         
-        const totalScore = physicsScore + functionalScore + technicalScore;
-        
-        console.log(`  📊 Итоговый КСР: ${totalScore.toFixed(1)} (физика=${physicsScore.toFixed(1)} + функционал=${functionalScore.toFixed(1)} + техника=${technicalScore.toFixed(1)})`);
-        
-        if (totalScore === 0) {
-            console.log('  ⚠️ КСР = "Нет данных" (все категории пустые)');
-            return "Нет данных";
-        }
-        
-        return Math.round(totalScore);
-    },
+        const completedFunctional = Object.keys(athlete.tests?.functional || {}).length;
+        console.log(`  Функционал: сдано ${completedFunctional} из ${totalFunctionalTests} тестов, средний балл=${avgFunctional.toFixed(1)}, вклад=${functionalScore.toFixed(1)}`);
+    }
+    
+    // 3. Техника (33.3%)
+    if (athlete.technicalScore && typeof athlete.technicalScore === 'number') {
+        technicalScore = ((athlete.technicalScore / 5) * 100) * 0.333;
+        console.log(`  Техника: оценка=${athlete.technicalScore}/5, вклад=${technicalScore.toFixed(1)}`);
+    }
+    
+    const totalScore = physicsScore + functionalScore + technicalScore;
+    
+    console.log(`  📊 Итоговый КСР: ${totalScore.toFixed(1)} (физика=${physicsScore.toFixed(1)} + функционал=${functionalScore.toFixed(1)} + техника=${technicalScore.toFixed(1)})`);
+    
+    if (totalScore === 0) {
+        console.log('  ⚠️ КСР = "Нет данных" (все категории пустые)');
+        return "Нет данных";
+    }
+    
+    return Math.round(totalScore);
+},
+
 
     calculateGap(potential, realization) {
         if (realization === "Нет данных") {
@@ -624,17 +646,18 @@ const Calculations = {
     },
 
     async updateAthleteMetrics(athleteId) {
-        console.log(`🔄 Обновление метрик для спортсмена ${athleteId}`);
-        
-        const athlete = await Storage.getAthleteById(athleteId);
-        if (!athlete) {
-            console.error(`❌ Не удалось загрузить спортсмена для обновления метрик`);
-            return null;
+    console.log(`🔄 Обновление метрик для спортсмена ${athleteId}`);
+    
+       const athlete = await Storage.getAthleteById(athleteId);
+       if (!athlete) {
+        console.error(`❌ Не удалось загрузить спортсмена для обновления метрик`);
+        return null;
         }
-        
-        const potential = this.calculatePotential(athlete);
-        const realization = this.calculateRealization(athlete);
-        const gap = this.calculateGap(potential, realization);
+    
+       const potential = this.calculatePotential(athlete);
+       const realization = await this.calculateRealization(athlete); // ✅ Добавили await
+       const gap = this.calculateGap(potential, realization);
+
         
         const metrics = { potential, realization, gap };
         
@@ -876,11 +899,11 @@ const Share = {
     async getAthleteByToken(token) {
         const athlete = await Storage.getAthleteByToken(token);
         if (!athlete) return null;
-        
+    
         const potential = Calculations.calculatePotential(athlete);
-        const realization = Calculations.calculateRealization(athlete);
+        const realization = await Calculations.calculateRealization(athlete); // ✅ Добавили await
         const gap = Calculations.calculateGap(potential, realization);
-        
+
         return {
             id: athlete.id,
             firstName: athlete.firstName,
@@ -1199,7 +1222,7 @@ const Router = {
             
             for (const athlete of athletes) {
                 const potential = Calculations.calculatePotential(athlete);
-                const realization = Calculations.calculateRealization(athlete);
+                const realization = await Calculations.calculateRealization(athlete); // ✅ Добавили await
                 const gap = Calculations.calculateGap(potential, realization);
                 const weightCategory = Calculations.getWeightCategory(athlete);
                 
@@ -1363,8 +1386,9 @@ const Router = {
         document.getElementById('profile-athlete-meta').textContent = `${athlete.birthYear} г.р., ${genderText}`;
 
         const potential = Calculations.calculatePotential(athlete);
-        const realization = Calculations.calculateRealization(athlete);
+        const realization = await Calculations.calculateRealization(athlete); // ✅ Добавили await
         const gap = Calculations.calculateGap(potential, realization);
+
         
         const realizationDisplay = realization === "Нет данных" ? "Нет данных" : `${realization}%`;
         const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
