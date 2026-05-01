@@ -368,7 +368,7 @@
 </head>
 <body>
     <div class="container">
-        <a href="#" id="back-btn" class="back-button">← Назад</a>
+        <a href="javascript:history.back()" class="back-button">← Назад</a>
 
         <div class="header">
             <h1 id="athlete-name">Физическое развитие</h1>
@@ -790,17 +790,6 @@ async function init() {
     console.log('🚀 Инициализация physical.html');
     console.log('📌 Athlete ID из URL:', athleteId);
     
-    // ✅ НАСТРОЙКА КНОПКИ "НАЗАД"
-    const backBtn = document.getElementById('back-btn');
-    if (athleteId) {
-        backBtn.href = `index.html#profile-${athleteId}`;
-        backBtn.onclick = (e) => {
-            e.preventDefault();
-            window.location.href = `index.html#profile-${athleteId}`;
-        };
-    } else {
-        backBtn.href = 'index.html';
-    }
     
     if (!athleteId) {
         console.error('❌ ID спортсмена не указан в URL');
