@@ -136,7 +136,7 @@
             font-weight: 600;
         }
 
-        /* Переключатель уровней */
+        /* ✅ ПЕРЕКЛЮЧАТЕЛЬ УРОВНЕЙ С TOOLTIP */
         .level-selector {
             display: flex;
             gap: 12px;
@@ -154,6 +154,7 @@
             transition: all 0.3s;
             text-align: center;
             background: #ffffff;
+            position: relative;
         }
 
         .level-option:hover {
@@ -192,6 +193,115 @@
             display: block;
         }
 
+        /* ✅ ИКОНКА ИНФОРМАЦИИ */
+        .level-info-icon {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 18px;
+            height: 18px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            cursor: help;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+
+        .level-option:hover .level-info-icon {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .level-option.active .level-info-icon {
+            background: rgba(255, 255, 255, 0.3);
+            color: inherit;
+        }
+
+        /* ✅ TOOLTIP */
+        .level-tooltip {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a2e;
+            color: #ffffff;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            width: 280px;
+            max-width: 90vw;
+            display: none;
+            font-size: 13px;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        .level-tooltip.show {
+            display: block;
+            animation: tooltipFadeIn 0.2s ease-out;
+        }
+
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .level-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #1a1a2e;
+        }
+
+        .level-tooltip h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .level-tooltip p {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .level-tooltip p:last-child {
+            margin-bottom: 0;
+        }
+
+        .level-tooltip ul {
+            margin: 8px 0 0 0;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .level-tooltip li {
+            margin-bottom: 6px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .level-tooltip li::before {
+            content: attr(data-icon);
+            position: absolute;
+            left: 0;
+            font-size: 16px;
+        }
+
         /* Поле комментария */
         .comment-field {
             margin-bottom: 20px;
@@ -214,6 +324,7 @@
             font-family: inherit;
             resize: vertical;
             min-height: 80px;
+            box-sizing: border-box;
         }
 
         .comment-field textarea:focus {
@@ -369,6 +480,11 @@
             .overall-score-value {
                 font-size: 56px;
             }
+
+            .level-tooltip {
+                width: 260px;
+                font-size: 12px;
+            }
         }
     </style>
 </head>
@@ -405,7 +521,7 @@ if (!firebase.apps.length) {
 }
 
 const db = firebase.firestore();
-const auth = firebase.auth(); // ✅ ДОБАВИЛИ AUTH
+const auth = firebase.auth();
 
 // URL Google Sheets (лист Technical)
 const TECHNICAL_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=320989263&single=true&output=csv';
@@ -414,13 +530,53 @@ let currentAthlete = null;
 let technicalAtoms = [];
 let athleteTechnicalData = {};
 
-// Конфигурация уровней
+// ✅ КОНФИГУРАЦИЯ УРОВНЕЙ С ОПИСАНИЯМИ
 const LEVELS = [
-    { value: 0, name: 'Не изучен', emoji: '⚫', color: '#4A4A4A', ksr: 0 },
-    { value: 1, name: 'Знание', emoji: '🔴', subemoji: '🧠👁️🤲', color: '#E74C3C', ksr: 0.25 },
-    { value: 2, name: 'Двигательное умение', emoji: '🟠', color: '#E67E22', ksr: 0.5 },
-    { value: 3, name: 'Двигательный навык', emoji: '🟡', color: '#F1C40F', ksr: 0.75 },
-    { value: 4, name: 'Автоматизированный навык', emoji: '🟢', color: '#27AE60', ksr: 1.0 }
+    { 
+        value: 0, 
+        name: 'Не изучен', 
+        emoji: '⚫', 
+        color: '#4A4A4A', 
+        ksr: 0,
+        description: 'Атом ещё не разбирался на тренировке. Ученик не знаком с этим элементом.'
+    },
+    { 
+        value: 1, 
+        name: 'Знание', 
+        emoji: '🔴', 
+        color: '#E74C3C', 
+        ksr: 0.25,
+        description: `Ученик сформировал три образа элемента:`,
+        details: [
+            { icon: '🧠', text: 'Логический образ — понимает механику, может объяснить словами' },
+            { icon: '👁️', text: 'Зрительный образ — видит как выглядит правильное выполнение, замечает ошибку' },
+            { icon: '🤲', text: 'Кинестезический образ — чувствует движение телом, может воспроизвести медленно' }
+        ]
+    },
+    { 
+        value: 2, 
+        name: 'Двигательное умение', 
+        emoji: '🟠', 
+        color: '#E67E22', 
+        ksr: 0.5,
+        description: 'Выполняет элемент самостоятельно, но нестабильно. Требует концентрации — в стрессе или усталости ломается.'
+    },
+    { 
+        value: 3, 
+        name: 'Двигательный навык', 
+        emoji: '🟡', 
+        color: '#F1C40F', 
+        ksr: 0.75,
+        description: 'Выполняет стабильно и без лишних усилий. Элемент воспроизводится в спарринге, но ещё требует внимания.'
+    },
+    { 
+        value: 4, 
+        name: 'Автоматизированный навык', 
+        emoji: '🟢', 
+        color: '#27AE60', 
+        ksr: 1.0,
+        description: 'Элемент вшит в тело. Выполняется автоматически в любых условиях — усталость, стресс, давление соперника не влияют.'
+    }
 ];
 
 // Загрузка данных из Google Sheets
@@ -431,13 +587,11 @@ async function loadTechnicalAtoms() {
         const csvText = await response.text();
         
         const rows = csvText.split('\n').map(row => {
-            // Простой парсинг CSV (для сложных случаев нужна библиотека)
             return row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
         });
         
         console.log(`📊 Загружено строк: ${rows.length}`);
         
-        // Пропускаем заголовок
         const dataRows = rows.slice(1);
         
         const atoms = [];
@@ -475,13 +629,12 @@ async function loadTechnicalAtoms() {
 // Загрузка данных спортсмена
 async function loadAthleteData(athleteId) {
     try {
-        // ✅ ПРОВЕРКА АВТОРИЗАЦИИ
         if (!auth.currentUser) {
             console.error('❌ Пользователь не авторизован');
             return null;
         }
         
-        console.log(`🔍 Загрузка данных спортсмена ${athleteId} для пользователя ${auth.currentUser.uid}`);
+        console.log(`🔍 Загрузка данных спортсмена ${athleteId}`);
         
         const doc = await db.collection('students').doc(athleteId).get();
         
@@ -492,13 +645,12 @@ async function loadAthleteData(athleteId) {
         
         const data = doc.data();
         
-        // ✅ ПРОВЕРКА ВЛАДЕЛЬЦА
         if (data.coachId !== auth.currentUser.uid) {
-            console.error(`❌ Доступ запрещён: спортсмен принадлежит другому тренеру`);
+            console.error(`❌ Доступ запрещён`);
             return null;
         }
         
-        console.log(`✅ Данные спортсмена загружены: ${data.firstName} ${data.lastName}`);
+        console.log(`✅ Данные спортсмена загружены`);
         
         return {
             id: doc.id,
@@ -512,7 +664,23 @@ async function loadAthleteData(athleteId) {
     }
 }
 
-// Рендер карточки атома
+// ✅ РЕНДЕР TOOLTIP ДЛЯ УРОВНЯ
+function renderLevelTooltip(level) {
+    let content = `<h4>${level.emoji} ${level.name}</h4>`;
+    content += `<p>${level.description}</p>`;
+    
+    if (level.details) {
+        content += '<ul>';
+        level.details.forEach(detail => {
+            content += `<li data-icon="${detail.icon}">${detail.text}</li>`;
+        });
+        content += '</ul>';
+    }
+    
+    return content;
+}
+
+// ✅ РЕНДЕР КАРТОЧКИ АТОМА
 function renderAtomCard(atom) {
     const savedData = athleteTechnicalData[atom.id] || { level: 0, comment: '' };
     
@@ -530,8 +698,12 @@ function renderAtomCard(atom) {
             ${LEVELS.map(level => `
                 <div class="level-option level-${level.value} ${savedData.level === level.value ? 'active' : ''}" 
                      data-level="${level.value}">
-                    <span class="level-emoji">${level.emoji}${level.subemoji || ''}</span>
+                    <span class="level-info-icon" data-level-info="${level.value}">ℹ️</span>
+                    <span class="level-emoji">${level.emoji}</span>
                     <span class="level-name">${level.name}</span>
+                    <div class="level-tooltip" id="tooltip-${atom.id}-${level.value}">
+                        ${renderLevelTooltip(level)}
+                    </div>
                 </div>
             `).join('')}
         </div>
@@ -594,9 +766,7 @@ function openVideo(link) {
 
 // Расчет общего КСР по технике
 function calculateTechnicalKSR() {
-    const atomIds = Object.keys(athleteTechnicalData);
-    
-    if (atomIds.length === 0 || technicalAtoms.length === 0) {
+    if (technicalAtoms.length === 0) {
         return 0;
     }
     
@@ -637,6 +807,13 @@ function renderOverallScore() {
     `;
 }
 
+// ✅ СКРЫТИЕ ВСЕХ TOOLTIP ПРИ КЛИКЕ ВНЕ
+function hideAllTooltips() {
+    document.querySelectorAll('.level-tooltip').forEach(tooltip => {
+        tooltip.classList.remove('show');
+    });
+}
+
 // Рендер контента
 function renderContent() {
     const container = document.getElementById('main-content');
@@ -655,14 +832,37 @@ function renderContent() {
     saveBtn.onclick = saveAllData;
     container.appendChild(saveBtn);
     
-    // Обработчики выбора уровня
+    // ✅ ОБРАБОТЧИКИ ВЫБОРА УРОВНЯ И TOOLTIP
     document.querySelectorAll('.level-selector').forEach(selector => {
         selector.addEventListener('click', (e) => {
+            const infoIcon = e.target.closest('.level-info-icon');
             const option = e.target.closest('.level-option');
+            
             if (!option) return;
             
             const atomId = selector.dataset.atomId;
             const level = parseInt(option.dataset.level);
+            
+            // ✅ ЕСЛИ КЛИКНУЛИ НА ℹ️ - ПОКАЗЫВАЕМ TOOLTIP
+            if (infoIcon) {
+                e.stopPropagation();
+                const tooltipId = `tooltip-${atomId}-${level}`;
+                const tooltip = document.getElementById(tooltipId);
+                
+                // Скрываем все другие tooltip
+                document.querySelectorAll('.level-tooltip').forEach(t => {
+                    if (t.id !== tooltipId) {
+                        t.classList.remove('show');
+                    }
+                });
+                
+                // Переключаем текущий tooltip
+                tooltip.classList.toggle('show');
+                return;
+            }
+            
+            // ✅ ИНАЧЕ - ВЫБИРАЕМ УРОВЕНЬ
+            hideAllTooltips();
             
             // Снимаем active со всех опций в этом селекторе
             selector.querySelectorAll('.level-option').forEach(opt => {
@@ -680,6 +880,13 @@ function renderContent() {
             
             console.log(`Уровень атома ${atomId} установлен на ${level}`);
         });
+    });
+    
+    // ✅ СКРЫТИЕ TOOLTIP ПРИ КЛИКЕ ВНЕ
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.level-option')) {
+            hideAllTooltips();
+        }
     });
 }
 
@@ -734,7 +941,7 @@ async function saveAllData() {
     }
 }
 
-// ✅ ОСНОВНАЯ ФУНКЦИЯ ИНИЦИАЛИЗАЦИИ С ПРОВЕРКОЙ АВТОРИЗАЦИИ
+// Инициализация
 async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const athleteId = urlParams.get('id');
@@ -747,7 +954,7 @@ async function init() {
     // ✅ ЖДЁМ АВТОРИЗАЦИИ
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
-            console.error('❌ Пользователь не авторизован, редирект на главную страницу');
+            console.error('❌ Пользователь не авторизован');
             document.getElementById('main-content').innerHTML = `
                 <div class="loading" style="color: #e74c3c;">
                     <h2>⚠️ Требуется авторизация</h2>
@@ -803,7 +1010,6 @@ async function init() {
     });
 }
 
-// ✅ ЗАПУСК ПРИ ЗАГРУЗКЕ СТРАНИЦЫ
 window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
