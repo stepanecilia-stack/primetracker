@@ -19,7 +19,7 @@ const db = firebase.firestore();
 // ============================================
 // GOOGLE SHEETS URL (Лист "Нормативы")
 // ============================================
-const NORMS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=0&single=true&output=csv';
+const NORMS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=1658605285&single=true&output=csv';
 
 // ============================================
 // NORMS MODULE (ЗАГРУЗКА ИЗ GOOGLE SHEETS)
