@@ -18,7 +18,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -64,46 +64,18 @@
             font-size: 16px;
         }
 
-        .content-card {
-            background: #ffffff;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 32px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            margin-bottom: 24px;
-        }
-
-        .info-block {
-            background: #f0f4ff;
-            border-left: 4px solid #667eea;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 32px;
-        }
-
-        .info-block h3 {
-            margin: 0 0 12px 0;
-            color: #667eea;
-            font-size: 18px;
-        }
-
-        .info-block p {
-            margin: 0;
-            color: #1a1a2e;
-            line-height: 1.6;
-            font-size: 14px;
-        }
-
-        .current-score {
-            text-align: center;
-            padding: 32px;
+        /* Блок общей оценки */
+        .overall-score-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 32px;
             border-radius: 12px;
             margin-bottom: 32px;
             color: #ffffff;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
-        .current-score-label {
+        .overall-score-label {
             font-size: 14px;
             opacity: 0.9;
             margin-bottom: 8px;
@@ -111,124 +83,220 @@
             letter-spacing: 1px;
         }
 
-        .current-score-value {
+        .overall-score-value {
             font-size: 72px;
             font-weight: 700;
             line-height: 1;
             margin-bottom: 8px;
         }
 
-        .current-score-max {
-            font-size: 24px;
-            opacity: 0.8;
-        }
-
-        .current-score-description {
+        .overall-score-description {
             margin-top: 16px;
             font-size: 16px;
             opacity: 0.9;
         }
 
-        .score-form {
-            margin-top: 32px;
+        /* Карточки атомов */
+        .atom-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
         }
 
-        .form-group {
-            margin-bottom: 24px;
+        .atom-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 12px;
-            color: #1a1a2e;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .score-input-wrapper {
+        .atom-header {
             display: flex;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
             gap: 16px;
         }
 
-        .score-input {
+        .atom-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin: 0;
             flex: 1;
-            width: 100%;
         }
 
-        .score-input input[type="range"] {
-            width: 100%;
-            height: 8px;
-            border-radius: 4px;
-            background: #e0e0e0;
-            outline: none;
-            -webkit-appearance: none;
-        }
-
-        .score-input input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-        }
-
-        .score-input input[type="range"]::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            border: none;
-        }
-
-        .score-display {
-            font-size: 32px;
-            font-weight: 700;
+        .atom-number {
+            background: #f0f4ff;
             color: #667eea;
-            min-width: 60px;
-            text-align: center;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        .score-labels {
+        /* Переключатель уровней */
+        .level-selector {
             display: flex;
-            justify-content: space-between;
-            margin-top: 8px;
-            font-size: 12px;
-            color: #6b7280;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
-        .score-descriptions {
-            margin-top: 24px;
-            padding: 20px;
+        .level-option {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            background: #ffffff;
+        }
+
+        .level-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .level-option.active {
+            border-width: 3px;
+            font-weight: 600;
+        }
+
+        .level-option.level-0 { border-color: #4A4A4A; }
+        .level-option.level-0.active { background: #4A4A4A; color: #ffffff; }
+
+        .level-option.level-1 { border-color: #E74C3C; }
+        .level-option.level-1.active { background: #E74C3C; color: #ffffff; }
+
+        .level-option.level-2 { border-color: #E67E22; }
+        .level-option.level-2.active { background: #E67E22; color: #ffffff; }
+
+        .level-option.level-3 { border-color: #F1C40F; }
+        .level-option.level-3.active { background: #F1C40F; color: #1a1a2e; }
+
+        .level-option.level-4 { border-color: #27AE60; }
+        .level-option.level-4.active { background: #27AE60; color: #ffffff; }
+
+        .level-emoji {
+            font-size: 20px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .level-name {
+            font-size: 13px;
+            display: block;
+        }
+
+        /* Поле комментария */
+        .comment-field {
+            margin-bottom: 20px;
+        }
+
+        .comment-field label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+        }
+
+        .comment-field textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .comment-field textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Кнопки действий */
+        .atom-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .atom-btn {
+            padding: 10px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #ffffff;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .atom-btn:hover {
+            background: #f8f9fa;
+            border-color: #667eea;
+        }
+
+        .atom-btn-video {
+            background: #e74c3c;
+            color: #ffffff;
+            border-color: #e74c3c;
+        }
+
+        .atom-btn-video:hover {
+            background: #c0392b;
+            border-color: #c0392b;
+        }
+
+        /* Раскрывающиеся блоки */
+        .collapsible-content {
+            margin-top: 16px;
+            padding: 16px;
             background: #f8f9fa;
             border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: none;
         }
 
-        .score-descriptions h4 {
-            margin: 0 0 12px 0;
+        .collapsible-content.show {
+            display: block;
+        }
+
+        .collapsible-content h4 {
+            margin: 0 0 8px 0;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .collapsible-content p {
+            margin: 0;
             color: #1a1a2e;
             font-size: 14px;
+            line-height: 1.6;
         }
 
-        .score-desc-item {
-            padding: 8px 0;
-            border-bottom: 1px solid #e0e0e0;
-            font-size: 13px;
+        .collapsible-section {
+            margin-bottom: 12px;
         }
 
-        .score-desc-item:last-child {
-            border-bottom: none;
+        .collapsible-section:last-child {
+            margin-bottom: 0;
         }
 
-        .score-desc-item strong {
-            color: #667eea;
-            margin-right: 8px;
-        }
-
-        .btn-save {
+        /* Кнопка сохранения */
+        .save-all-btn {
+            position: sticky;
+            bottom: 20px;
             width: 100%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #ffffff;
@@ -239,13 +307,13 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
             margin-top: 32px;
         }
 
-        .btn-save:hover {
+        .save-all-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
         }
 
         .loading {
@@ -266,30 +334,59 @@
 
         .success-message.show {
             display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         @media (max-width: 768px) {
-            .current-score-value {
-                font-size: 56px;
+            .level-selector {
+                gap: 8px;
             }
             
-            .score-display {
-                font-size: 24px;
+            .level-option {
+                min-width: 80px;
+                padding: 10px;
+            }
+            
+            .level-emoji {
+                font-size: 16px;
+            }
+            
+            .level-name {
+                font-size: 11px;
+            }
+            
+            .overall-score-value {
+                font-size: 56px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <a href="index.html" class="back-button">← Назад</a>
+        <a href="index.html" class="back-button">← Назад к профилю</a>
 
         <div class="header">
             <h1 id="athlete-name">Техническая подготовленность</h1>
-            <p id="athlete-meta">Общая оценка навыков</p>
+            <p id="athlete-meta">Оценка технических навыков</p>
+        </div>
+
+        <div id="success-msg" class="success-message">
+            ✅ Данные успешно сохранены!
         </div>
 
         <div id="main-content" class="loading">
-            Загрузка данных...
+            Загрузка данных из Google Sheets...
         </div>
     </div>
 
@@ -309,122 +406,316 @@ if (!firebase.apps.length) {
 
 const db = firebase.firestore();
 
-let currentAthlete = null;
+// URL Google Sheets (лист Technical)
+const TECHNICAL_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=320989263&single=true&output=csv';
 
-function getScoreDescription(score) {
-    const descriptions = {
-        1: 'Начальный уровень. Требуется значительная работа над техникой.',
-        2: 'Базовый уровень. Основы освоены, но много недочетов.',
-        3: 'Средний уровень. Техника стабильная, но есть резервы для улучшения.',
-        4: 'Хороший уровень. Уверенное владение техникой, минимум ошибок.',
-        5: 'Отличный уровень. Эталонное выполнение, высокий технический класс.'
-    };
-    return descriptions[score] || 'Не оценено';
+let currentAthlete = null;
+let technicalAtoms = [];
+let athleteTechnicalData = {};
+
+// Конфигурация уровней
+const LEVELS = [
+    { value: 0, name: 'Не изучен', emoji: '⚫', color: '#4A4A4A', ksr: 0 },
+    { value: 1, name: 'Знание', emoji: '🔴', subemoji: '🧠👁️🤲', color: '#E74C3C', ksr: 0.25 },
+    { value: 2, name: 'Двигательное умение', emoji: '🟠', color: '#E67E22', ksr: 0.5 },
+    { value: 3, name: 'Двигательный навык', emoji: '🟡', color: '#F1C40F', ksr: 0.75 },
+    { value: 4, name: 'Автоматизированный навык', emoji: '🟢', color: '#27AE60', ksr: 1.0 }
+];
+
+// Загрузка данных из Google Sheets
+async function loadTechnicalAtoms() {
+    try {
+        console.log('🔄 Загрузка технических атомов из Google Sheets...');
+        const response = await fetch(TECHNICAL_SHEET_URL);
+        const csvText = await response.text();
+        
+        const rows = csvText.split('\n').map(row => {
+            // Простой парсинг CSV (для сложных случаев нужна библиотека)
+            return row.split(',').map(cell => cell.trim().replace(/^"|"$/g, ''));
+        });
+        
+        console.log(`📊 Загружено строк: ${rows.length}`);
+        
+        // Пропускаем заголовок
+        const dataRows = rows.slice(1);
+        
+        const atoms = [];
+        dataRows.forEach((row, index) => {
+            if (row.length < 7) {
+                console.warn(`⚠️ Строка ${index + 2} пропущена (недостаточно колонок)`);
+                return;
+            }
+            
+            const [number, name, howTo, whyHowTo, mistakes, whyMistakes, videoLink] = row;
+            
+            if (!name || name.trim() === '') return;
+            
+            atoms.push({
+                id: `atom_${number || index}`,
+                number: number || (index + 1).toString(),
+                name: name.trim(),
+                howTo: howTo.trim(),
+                whyHowTo: whyHowTo.trim(),
+                mistakes: mistakes.trim(),
+                whyMistakes: whyMistakes.trim(),
+                videoLink: videoLink.trim()
+            });
+        });
+        
+        console.log(`✅ Загружено атомов: ${atoms.length}`);
+        return atoms;
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки данных из Google Sheets:', error);
+        return [];
+    }
 }
 
-function renderContent(athlete) {
-    const container = document.getElementById('main-content');
+// Загрузка данных спортсмена
+async function loadAthleteData(athleteId) {
+    try {
+        const doc = await db.collection('students').doc(athleteId).get();
+        
+        if (!doc.exists) {
+            return null;
+        }
+        
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            technicalData: data.technicalData || {}
+        };
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки данных спортсмена:', error);
+        return null;
+    }
+}
+
+// Рендер карточки атома
+function renderAtomCard(atom) {
+    const savedData = athleteTechnicalData[atom.id] || { level: 0, comment: '' };
     
-    const currentScore = athlete.technicalScore || 0;
+    const card = document.createElement('div');
+    card.className = 'atom-card';
+    card.dataset.atomId = atom.id;
     
-    container.innerHTML = `
-        <div id="success-msg" class="success-message">
-            ✅ Оценка успешно сохранена!
+    card.innerHTML = `
+        <div class="atom-header">
+            <h3 class="atom-title">${atom.name}</h3>
+            <span class="atom-number">#${atom.number}</span>
         </div>
-
-        ${currentScore > 0 ? `
-        <div class="current-score">
-            <div class="current-score-label">Текущая оценка</div>
-            <div class="current-score-value">${currentScore}<span class="current-score-max">/5</span></div>
-            <div class="current-score-description">${getScoreDescription(currentScore)}</div>
-        </div>
-        ` : ''}
-
-        <div class="content-card">
-            <div class="info-block">
-                <h3>ℹ️ О технической оценке</h3>
-                <p>Техническая оценка вносится тренером вручную на основе наблюдений за спортсменом в спаррингах, на тренировках и соревнованиях. Оценка влияет на общий КСР (Коэффициент Спортивной Реализации) с весом 33.3%.</p>
-            </div>
-
-            <form id="scoreForm" class="score-form">
-                <div class="form-group">
-                    <label for="technicalScore">Выберите оценку (1-5)</label>
-                    
-                    <div class="score-input-wrapper">
-                        <div class="score-input">
-                            <input type="range" id="technicalScore" min="1" max="5" value="${currentScore || 3}" step="1">
-                            <div class="score-labels">
-                                <span>1</span>
-                                <span>2</span>
-                                <span>3</span>
-                                <span>4</span>
-                                <span>5</span>
-                            </div>
-                        </div>
-                        <div class="score-display" id="scoreDisplay">${currentScore || 3}</div>
-                    </div>
-
-                    <div class="score-descriptions">
-                        <h4>Расшифровка оценок:</h4>
-                        <div class="score-desc-item"><strong>1 балл:</strong> Начальный уровень. Требуется значительная работа над техникой.</div>
-                        <div class="score-desc-item"><strong>2 балла:</strong> Базовый уровень. Основы освоены, но много недочетов.</div>
-                        <div class="score-desc-item"><strong>3 балла:</strong> Средний уровень. Техника стабильная, но есть резервы.</div>
-                        <div class="score-desc-item"><strong>4 балла:</strong> Хороший уровень. Уверенное владение, минимум ошибок.</div>
-                        <div class="score-desc-item"><strong>5 баллов:</strong> Отличный уровень. Эталонное выполнение, высокий класс.</div>
-                    </div>
+        
+        <div class="level-selector" data-atom-id="${atom.id}">
+            ${LEVELS.map(level => `
+                <div class="level-option level-${level.value} ${savedData.level === level.value ? 'active' : ''}" 
+                     data-level="${level.value}">
+                    <span class="level-emoji">${level.emoji}${level.subemoji || ''}</span>
+                    <span class="level-name">${level.name}</span>
                 </div>
-
-                <button type="submit" class="btn-save">💾 Сохранить оценку</button>
-            </form>
+            `).join('')}
+        </div>
+        
+        <div class="comment-field">
+            <label>💬 Комментарий тренера (опционально)</label>
+            <textarea placeholder="Дополнительные замечания..." data-atom-id="${atom.id}">${savedData.comment || ''}</textarea>
+        </div>
+        
+        <div class="atom-actions">
+            <button class="atom-btn" onclick="toggleHint('${atom.id}')">💡 Подсказка</button>
+            <button class="atom-btn" onclick="toggleDetails('${atom.id}')">📖 Подробнее</button>
+            ${atom.videoLink ? `<button class="atom-btn atom-btn-video" onclick="openVideo('${atom.videoLink}')">▶️ Видео</button>` : ''}
+        </div>
+        
+        <div id="hint-${atom.id}" class="collapsible-content">
+            <div class="collapsible-section">
+                <h4>КАК НАДО:</h4>
+                <p>${atom.howTo || 'Нет данных'}</p>
+            </div>
+            <div class="collapsible-section">
+                <h4>ОШИБКИ:</h4>
+                <p>${atom.mistakes || 'Нет данных'}</p>
+            </div>
+        </div>
+        
+        <div id="details-${atom.id}" class="collapsible-content">
+            <div class="collapsible-section">
+                <h4>Почему так надо:</h4>
+                <p>${atom.whyHowTo || 'Нет данных'}</p>
+            </div>
+            <div class="collapsible-section">
+                <h4>Почему так не надо:</h4>
+                <p>${atom.whyMistakes || 'Нет данных'}</p>
+            </div>
         </div>
     `;
-
-    // Обработчик изменения слайдера
-    const slider = document.getElementById('technicalScore');
-    const display = document.getElementById('scoreDisplay');
     
-    slider.addEventListener('input', function() {
-        display.textContent = this.value;
-    });
+    return card;
+}
 
-    // Обработчик формы
-    document.getElementById('scoreForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        await saveScore();
+// Переключение подсказки
+function toggleHint(atomId) {
+    const hint = document.getElementById(`hint-${atomId}`);
+    hint.classList.toggle('show');
+}
+
+// Переключение деталей
+function toggleDetails(atomId) {
+    const details = document.getElementById(`details-${atomId}`);
+    details.classList.toggle('show');
+}
+
+// Открытие видео
+function openVideo(link) {
+    if (link) {
+        window.open(link, '_blank');
+    }
+}
+
+// Расчет общего КСР по технике
+function calculateTechnicalKSR() {
+    const atomIds = Object.keys(athleteTechnicalData);
+    
+    if (atomIds.length === 0 || technicalAtoms.length === 0) {
+        return 0;
+    }
+    
+    let totalKSR = 0;
+    let count = 0;
+    
+    technicalAtoms.forEach(atom => {
+        const data = athleteTechnicalData[atom.id];
+        const level = data ? data.level : 0;
+        const levelConfig = LEVELS.find(l => l.value === level);
+        
+        if (levelConfig) {
+            totalKSR += levelConfig.ksr;
+            count++;
+        }
+    });
+    
+    return count > 0 ? (totalKSR / count) : 0;
+}
+
+// Рендер общей оценки
+function renderOverallScore() {
+    const ksr = calculateTechnicalKSR();
+    const percentage = Math.round(ksr * 100);
+    
+    const completedAtoms = Object.keys(athleteTechnicalData).filter(key => {
+        return athleteTechnicalData[key].level > 0;
+    }).length;
+    
+    return `
+        <div class="overall-score-card">
+            <div class="overall-score-label">Средний уровень технической подготовки</div>
+            <div class="overall-score-value">${percentage}%</div>
+            <div class="overall-score-description">
+                Оценено атомов: ${completedAtoms} из ${technicalAtoms.length}
+            </div>
+        </div>
+    `;
+}
+
+// Рендер контента
+function renderContent() {
+    const container = document.getElementById('main-content');
+    
+    container.innerHTML = renderOverallScore();
+    
+    technicalAtoms.forEach(atom => {
+        const card = renderAtomCard(atom);
+        container.appendChild(card);
+    });
+    
+    // Кнопка сохранения
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'save-all-btn';
+    saveBtn.textContent = '💾 Сохранить все изменения';
+    saveBtn.onclick = saveAllData;
+    container.appendChild(saveBtn);
+    
+    // Обработчики выбора уровня
+    document.querySelectorAll('.level-selector').forEach(selector => {
+        selector.addEventListener('click', (e) => {
+            const option = e.target.closest('.level-option');
+            if (!option) return;
+            
+            const atomId = selector.dataset.atomId;
+            const level = parseInt(option.dataset.level);
+            
+            // Снимаем active со всех опций в этом селекторе
+            selector.querySelectorAll('.level-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            
+            // Добавляем active к выбранной опции
+            option.classList.add('active');
+            
+            // Сохраняем в памяти
+            if (!athleteTechnicalData[atomId]) {
+                athleteTechnicalData[atomId] = {};
+            }
+            athleteTechnicalData[atomId].level = level;
+            
+            console.log(`Уровень атома ${atomId} установлен на ${level}`);
+        });
     });
 }
 
-async function saveScore() {
-    const score = parseInt(document.getElementById('technicalScore').value);
-    
-    if (!currentAthlete || !score) return;
+// Сохранение всех данных
+async function saveAllData() {
+    if (!currentAthlete) return;
     
     try {
-        const athleteRef = db.collection('students').doc(currentAthlete.id);
-        await athleteRef.update({ technicalScore: score });
+        // Собираем данные с формы
+        document.querySelectorAll('textarea[data-atom-id]').forEach(textarea => {
+            const atomId = textarea.dataset.atomId;
+            const comment = textarea.value.trim();
+            
+            if (!athleteTechnicalData[atomId]) {
+                athleteTechnicalData[atomId] = { level: 0 };
+            }
+            athleteTechnicalData[atomId].comment = comment;
+        });
         
-        // Обновляем локальные данные
-        currentAthlete.technicalScore = score;
+        // Расчет КСР
+        const technicalKSR = calculateTechnicalKSR();
         
-        // Показываем сообщение об успехе
+        console.log('💾 Сохранение данных:', {
+            technicalData: athleteTechnicalData,
+            technicalKSR: technicalKSR
+        });
+        
+        // Сохранение в Firebase
+        await db.collection('students').doc(currentAthlete.id).update({
+            technicalData: athleteTechnicalData,
+            technicalScore: technicalKSR
+        });
+        
+        console.log('✅ Данные успешно сохранены');
+        
+        // Показываем сообщение
         const successMsg = document.getElementById('success-msg');
         successMsg.classList.add('show');
         setTimeout(() => {
             successMsg.classList.remove('show');
         }, 3000);
         
-        // Перерисовываем контент
-        renderContent(currentAthlete);
+        // Обновляем отображение
+        renderContent();
         
         // Прокручиваем наверх
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
     } catch (error) {
-        console.error('Ошибка сохранения:', error);
-        alert('❌ Ошибка сохранения оценки');
+        console.error('❌ Ошибка сохранения:', error);
+        alert('❌ Ошибка сохранения данных');
     }
 }
 
+// Инициализация
 async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const athleteId = urlParams.get('id');
@@ -435,21 +726,33 @@ async function init() {
     }
     
     try {
-        const doc = await db.collection('students').doc(athleteId).get();
+        // Загружаем атомы из Google Sheets
+        technicalAtoms = await loadTechnicalAtoms();
         
-        if (!doc.exists) {
+        if (technicalAtoms.length === 0) {
+            document.getElementById('main-content').innerHTML = '<div class="loading">Не удалось загрузить данные из Google Sheets</div>';
+            return;
+        }
+        
+        // Загружаем данные спортсмена
+        currentAthlete = await loadAthleteData(athleteId);
+        
+        if (!currentAthlete) {
             document.getElementById('main-content').innerHTML = '<div class="loading">Спортсмен не найден</div>';
             return;
         }
         
-        currentAthlete = { id: doc.id, ...doc.data() };
+        // Загружаем сохраненные данные по технике
+        athleteTechnicalData = currentAthlete.technicalData || {};
         
+        // Обновляем заголовок
         document.getElementById('athlete-name').textContent = `${currentAthlete.firstName} ${currentAthlete.lastName} — Техническая подготовленность`;
         
-        renderContent(currentAthlete);
+        // Рендерим контент
+        renderContent();
         
     } catch (error) {
-        console.error('Ошибка:', error);
+        console.error('❌ Ошибка:', error);
         document.getElementById('main-content').innerHTML = '<div class="loading">Ошибка загрузки данных</div>';
     }
 }

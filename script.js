@@ -619,21 +619,15 @@ async calculateRealization(athlete) {
         console.log(`  Функционал: сдано ${completedFunctional} из ${totalFunctionalTests} тестов, средний балл=${avgFunctional.toFixed(1)}, вклад=${functionalScore.toFixed(1)}`);
     }
     
-    // 3. Техника (33.3%)
-    if (athlete.technicalScore && typeof athlete.technicalScore === 'number') {
-        technicalScore = ((athlete.technicalScore / 5) * 100) * 0.333;
-        console.log(`  Техника: оценка=${athlete.technicalScore}/5, вклад=${technicalScore.toFixed(1)}`);
+    // 3. Техника (33.3%) — ИЗ НОВОЙ СИСТЕМЫ
+    if (athlete.technicalScore !== null && athlete.technicalScore !== undefined) {
+    // technicalScore теперь хранит среднее значение от 0 до 1
+    const technicalNormalized = athlete.technicalScore * 100; // Переводим в проценты
+    technicalScore = technicalNormalized * 0.333;
+    
+    console.log(`  Техника: средний КСР=${athlete.technicalScore.toFixed(2)}, нормализованный=${technicalNormalized.toFixed(1)}, вклад=${technicalScore.toFixed(1)}`);
     }
-    
-    const totalScore = physicsScore + functionalScore + technicalScore;
-    
-    console.log(`  📊 Итоговый КСР: ${totalScore.toFixed(1)} (физика=${physicsScore.toFixed(1)} + функционал=${functionalScore.toFixed(1)} + техника=${technicalScore.toFixed(1)})`);
-    
-    if (totalScore === 0) {
-        console.log('  ⚠️ КСР = "Нет данных" (все категории пустые)');
-        return "Нет данных";
-    }
-    
+
     return Math.round(totalScore);
 },
 
