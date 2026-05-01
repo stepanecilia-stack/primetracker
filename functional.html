@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Физическое развитие | Cartel Academy</title>
+    <title>Функциональная готовность | Cartel Academy</title>
     <link rel="stylesheet" href="style.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -371,7 +371,7 @@
         <a href="#" id="back-btn" class="back-button">← Назад</a>
 
         <div class="header">
-            <h1 id="athlete-name">Физическое развитие</h1>
+            <h1 id="athlete-name">Функциональная готовность</h1>
             <p id="athlete-meta">Тесты и нормативы</p>
         </div>
 
@@ -423,11 +423,10 @@ let currentTest = null;
 
 async function loadNorms() {
     try {
-        console.log('🔄 Загрузка нормативов из Google Sheets (physical.html)...');
+        console.log('🔄 Загрузка нормативов из Google Sheets (functional.html)...');
         const response = await fetch(NORMS_SHEET_URL);
         const csvText = await response.text();
         
-        // ✅ ЛОГИРОВАНИЕ RAW DATA
         console.log('CSV Raw Data:', csvText.substring(0, 500) + '...');
         
         const rows = csvText.split('\n').map(row => row.split(','));
@@ -468,7 +467,6 @@ async function loadNorms() {
     }
 }
 
-// ✅ ЛОГИКА ВЕРХНЕЙ КРОМКИ
 function getAthletNorms(allNorms, athlete, category) {
     const age = new Date().getFullYear() - Number(athlete.birthYear);
     const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
@@ -479,7 +477,6 @@ function getAthletNorms(allNorms, athlete, category) {
         if (norm.category !== category) return false;
         if (norm.gender !== athlete.gender) return false;
         
-        // Парсинг возрастной группы
         const ageParts = norm.ageGroup.split('-');
         if (ageParts.length !== 2) {
             console.warn(`⚠️ Некорректный формат возрастной группы: ${norm.ageGroup}`);
@@ -489,7 +486,6 @@ function getAthletNorms(allNorms, athlete, category) {
         const minAge = parseInt(ageParts[0]);
         const maxAge = parseInt(ageParts[1]);
         
-        // ✅ ВЕРХНЯЯ КРОМКА: Возраст должен попадать в диапазон
         return age >= minAge && age <= maxAge;
     });
     
@@ -570,7 +566,6 @@ function renderTests(norms, athlete) {
         return;
     }
     
-    // ✅ UI-АКЦЕНТ: Целевой возраст (верхняя кромка)
     const ageRange = norms[0].ageGroup;
     const targetAge = parseInt(ageRange.split('-')[1]);
     
@@ -578,7 +573,7 @@ function renderTests(norms, athlete) {
         const card = document.createElement('div');
         card.className = 'test-card';
         
-        const existingTest = athlete.tests?.physical?.[norm.testId];
+        const existingTest = athlete.tests?.functional?.[norm.testId];
         
         let resultHTML = '';
         if (existingTest) {
@@ -635,7 +630,6 @@ function closeTestModal() {
     currentTest = null;
 }
 
-// ✅ СИНХРОНИЗАЦИЯ КСР
 async function recalculateKSR(athleteId) {
     console.log('🔄 Пересчет КСР после сдачи теста...');
     console.log('═══════════════════════════════════════');
@@ -650,7 +644,6 @@ async function recalculateKSR(athleteId) {
         let functionalScore = 0;
         let technicalScore = 0;
         
-        // ✅ ВАРИАНТ А: Загружаем доступные тесты из Google Sheets
         const allNorms = await loadNorms();
         const physicalNorms = getAthletNorms(allNorms, athlete, 'physical');
         const functionalNorms = getAthletNorms(allNorms, athlete, 'functional');
@@ -658,7 +651,6 @@ async function recalculateKSR(athleteId) {
         const totalPhysicalTests = physicalNorms.length;
         const totalFunctionalTests = functionalNorms.length;
         
-        // 1. Физика (33.3%) — штраф за несданные тесты
         if (totalPhysicalTests > 0) {
             let sumPhysics = 0;
             let completedPhysics = 0;
@@ -669,7 +661,6 @@ async function recalculateKSR(athleteId) {
                     sumPhysics += testResult.normalizedScore || 0;
                     completedPhysics++;
                 }
-                // Несданные тесты добавляют 0 к сумме
             });
             
             const avgPhysics = sumPhysics / totalPhysicalTests;
@@ -682,7 +673,6 @@ async function recalculateKSR(athleteId) {
             console.log(`  Вклад в КСР: ${physicsScore.toFixed(2)}`);
         }
         
-        // 2. Функционал (33.3%) — штраф за несданные тесты
         if (totalFunctionalTests > 0) {
             let sumFunctional = 0;
             let completedFunctional = 0;
@@ -705,11 +695,10 @@ async function recalculateKSR(athleteId) {
             console.log(`  Вклад в КСР: ${functionalScore.toFixed(2)}`);
         }
         
-        // 3. Техника (33.3%)
         if (athlete.technicalScore && typeof athlete.technicalScore === 'number') {
-            technicalScore = ((athlete.technicalScore / 5) * 100) * 0.333;
+            technicalScore = athlete.technicalScore * 100 * 0.333;
             console.log(`🥊 ТЕХНИКА:`);
-            console.log(`  Оценка: ${athlete.technicalScore}/5`);
+            console.log(`  Оценка: ${(athlete.technicalScore * 100).toFixed(0)}%`);
             console.log(`  Вклад в КСР: ${technicalScore.toFixed(2)}`);
         }
         
@@ -734,7 +723,6 @@ async function recalculateKSR(athleteId) {
         console.error('❌ Ошибка пересчета КСР:', error);
     }
 }
-
 
 document.getElementById('testForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -772,7 +760,6 @@ document.getElementById('testForm').addEventListener('submit', async function(e)
         
         console.log('✅ Тест сохранен в коллекции students');
         
-        // ✅ ПЕРЕСЧЕТ КСР
         await recalculateKSR(currentAthlete.id);
         
         currentAthlete.tests = tests;
@@ -787,7 +774,6 @@ document.getElementById('testForm').addEventListener('submit', async function(e)
     }
 });
 
-// ✅ ПРОВЕРКА АВТОРИЗАЦИИ
 async function waitForAuth() {
     return new Promise((resolve) => {
         const unsubscribe = auth.onAuthStateChanged(user => {
@@ -801,8 +787,20 @@ async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const athleteId = urlParams.get('id');
     
-    console.log('🚀 Инициализация physical.html');
+    console.log('🚀 Инициализация functional.html');
     console.log('📌 Athlete ID из URL:', athleteId);
+    
+    // ✅ НАСТРОЙКА КНОПКИ "НАЗАД"
+    const backBtn = document.getElementById('back-btn');
+    if (athleteId) {
+        backBtn.href = `index.html#profile-${athleteId}`;
+        backBtn.onclick = (e) => {
+            e.preventDefault();
+            window.location.href = `index.html#profile-${athleteId}`;
+        };
+    } else {
+        backBtn.href = 'index.html';
+    }
     
     if (!athleteId) {
         console.error('❌ ID спортсмена не указан в URL');
@@ -810,7 +808,6 @@ async function init() {
         return;
     }
     
-    // ✅ ОЖИДАНИЕ АВТОРИЗАЦИИ
     console.log('🔐 Проверка авторизации...');
     const user = await waitForAuth();
     
@@ -843,7 +840,6 @@ async function init() {
         
         currentAthlete = { id: doc.id, ...doc.data() };
         
-        // ✅ ПРОВЕРКА ПРАВ ДОСТУПА
         if (currentAthlete.coachId !== user.uid) {
             console.error('❌ У вас нет прав доступа к этому спортсмену');
             document.getElementById('tests-container').innerHTML = `
@@ -857,7 +853,7 @@ async function init() {
         console.log(`✅ Спортсмен найден: ${currentAthlete.firstName} ${currentAthlete.lastName}`);
         console.log('📊 Данные спортсмена:', currentAthlete);
         
-        document.getElementById('athlete-name').textContent = `${currentAthlete.firstName} ${currentAthlete.lastName} — Физическое развитие`;
+        document.getElementById('athlete-name').textContent = `${currentAthlete.firstName} ${currentAthlete.lastName} — Функциональная готовность`;
         
         const allNorms = await loadNorms();
         
@@ -883,7 +879,6 @@ async function init() {
     } catch (error) {
         console.error('❌ Критическая ошибка при инициализации:', error);
         
-        // ✅ ДЕТАЛЬНАЯ ДИАГНОСТИКА
         let errorDetails = error.message;
         if (error.code === 'permission-denied') {
             errorDetails = `
@@ -928,20 +923,6 @@ service cloud.firestore {
             </div>
         `;
     }
-    // ✅ НАСТРОЙКА КНОПКИ "НАЗАД"
-const urlParams = new URLSearchParams(window.location.search);
-const athleteId = urlParams.get('id');
-const backBtn = document.getElementById('back-btn');
-if (athleteId) {
-    backBtn.href = `index.html#profile-${athleteId}`;
-    backBtn.onclick = (e) => {
-        e.preventDefault();
-        window.location.href = `index.html#profile-${athleteId}`;
-    };
-} else {
-    backBtn.href = 'index.html';
-}
-
 }
 
 window.addEventListener('DOMContentLoaded', init);
