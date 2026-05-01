@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Функциональная готовность | Cartel Academy</title>
+    <title>Физическое развитие | Cartel Academy</title>
     <link rel="stylesheet" href="style.css">
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -250,6 +250,13 @@
             border-radius: 8px;
             margin: 20px 0;
             color: #c62828;
+            line-height: 1.6;
+        }
+
+        .error-message a {
+            color: #667eea;
+            text-decoration: underline;
+            font-weight: 600;
         }
 
         .modal {
@@ -364,8 +371,8 @@
         <a href="index.html" class="back-button">← Назад</a>
 
         <div class="header">
-            <h1 id="athlete-name">Функциональная готовность</h1>
-            <p id="athlete-meta">Тесты скорости и реакции</p>
+            <h1 id="athlete-name">Физическое развитие</h1>
+            <p id="athlete-meta">Тесты и нормативы</p>
         </div>
 
         <div id="tests-container" class="loading">
@@ -406,6 +413,7 @@ if (!firebase.apps.length) {
 }
 
 const db = firebase.firestore();
+const auth = firebase.auth();
 
 const NORMS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=1658605285&single=true&output=csv';
 
@@ -415,7 +423,7 @@ let currentTest = null;
 
 async function loadNorms() {
     try {
-        console.log('🔄 Загрузка нормативов из Google Sheets (functional.html)...');
+        console.log('🔄 Загрузка нормативов из Google Sheets (physical.html)...');
         const response = await fetch(NORMS_SHEET_URL);
         const csvText = await response.text();
         
@@ -496,7 +504,6 @@ function evaluateTest(result, norm) {
     let status, normalizedScore;
     
     if (measureType === 'MAX') {
-        // Больше = Лучше
         if (result >= gold) {
             status = 'gold';
             normalizedScore = 100 + ((result - gold) / gold) * 20;
@@ -511,7 +518,6 @@ function evaluateTest(result, norm) {
             normalizedScore = (result / bronze) * 60;
         }
     } else {
-        // Меньше = Лучше (MIN)
         if (result <= gold) {
             status = 'gold';
             normalizedScore = 100 + ((gold - result) / gold) * 20;
@@ -564,16 +570,15 @@ function renderTests(norms, athlete) {
         return;
     }
     
-    // ✅ ПОЛУЧАЕМ ЦЕЛЕВОЙ ВОЗРАСТ (верхняя кромка диапазона)
+    // ✅ UI-АКЦЕНТ: Целевой возраст (верхняя кромка)
     const ageRange = norms[0].ageGroup;
     const targetAge = parseInt(ageRange.split('-')[1]);
-    const currentAge = new Date().getFullYear() - Number(athlete.birthYear);
     
     norms.forEach(norm => {
         const card = document.createElement('div');
         card.className = 'test-card';
         
-        const existingTest = athlete.tests?.functional?.[norm.testId];
+        const existingTest = athlete.tests?.physical?.[norm.testId];
         
         let resultHTML = '';
         if (existingTest) {
@@ -630,7 +635,7 @@ function closeTestModal() {
     currentTest = null;
 }
 
-// ✅ СИНХРОНИЗАЦИЯ КСР ПРИ СОХРАНЕНИИ
+// ✅ СИНХРОНИЗАЦИЯ КСР
 async function recalculateKSR(athleteId) {
     console.log('🔄 Пересчет КСР после сдачи теста...');
     
@@ -640,7 +645,6 @@ async function recalculateKSR(athleteId) {
         
         const athlete = { id: doc.id, ...doc.data() };
         
-        // Расчет КСР
         let physicsScore = 0;
         let functionalScore = 0;
         let technicalScore = 0;
@@ -650,7 +654,7 @@ async function recalculateKSR(athleteId) {
             if (tests.length > 0) {
                 const avg = tests.reduce((sum, t) => sum + t.normalizedScore, 0) / tests.length;
                 physicsScore = avg * 0.333;
-                console.log(`  📊 Физика: ${tests.length} тестов, средний балл=${avg.toFixed(1)}`);
+                console.log(`  📊 Физика: ${tests.length} тестов, вклад=${physicsScore.toFixed(1)}`);
             }
         }
         
@@ -659,21 +663,19 @@ async function recalculateKSR(athleteId) {
             if (tests.length > 0) {
                 const avg = tests.reduce((sum, t) => sum + t.normalizedScore, 0) / tests.length;
                 functionalScore = avg * 0.333;
-                console.log(`  📊 Функционал: ${tests.length} тестов, средний балл=${avg.toFixed(1)}`);
+                console.log(`  📊 Функционал: ${tests.length} тестов, вклад=${functionalScore.toFixed(1)}`);
             }
         }
         
         if (athlete.technicalScore) {
             technicalScore = ((athlete.technicalScore / 5) * 100) * 0.333;
-            console.log(`  📊 Техника: оценка=${athlete.technicalScore}/5`);
+            console.log(`  📊 Техника: оценка=${athlete.technicalScore}/5, вклад=${technicalScore.toFixed(1)}`);
         }
         
         const totalScore = physicsScore + functionalScore + technicalScore;
         const realization = totalScore === 0 ? "Нет данных" : Math.round(totalScore);
         
-        // Расчет потенциала (упрощенно, т.к. нет полных данных антропометрии здесь)
-        let potential = athlete.metrics?.potential || 0;
-        
+        const potential = athlete.metrics?.potential || 0;
         const gap = realization === "Нет данных" ? "Нет данных" : potential - realization;
         
         console.log(`✅ Новый КСР: ${realization}, Разрыв: ${gap}`);
@@ -729,7 +731,6 @@ document.getElementById('testForm').addEventListener('submit', async function(e)
         // ✅ ПЕРЕСЧЕТ КСР
         await recalculateKSR(currentAthlete.id);
         
-        // Обновляем локальные данные
         currentAthlete.tests = tests;
         
         closeTestModal();
@@ -742,11 +743,21 @@ document.getElementById('testForm').addEventListener('submit', async function(e)
     }
 });
 
+// ✅ ПРОВЕРКА АВТОРИЗАЦИИ
+async function waitForAuth() {
+    return new Promise((resolve) => {
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            unsubscribe();
+            resolve(user);
+        });
+    });
+}
+
 async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const athleteId = urlParams.get('id');
     
-    console.log('🚀 Инициализация functional.html');
+    console.log('🚀 Инициализация physical.html');
     console.log('📌 Athlete ID из URL:', athleteId);
     
     if (!athleteId) {
@@ -754,6 +765,22 @@ async function init() {
         document.getElementById('tests-container').innerHTML = '<div class="error-message">ID спортсмена не указан в URL</div>';
         return;
     }
+    
+    // ✅ ОЖИДАНИЕ АВТОРИЗАЦИИ
+    console.log('🔐 Проверка авторизации...');
+    const user = await waitForAuth();
+    
+    if (!user) {
+        console.error('❌ Пользователь не авторизован');
+        document.getElementById('tests-container').innerHTML = `
+            <div class="error-message">
+                ❌ Вы не авторизованы. <a href="index.html">Войдите в систему</a>
+            </div>
+        `;
+        return;
+    }
+    
+    console.log(`✅ Пользователь авторизован: ${user.email}`);
     
     try {
         console.log(`🔍 Поиск спортсмена в коллекции 'students' с ID: ${athleteId}`);
@@ -772,10 +799,21 @@ async function init() {
         
         currentAthlete = { id: doc.id, ...doc.data() };
         
+        // ✅ ПРОВЕРКА ПРАВ ДОСТУПА
+        if (currentAthlete.coachId !== user.uid) {
+            console.error('❌ У вас нет прав доступа к этому спортсмену');
+            document.getElementById('tests-container').innerHTML = `
+                <div class="error-message">
+                    ❌ У вас нет прав доступа к этому спортсмену
+                </div>
+            `;
+            return;
+        }
+        
         console.log(`✅ Спортсмен найден: ${currentAthlete.firstName} ${currentAthlete.lastName}`);
         console.log('📊 Данные спортсмена:', currentAthlete);
         
-        document.getElementById('athlete-name').textContent = `${currentAthlete.firstName} ${currentAthlete.lastName} — Функциональная готовность`;
+        document.getElementById('athlete-name').textContent = `${currentAthlete.firstName} ${currentAthlete.lastName} — Физическое развитие`;
         
         const allNorms = await loadNorms();
         
@@ -800,11 +838,49 @@ async function init() {
         
     } catch (error) {
         console.error('❌ Критическая ошибка при инициализации:', error);
+        
+        // ✅ ДЕТАЛЬНАЯ ДИАГНОСТИКА
+        let errorDetails = error.message;
+        if (error.code === 'permission-denied') {
+            errorDetails = `
+                <strong>Ошибка прав доступа Firebase</strong>
+                <br><br>
+                <strong>Решение:</strong>
+                <ol style="margin-top: 12px; text-align: left;">
+                    <li>Откройте <a href="https://console.firebase.google.com/project/cartel-academy/firestore/rules" target="_blank">Firebase Console → Firestore → Правила</a></li>
+                    <li>Скопируйте правила из инструкции ниже</li>
+                    <li>Нажмите "Опубликовать"</li>
+                </ol>
+                <br>
+                <details style="margin-top: 12px;">
+                    <summary style="cursor: pointer; font-weight: 600;">Показать правила безопасности</summary>
+                    <pre style="background: #1a1a2e; color: #4caf50; padding: 12px; border-radius: 8px; overflow-x: auto; margin-top: 8px; font-size: 12px;">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /coaches/{coachId} {
+      allow read, write: if request.auth != null && request.auth.uid == coachId;
+    }
+    match /students/{studentId} {
+      allow read: if request.auth != null && 
+                     (resource.data.coachId == request.auth.uid || 
+                      resource.data.shareToken != null);
+      allow create: if request.auth != null && 
+                       request.resource.data.coachId == request.auth.uid;
+      allow update, delete: if request.auth != null && 
+                               resource.data.coachId == request.auth.uid;
+    }
+  }
+}</pre>
+                </details>
+            `;
+        }
+        
         document.getElementById('tests-container').innerHTML = `
             <div class="error-message">
-                ❌ Ошибка загрузки данных: ${error.message}
+                ❌ ${errorDetails}
                 <br><br>
-                Откройте консоль браузера (F12) для подробностей.
+                <small>Откройте консоль браузера (F12 → Console) для подробностей.</small>
             </div>
         `;
     }
