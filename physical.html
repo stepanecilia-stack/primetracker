@@ -3,71 +3,640 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Физическое развитие — Cartel</title>
+    <title>Физическое развитие | Cartel Academy</title>
     <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        .norms-table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-        .norms-table th, .norms-table td { border: 1px solid #eee; padding: 12px; text-align: left; }
-        .norms-table th { background: #f8f9fa; font-weight: bold; }
-        .level-1 { background-color: #e8f5e9; } /* Зеленый - Отлично */
-        .level-2 { background-color: #fff3e0; } /* Оранжевый - Хорошо */
-        .level-3 { background-color: #ffebee; } /* Красный - Удовл */
-        .loading { padding: 20px; text-align: center; color: #666; }
+        body {
+            background-color: #f8f8f8;
+            color: #1a1a2e;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ffffff;
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .back-button:hover {
+            background: #f8f8f8;
+            border-color: #667eea;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0 0 8px 0;
+            font-size: 32px;
+            color: #ffffff;
+        }
+
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .tests-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .test-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .test-card:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .test-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin: 0;
+            flex: 1;
+        }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: help;
+            position: relative;
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            flex-shrink: 0;
+            margin-left: 8px;
+        }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            top: 30px;
+            right: 0;
+            width: 280px;
+            background: #1a1a2e;
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.5;
+            z-index: 1000;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            font-weight: 400;
+        }
+
+        .info-icon:hover .tooltip {
+            display: block;
+        }
+
+        .test-goal {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .test-goal-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .test-goal-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4caf50;
+        }
+
+        .test-result {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border-left: 4px solid #e0e0e0;
+        }
+
+        .test-result.gold {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+
+        .test-result.silver {
+            border-left-color: #ffeb3b;
+            background: #fffde7;
+        }
+
+        .test-result.bronze {
+            border-left-color: #ff9800;
+            background: #fff3e0;
+        }
+
+        .test-result.red {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        .test-result-value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .test-result-status {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .test-result-date {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .btn-submit-test {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-submit-test:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 32px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: #1a1a2e;
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            background: #ffffff;
+            color: #1a1a2e;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 28px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #1a1a2e;
+            border: 1px solid #e0e0e0;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        @media (max-width: 768px) {
+            .tests-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="form-container">
-        <header class="form-header">
-            <button class="btn btn-back" onclick="window.location.href='index.html'">← Назад</button>
-            <div>
-                <h1>Физическое развитие</h1>
-                <p class="text-secondary">Нормативы и результаты</p>
-            </div>
-        </header>
+    <div class="container">
+        <a href="index.html" class="back-button">← Назад</a>
 
-        <div id="norms-container">
-            <div class="loading">Загрузка нормативов из таблицы...</div>
+        <div class="header">
+            <h1 id="athlete-name">Физическое развитие</h1>
+            <p id="athlete-meta">Тесты и нормативы</p>
+        </div>
+
+        <div id="tests-container" class="loading">
+            Загрузка тестов...
+        </div>
+    </div>
+
+    <!-- MODAL ДЛЯ СДАЧИ ТЕСТА -->
+    <div id="testModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header" id="modal-test-name">Сдача теста</h2>
+            <form id="testForm">
+                <div class="form-group">
+                    <label for="test-result">Результат *</label>
+                    <input type="number" id="test-result" step="0.01" required>
+                    <small id="test-unit-hint" style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;"></small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeTestModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <script>
-        // Твоя ссылка на CSV (лист speed)
-        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=1633594327&single=true&output=csv';
+const firebaseConfig = {
+    apiKey: "AIzaSyAxsNe0j6NxMwLDeWrFpvdqRbBHFg5gdiw",
+    authDomain: "cartel-academy.firebaseapp.com",
+    projectId: "cartel-academy",
+    storageBucket: "cartel-academy.firebasestorage.app",
+    messagingSenderId: "988659631950",
+    appId: "1:988659631950:web:ffb7ec4d4b5e0ec440401f"
+};
 
-        async function loadNorms() {
-            try {
-                const response = await fetch(SHEET_CSV_URL);
-                const data = await response.text();
-                const rows = data.split('\n').map(row => row.split(','));
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 
-                // Убираем заголовок таблицы
-                const contentRows = rows.slice(1);
+const db = firebase.firestore();
 
-                let html = '<table class="norms-table">';
-                html += '<thead><tr><th>Тест</th><th>Возраст</th><th>Пол</th><th class="level-1">Отлично</th><th class="level-2">Хорошо</th><th class="level-3">Удовл.</th></tr></thead><tbody>';
+const NORMS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=0&single=true&output=csv';
 
-                contentRows.forEach(row => {
-                    if (row.length < 5) return; // Пропускаем пустые строки
-                    const [block, testName, age, gender, l1, l2, l3, unit] = row;
-                    html += `<tr>
-                        <td>${testName}</td>
-                        <td>${age}</td>
-                        <td>${gender === 'M' ? 'М' : 'Ж'}</td>
-                        <td class="level-1">${l1} ${unit}</td>
-                        <td class="level-2">${l2} ${unit}</td>
-                        <td class="level-3">${l3} ${unit}</td>
-                    </tr>`;
-                });
+let currentAthlete = null;
+let currentNorms = [];
+let currentTest = null;
 
-                html += '</tbody></table>';
-                document.getElementById('norms-container').innerHTML = html;
-            } catch (error) {
-                document.getElementById('norms-container').innerHTML = '<div class="error-message">Ошибка загрузки данных. Проверьте публикацию таблицы.</div>';
-                console.error('Error:', error);
-            }
+async function loadNorms() {
+    try {
+        const response = await fetch(NORMS_SHEET_URL);
+        const csvText = await response.text();
+        const rows = csvText.split('\n').map(row => row.split(','));
+        
+        const dataRows = rows.slice(1);
+        
+        const norms = [];
+        dataRows.forEach(row => {
+            if (row.length < 10) return;
+            
+            const [category, testId, testName, description, ageGroup, gender, gold, silver, bronze, unit, measureType] = row;
+            
+            norms.push({
+                category: category.trim(),
+                testId: testId.trim(),
+                testName: testName.trim(),
+                description: description.trim(),
+                ageGroup: ageGroup.trim(),
+                gender: gender.trim(),
+                gold: parseFloat(gold),
+                silver: parseFloat(silver),
+                bronze: parseFloat(bronze),
+                unit: unit.trim(),
+                measureType: measureType.trim()
+            });
+        });
+        
+        return norms;
+    } catch (error) {
+        console.error('Ошибка загрузки нормативов:', error);
+        return [];
+    }
+}
+
+function getAthletNorms(allNorms, athlete, category) {
+    const age = new Date().getFullYear() - athlete.birthYear;
+    
+    return allNorms.filter(norm => {
+        if (norm.category !== category) return false;
+        if (norm.gender !== athlete.gender) return false;
+        
+        const [minAge, maxAge] = norm.ageGroup.split('-').map(n => parseInt(n));
+        return age >= minAge && age <= maxAge;
+    });
+}
+
+function evaluateTest(result, norm) {
+    const { gold, silver, bronze, measureType } = norm;
+    
+    let status, normalizedScore;
+    
+    if (measureType === 'MAX') {
+        // Больше = Лучше
+        if (result >= gold) {
+            status = 'gold';
+            normalizedScore = 100 + ((result - gold) / gold) * 20;
+        } else if (result >= silver) {
+            status = 'silver';
+            normalizedScore = 80 + ((result - silver) / (gold - silver)) * 20;
+        } else if (result >= bronze) {
+            status = 'bronze';
+            normalizedScore = 60 + ((result - bronze) / (silver - bronze)) * 20;
+        } else {
+            status = 'red';
+            normalizedScore = (result / bronze) * 60;
         }
+    } else {
+        // Меньше = Лучше (MIN)
+        if (result <= gold) {
+            status = 'gold';
+            normalizedScore = 100 + ((gold - result) / gold) * 20;
+        } else if (result <= silver) {
+            status = 'silver';
+            normalizedScore = 80 + ((silver - result) / (silver - gold)) * 20;
+        } else if (result <= bronze) {
+            status = 'bronze';
+            normalizedScore = 60 + ((bronze - result) / (bronze - silver)) * 20;
+        } else {
+            status = 'red';
+            normalizedScore = (bronze / result) * 60;
+        }
+    }
+    
+    normalizedScore = Math.max(0, Math.min(120, normalizedScore));
+    
+    return {
+        status,
+        normalizedScore: Math.round(normalizedScore)
+    };
+}
 
-        loadNorms();
-    </script>
+function getStatusText(status) {
+    const texts = {
+        gold: '🥇 Золото (Элита)',
+        silver: '🥈 Серебро (Норма)',
+        bronze: '🥉 Бронза (Ниже нормы)',
+        red: '🔴 Критическое отставание'
+    };
+    return texts[status] || 'Не оценено';
+}
+
+function renderTests(norms, athlete) {
+    const container = document.getElementById('tests-container');
+    container.innerHTML = '';
+    container.className = 'tests-grid';
+    
+    if (norms.length === 0) {
+        container.innerHTML = '<div class="loading">Нет доступных тестов для этого возраста и пола</div>';
+        return;
+    }
+    
+    norms.forEach(norm => {
+        const card = document.createElement('div');
+        card.className = 'test-card';
+        
+        const existingTest = athlete.tests?.physical?.[norm.testId];
+        
+        let resultHTML = '';
+        if (existingTest) {
+            resultHTML = `
+                <div class="test-result ${existingTest.status}">
+                    <div class="test-result-value">${existingTest.result} ${norm.unit}</div>
+                    <div class="test-result-status">${getStatusText(existingTest.status)}</div>
+                    <div class="test-result-date">Дата: ${existingTest.date}</div>
+                </div>
+            `;
+        }
+        
+        card.innerHTML = `
+            <div class="test-header">
+                <h3 class="test-title">${norm.testName}</h3>
+                <div class="info-icon">
+                    ℹ️
+                    <div class="tooltip">${norm.description}</div>
+                </div>
+            </div>
+            
+            <div class="test-goal">
+                <div class="test-goal-label">Цель (Золото)</div>
+                <div class="test-goal-value">${norm.gold} ${norm.unit}</div>
+            </div>
+            
+            ${resultHTML}
+            
+            <button class="btn-submit-test" onclick="openTestModal('${norm.testId}', '${norm.testName}', '${norm.unit}')">
+                ${existingTest ? 'Пересдать тест' : 'Сдать тест'}
+            </button>
+        `;
+        
+        container.appendChild(card);
+    });
+}
+
+function openTestModal(testId, testName, unit) {
+    const norm = currentNorms.find(n => n.testId === testId);
+    if (!norm) return;
+    
+    currentTest = norm;
+    document.getElementById('modal-test-name').textContent = testName;
+    document.getElementById('test-unit-hint').textContent = `Укажите результат в ${unit}`;
+    document.getElementById('testModal').classList.add('active');
+    document.getElementById('test-result').value = '';
+    document.getElementById('test-result').focus();
+}
+
+function closeTestModal() {
+    document.getElementById('testModal').classList.remove('active');
+    currentTest = null;
+}
+
+document.getElementById('testForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    if (!currentTest || !currentAthlete) return;
+    
+    const result = parseFloat(document.getElementById('test-result').value);
+    const evaluation = evaluateTest(result, currentTest);
+    
+    const testData = {
+        result: result,
+        date: new Date().toISOString().split('T')[0],
+        status: evaluation.status,
+        normalizedScore: evaluation.normalizedScore
+    };
+    
+    try {
+        const athleteRef = db.collection('students').doc(currentAthlete.id);
+        const doc = await athleteRef.get();
+        
+        if (doc.exists) {
+            const data = doc.data();
+            const tests = data.tests || { physical: {}, functional: {} };
+            if (!tests.physical) tests.physical = {};
+            tests.physical[currentTest.testId] = testData;
+            
+            await athleteRef.update({ tests });
+            
+            // Обновляем данные локально
+            currentAthlete.tests = tests;
+            
+            closeTestModal();
+            renderTests(currentNorms, currentAthlete);
+            
+            alert('✅ Результат сохранен!');
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        alert('❌ Ошибка сохранения результата');
+    }
+});
+
+async function init() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const athleteId = urlParams.get('id');
+    
+    if (!athleteId) {
+        document.getElementById('tests-container').innerHTML = '<div class="loading">ID спортсмена не указан</div>';
+        return;
+    }
+    
+    try {
+        const doc = await db.collection('students').doc(athleteId).get();
+        
+        if (!doc.exists) {
+            document.getElementById('tests-container').innerHTML = '<div class="loading">Спортсмен не найден</div>';
+            return;
+        }
+        
+        currentAthlete = { id: doc.id, ...doc.data() };
+        
+        document.getElementById('athlete-name').textContent = `${currentAthlete.firstName} ${currentAthlete.lastName} — Физическое развитие`;
+        
+        const allNorms = await loadNorms();
+        currentNorms = getAthletNorms(allNorms, currentAthlete, 'physical');
+        
+        renderTests(currentNorms, currentAthlete);
+        
+    } catch (error) {
+        console.error('Ошибка:', error);
+        document.getElementById('tests-container').innerHTML = '<div class="loading">Ошибка загрузки данных</div>';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>

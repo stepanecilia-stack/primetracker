@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Техническая подготовленность | Cartel Academy</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        body {
+            background-color: #f8f8f8;
+            color: #1a1a2e;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ffffff;
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .back-button:hover {
+            background: #f8f8f8;
+            border-color: #667eea;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            color: #ffffff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            margin: 0 0 8px 0;
+            font-size: 32px;
+            color: #ffffff;
+        }
+
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .content-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 32px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 24px;
+        }
+
+        .info-block {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 32px;
+        }
+
+        .info-block h3 {
+            margin: 0 0 12px 0;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .info-block p {
+            margin: 0;
+            color: #1a1a2e;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .current-score {
+            text-align: center;
+            padding: 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            margin-bottom: 32px;
+            color: #ffffff;
+        }
+
+        .current-score-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .current-score-value {
+            font-size: 72px;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .current-score-max {
+            font-size: 24px;
+            opacity: 0.8;
+        }
+
+        .current-score-description {
+            margin-top: 16px;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .score-form {
+            margin-top: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 12px;
+            color: #1a1a2e;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .score-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .score-input {
+            flex: 1;
+            width: 100%;
+        }
+
+        .score-input input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .score-input input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .score-input input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .score-display {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .score-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .score-descriptions {
+            margin-top: 24px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .score-descriptions h4 {
+            margin: 0 0 12px 0;
+            color: #1a1a2e;
+            font-size: 14px;
+        }
+
+        .score-desc-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        .score-desc-item:last-child {
+            border-bottom: none;
+        }
+
+        .score-desc-item strong {
+            color: #667eea;
+            margin-right: 8px;
+        }
+
+        .btn-save {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+            margin-top: 32px;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            color: #2e7d32;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .current-score-value {
+                font-size: 56px;
+            }
+            
+            .score-display {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-button">← Назад</a>
+
+        <div class="header">
+            <h1 id="athlete-name">Техническая подготовленность</h1>
+            <p id="athlete-meta">Общая оценка навыков</p>
+        </div>
+
+        <div id="main-content" class="loading">
+            Загрузка данных...
+        </div>
+    </div>
+
+    <script>
+const firebaseConfig = {
+    apiKey: "AIzaSyAxsNe0j6NxMwLDeWrFpvdqRbBHFg5gdiw",
+    authDomain: "cartel-academy.firebaseapp.com",
+    projectId: "cartel-academy",
+    storageBucket: "cartel-academy.firebasestorage.app",
+    messagingSenderId: "988659631950",
+    appId: "1:988659631950:web:ffb7ec4d4b5e0ec440401f"
+};
+
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+
+const db = firebase.firestore();
+
+let currentAthlete = null;
+
+function getScoreDescription(score) {
+    const descriptions = {
+        1: 'Начальный уровень. Требуется значительная работа над техникой.',
+        2: 'Базовый уровень. Основы освоены, но много недочетов.',
+        3: 'Средний уровень. Техника стабильная, но есть резервы для улучшения.',
+        4: 'Хороший уровень. Уверенное владение техникой, минимум ошибок.',
+        5: 'Отличный уровень. Эталонное выполнение, высокий технический класс.'
+    };
+    return descriptions[score] || 'Не оценено';
+}
+
+function renderContent(athlete) {
+    const container = document.getElementById('main-content');
+    
+    const currentScore = athlete.technicalScore || 0;
+    
+    container.innerHTML = `
+        <div id="success-msg" class="success-message">
+            ✅ Оценка успешно сохранена!
+        </div>
+
+        ${currentScore > 0 ? `
+        <div class="current-score">
+            <div class="current-score-label">Текущая оценка</div>
+            <div class="current-score-value">${currentScore}<span class="current-score-max">/5</span></div>
+            <div class="current-score-description">${getScoreDescription(currentScore)}</div>
+        </div>
+        ` : ''}
+
+        <div class="content-card">
+            <div class="info-block">
+                <h3>ℹ️ О технической оценке</h3>
+                <p>Техническая оценка вносится тренером вручную на основе наблюдений за спортсменом в спаррингах, на тренировках и соревнованиях. Оценка влияет на общий КСР (Коэффициент Спортивной Реализации) с весом 33.3%.</p>
+            </div>
+
+            <form id="scoreForm" class="score-form">
+                <div class="form-group">
+                    <label for="technicalScore">Выберите оценку (1-5)</label>
+                    
+                    <div class="score-input-wrapper">
+                        <div class="score-input">
+                            <input type="range" id="technicalScore" min="1" max="5" value="${currentScore || 3}" step="1">
+                            <div class="score-labels">
+                                <span>1</span>
+                                <span>2</span>
+                                <span>3</span>
+                                <span>4</span>
+                                <span>5</span>
+                            </div>
+                        </div>
+                        <div class="score-display" id="scoreDisplay">${currentScore || 3}</div>
+                    </div>
+
+                    <div class="score-descriptions">
+                        <h4>Расшифровка оценок:</h4>
+                        <div class="score-desc-item"><strong>1 балл:</strong> Начальный уровень. Требуется значительная работа над техникой.</div>
+                        <div class="score-desc-item"><strong>2 балла:</strong> Базовый уровень. Основы освоены, но много недочетов.</div>
+                        <div class="score-desc-item"><strong>3 балла:</strong> Средний уровень. Техника стабильная, но есть резервы.</div>
+                        <div class="score-desc-item"><strong>4 балла:</strong> Хороший уровень. Уверенное владение, минимум ошибок.</div>
+                        <div class="score-desc-item"><strong>5 баллов:</strong> Отличный уровень. Эталонное выполнение, высокий класс.</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-save">💾 Сохранить оценку</button>
+            </form>
+        </div>
+    `;
+
+    // Обработчик изменения слайдера
+    const slider = document.getElementById('technicalScore');
+    const display = document.getElementById('scoreDisplay');
+    
+    slider.addEventListener('input', function() {
+        display.textContent = this.value;
+    });
+
+    // Обработчик формы
+    document.getElementById('scoreForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await saveScore();
+    });
+}
+
+async function saveScore() {
+    const score = parseInt(document.getElementById('technicalScore').value);
+    
+    if (!currentAthlete || !score) return;
+    
+    try {
+        const athleteRef = db.collection('students').doc(currentAthlete.id);
+        await athleteRef.update({ technicalScore: score });
+        
+        // Обновляем локальные данные
+        currentAthlete.technicalScore = score;
+        
+        // Показываем сообщение об успехе
+        const successMsg = document.getElementById('success-msg');
+        successMsg.classList.add('show');
+        setTimeout(() => {
+            successMsg.classList.remove('show');
+        }, 3000);
+        
+        // Перерисовываем контент
+        renderContent(currentAthlete);
+        
+        // Прокручиваем наверх
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        alert('❌ Ошибка сохранения оценки');
+    }
+}
+
+async function init() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const athleteId = urlParams.get('id');
+    
+    if (!athleteId) {
+        document.getElementById('main-content').innerHTML = '<div class="loading">ID спортсмена не указан</div>';
+        return;
+    }
+    
+    try {
+        const doc = await db.collection('students').doc(athleteId).get();
+        
+        if (!doc.exists) {
+            document.getElementById('main-content').innerHTML = '<div class="loading">Спортсмен не найден</div>';
+            return;
+        }
+        
+        currentAthlete = { id: doc.id, ...doc.data() };
+        
+        document.getElementById('athlete-name').textContent = `${currentAthlete.firstName} ${currentAthlete.lastName} — Техническая подготовленность`;
+        
+        renderContent(currentAthlete);
+        
+    } catch (error) {
+        console.error('Ошибка:', error);
+        document.getElementById('main-content').innerHTML = '<div class="loading">Ошибка загрузки данных</div>';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
