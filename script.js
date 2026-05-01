@@ -28,19 +28,31 @@ const NormsLoader = {
     cache: null,
     
     async loadNorms() {
-        if (this.cache) return this.cache;
+        if (this.cache) {
+            console.log('✅ Нормативы загружены из кэша');
+            return this.cache;
+        }
         
         try {
+            console.log('🔄 Загрузка нормативов из Google Sheets...');
             const response = await fetch(NORMS_SHEET_URL);
             const csvText = await response.text();
+            
+            // ✅ ЛОГИРОВАНИЕ RAW DATA
+            console.log('CSV Raw Data:', csvText.substring(0, 500) + '...');
+            
             const rows = csvText.split('\n').map(row => row.split(','));
+            console.log(`📊 Всего строк в CSV: ${rows.length}`);
             
             // Пропускаем заголовок
             const dataRows = rows.slice(1);
             
             const norms = [];
-            dataRows.forEach(row => {
-                if (row.length < 10) return;
+            dataRows.forEach((row, index) => {
+                if (row.length < 10) {
+                    console.warn(`⚠️ Строка ${index + 2} пропущена (недостаточно колонок): ${row.length}`);
+                    return;
+                }
                 
                 const [category, testId, testName, description, ageGroup, gender, gold, silver, bronze, unit, measureType] = row;
                 
@@ -55,30 +67,55 @@ const NormsLoader = {
                     silver: parseFloat(silver),
                     bronze: parseFloat(bronze),
                     unit: unit.trim(),
-                    measureType: measureType.trim() // MAX или MIN
+                    measureType: measureType.trim()
                 });
             });
+            
+            console.log(`✅ Загружено нормативов: ${norms.length}`);
+            console.log('Пример норматива:', norms[0]);
             
             this.cache = norms;
             return norms;
         } catch (error) {
-            console.error('Ошибка загрузки нормативов:', error);
+            console.error('❌ Ошибка загрузки нормативов из Google Sheets:', error);
             return [];
         }
     },
     
+    // ✅ ЛОГИКА ВЕРХНЕЙ КРОМКИ
     async getNormsForAthlete(athlete, category) {
         const allNorms = await this.loadNorms();
-        const age = new Date().getFullYear() - athlete.birthYear;
+        const age = new Date().getFullYear() - Number(athlete.birthYear);
         
-        return allNorms.filter(norm => {
+        console.log(`🔍 Поиск нормативов для: возраст=${age}, пол=${athlete.gender}, категория=${category}`);
+        
+        const filtered = allNorms.filter(norm => {
             if (norm.category !== category) return false;
             if (norm.gender !== athlete.gender) return false;
             
-            // Парсинг возрастной группы (например "13-14")
-            const [minAge, maxAge] = norm.ageGroup.split('-').map(n => parseInt(n));
-            return age >= minAge && age <= maxAge;
+            // Парсинг возрастной группы
+            const ageParts = norm.ageGroup.split('-');
+            if (ageParts.length !== 2) {
+                console.warn(`⚠️ Некорректный формат возрастной группы: ${norm.ageGroup}`);
+                return false;
+            }
+            
+            const minAge = parseInt(ageParts[0]);
+            const maxAge = parseInt(ageParts[1]);
+            
+            // ✅ ВЕРХНЯЯ КРОМКА: Возраст должен попадать в диапазон
+            const matches = age >= minAge && age <= maxAge;
+            
+            if (matches) {
+                console.log(`✅ Найдено совпадение: ${norm.testName} (возраст ${norm.ageGroup})`);
+            }
+            
+            return matches;
         });
+        
+        console.log(`📋 Найдено нормативов для спортсмена: ${filtered.length}`);
+        
+        return filtered;
     }
 };
 
@@ -89,55 +126,50 @@ const TestEvaluator = {
     evaluateTest(result, norm) {
         const { gold, silver, bronze, measureType } = norm;
         
+        console.log(`🧮 Оценка теста: результат=${result}, золото=${gold}, тип=${measureType}`);
+        
         let status, normalizedScore;
         
         if (measureType === 'MAX') {
             // Больше = Лучше
             if (result >= gold) {
                 status = 'gold';
-                normalizedScore = 100;
+                normalizedScore = 100 + ((result - gold) / gold) * 20;
             } else if (result >= silver) {
                 status = 'silver';
-                normalizedScore = 80;
+                normalizedScore = 80 + ((result - silver) / (gold - silver)) * 20;
             } else if (result >= bronze) {
                 status = 'bronze';
-                normalizedScore = 60;
+                normalizedScore = 60 + ((result - bronze) / (silver - bronze)) * 20;
             } else {
                 status = 'red';
-                normalizedScore = Math.max(0, (result / bronze) * 60);
-            }
-            
-            // Дополнительная нормализация для золота
-            if (result > gold) {
-                normalizedScore = 100 + ((result - gold) / gold) * 20;
-                normalizedScore = Math.min(120, normalizedScore);
+                normalizedScore = (result / bronze) * 60;
             }
         } else {
             // Меньше = Лучше (MIN)
             if (result <= gold) {
                 status = 'gold';
-                normalizedScore = 100;
+                normalizedScore = 100 + ((gold - result) / gold) * 20;
             } else if (result <= silver) {
                 status = 'silver';
-                normalizedScore = 80;
+                normalizedScore = 80 + ((silver - result) / (silver - gold)) * 20;
             } else if (result <= bronze) {
                 status = 'bronze';
-                normalizedScore = 60;
+                normalizedScore = 60 + ((bronze - result) / (bronze - silver)) * 20;
             } else {
                 status = 'red';
-                normalizedScore = Math.max(0, (bronze / result) * 60);
-            }
-            
-            // Дополнительная нормализация для золота
-            if (result < gold) {
-                normalizedScore = 100 + ((gold - result) / gold) * 20;
-                normalizedScore = Math.min(120, normalizedScore);
+                normalizedScore = (bronze / result) * 60;
             }
         }
         
+        normalizedScore = Math.max(0, Math.min(120, normalizedScore));
+        normalizedScore = Math.round(normalizedScore);
+        
+        console.log(`✅ Результат оценки: статус=${status}, балл=${normalizedScore}`);
+        
         return {
             status,
-            normalizedScore: Math.round(normalizedScore),
+            normalizedScore,
             color: this.getStatusColor(status)
         };
     },
@@ -154,10 +186,10 @@ const TestEvaluator = {
     
     getStatusText(status) {
         const texts = {
-            gold: 'Золото (Элита)',
-            silver: 'Серебро (Норма)',
-            bronze: 'Бронза (Ниже нормы)',
-            red: 'Критическое отставание'
+            gold: '🥇 Золото (Элита)',
+            silver: '🥈 Серебро (Норма)',
+            bronze: '🥉 Бронза (Ниже нормы)',
+            red: '🔴 Критическое отставание'
         };
         return texts[status] || 'Не оценено';
     }
@@ -196,9 +228,14 @@ const Storage = {
 
     async getCoachAthletes() {
         if (!auth.currentUser) return [];
+        
+        console.log('🔍 Загрузка спортсменов из коллекции students...');
+        
         const snapshot = await db.collection('students')
             .where('coachId', '==', auth.currentUser.uid)
             .get();
+        
+        console.log(`✅ Найдено спортсменов: ${snapshot.docs.length}`);
         
         return snapshot.docs.map(doc => ({
             id: doc.id,
@@ -207,34 +244,66 @@ const Storage = {
     },
 
     async getAthleteById(id) {
+        console.log(`🔍 Поиск спортсмена в коллекции 'students' с ID: ${id}`);
+        
         const doc = await db.collection('students').doc(id).get();
-        if (!doc.exists) return null;
+        
+        if (!doc.exists) {
+            console.error(`❌ Student ID [${id}] not found in 'students' collection`);
+            return null;
+        }
+        
+        console.log(`✅ Спортсмен найден: ${doc.data().firstName} ${doc.data().lastName}`);
+        
         return { id: doc.id, ...doc.data() };
     },
 
     async getAthleteByToken(token) {
+        console.log(`🔍 Поиск спортсмена по токену в коллекции 'students'`);
+        
         const snapshot = await db.collection('students')
             .where('shareToken', '==', token)
             .limit(1)
             .get();
         
-        if (snapshot.empty) return null;
+        if (snapshot.empty) {
+            console.error(`❌ Student with token not found in 'students' collection`);
+            return null;
+        }
+        
         const doc = snapshot.docs[0];
+        console.log(`✅ Спортсмен найден по токену: ${doc.data().firstName}`);
+        
         return { id: doc.id, ...doc.data() };
     },
 
     async addAthlete(athlete) {
+        console.log('➕ Создание нового спортсмена в коллекции students...');
+        
         const docRef = await db.collection('students').add(athlete);
+        
+        console.log(`✅ Спортсмен создан с ID: ${docRef.id}`);
+        
         return { id: docRef.id, ...athlete };
     },
 
     async updateAthlete(id, updates) {
+        console.log(`🔄 Обновление спортсмена ${id} в коллекции students`);
+        
         await db.collection('students').doc(id).update(updates);
+        
+        console.log('✅ Данные обновлены');
+        
         return true;
     },
 
     async deleteAthlete(id) {
+        console.log(`🗑️ Удаление спортсмена ${id} из коллекции students`);
+        
         await db.collection('students').doc(id).delete();
+        
+        console.log('✅ Спортсмен удален');
+        
         return true;
     }
 };
@@ -292,7 +361,7 @@ const Utils = {
     },
 
     calculateAge(birthYear) {
-        return new Date().getFullYear() - birthYear;
+        return new Date().getFullYear() - Number(birthYear);
     },
 
     showLoader() {
@@ -440,7 +509,7 @@ const BOXING_BENCHMARKS = {
 };
 
 function getAgeGroup(birthYear) {
-    const age = new Date().getFullYear() - birthYear;
+    const age = new Date().getFullYear() - Number(birthYear);
     if (age >= 13 && age <= 14) return '13-14';
     if (age >= 15 && age <= 16) return '15-16';
     if (age >= 17 && age <= 18) return '17-18';
@@ -503,6 +572,8 @@ const Calculations = {
 
     // ✅ НОВАЯ ФОРМУЛА КСР (взвешенная сумма 3 категорий)
     calculateRealization(athlete) {
+        console.log('🧮 Расчет КСР для спортсмена:', athlete.firstName);
+        
         let physicsScore = 0;
         let functionalScore = 0;
         let technicalScore = 0;
@@ -513,6 +584,7 @@ const Calculations = {
             if (physicalTests.length > 0) {
                 const avgPhysics = physicalTests.reduce((sum, test) => sum + (test.normalizedScore || 0), 0) / physicalTests.length;
                 physicsScore = avgPhysics * 0.333;
+                console.log(`  Физика: ${physicalTests.length} тестов, средний балл=${avgPhysics.toFixed(1)}, вклад=${physicsScore.toFixed(1)}`);
             }
         }
         
@@ -522,19 +594,22 @@ const Calculations = {
             if (functionalTests.length > 0) {
                 const avgFunctional = functionalTests.reduce((sum, test) => sum + (test.normalizedScore || 0), 0) / functionalTests.length;
                 functionalScore = avgFunctional * 0.333;
+                console.log(`  Функционал: ${functionalTests.length} тестов, средний балл=${avgFunctional.toFixed(1)}, вклад=${functionalScore.toFixed(1)}`);
             }
         }
         
         // 3. Техника (33.3%)
         if (athlete.technicalScore && typeof athlete.technicalScore === 'number') {
-            // Преобразуем из шкалы 1-5 в 0-100, затем берем 33.3%
             technicalScore = ((athlete.technicalScore / 5) * 100) * 0.333;
+            console.log(`  Техника: оценка=${athlete.technicalScore}/5, вклад=${technicalScore.toFixed(1)}`);
         }
         
         const totalScore = physicsScore + functionalScore + technicalScore;
         
-        // Если все три категории пустые, возвращаем "Нет данных"
+        console.log(`  📊 Итоговый КСР: ${totalScore.toFixed(1)} (физика=${physicsScore.toFixed(1)} + функционал=${functionalScore.toFixed(1)} + техника=${technicalScore.toFixed(1)})`);
+        
         if (totalScore === 0) {
+            console.log('  ⚠️ КСР = "Нет данных" (все категории пустые)');
             return "Нет данных";
         }
         
@@ -549,15 +624,26 @@ const Calculations = {
     },
 
     async updateAthleteMetrics(athleteId) {
+        console.log(`🔄 Обновление метрик для спортсмена ${athleteId}`);
+        
         const athlete = await Storage.getAthleteById(athleteId);
-        if (!athlete) return null;
+        if (!athlete) {
+            console.error(`❌ Не удалось загрузить спортсмена для обновления метрик`);
+            return null;
+        }
         
         const potential = this.calculatePotential(athlete);
         const realization = this.calculateRealization(athlete);
         const gap = this.calculateGap(potential, realization);
         
         const metrics = { potential, realization, gap };
+        
+        console.log('📊 Новые метрики:', metrics);
+        
         await Storage.updateAthlete(athleteId, { metrics });
+        
+        console.log('✅ Метрики обновлены в Firebase');
+        
         return metrics;
     },
 
@@ -1014,14 +1100,9 @@ const Router = {
             document.getElementById('ape-index-desc').textContent = apeIndex.description;
         }
 
-        this.initStudentSections(athleteData);
         document.getElementById('btn-contact-coach').onclick = () => {
             alert('Свяжитесь с вашим тренером для получения подробной информации.');
         };
-    },
-
-    initStudentSections(athleteData) {
-        // Реализация для студенческой страницы
     },
 
     navigate(page, params = {}) {
