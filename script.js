@@ -1018,6 +1018,149 @@ const SilhouetteRenderer = {
 };
 
 // ============================================
+// COMBAT READINESS (КБГ) MODULE
+// ============================================
+const CombatReadiness = {
+    states: [
+        {
+            id: 'reactive',
+            emoji: '🌑',
+            name: 'Реактивный',
+            coefficient: 0.25,
+            description: 'Воля к победе ситуативна и зависит от внешних условий. Если боксёр чувствует превосходство над соперником — действует уверенно и агрессивно. Как только возникает угроза или давление, мотивация рассыпается: включается избегание, пассивность, деморализация. Психологи называют это внешним локусом контроля — боец управляется средой, а не собой.'
+        },
+        {
+            id: 'active',
+            emoji: '🌓',
+            name: 'Активный',
+            coefficient: 0.50,
+            description: 'Боксёр осознаёт сложность боя, но способен усилием воли запустить мобилизацию и действовать по плану. Это волевая саморегуляция — сознательное подавление тревоги и удержание тактической установки. Ресурс есть, но он расходуется: чем длиннее и тяжелее бой, тем выше риск срыва в реактивный режим.'
+        },
+        {
+            id: 'dominant',
+            emoji: '🌕',
+            name: 'Доминантный',
+            coefficient: 1.00,
+            description: 'Состояние полной психической концентрации, при котором внешние раздражители — давление соперника, усталость, шум зала — не разрушают установку. В нейрофизиологии это описывается как устойчивая доминанта по Ухтомскому: один очаг возбуждения подавляет все конкурирующие. Боксёр дерётся не вопреки обстоятельствам — он их не замечает.'
+        }
+    ],
+
+    getState(athleteId) {
+        const key = `pbg_${athleteId}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            const state = this.states.find(s => s.id === saved);
+            if (state) return state;
+        }
+        return this.states[0]; // Дефолт: Реактивный
+    },
+
+    setState(athleteId, stateId) {
+        const key = `pbg_${athleteId}`;
+        localStorage.setItem(key, stateId);
+        console.log(`💾 КБГ сохранён: ${stateId} для спортсмена ${athleteId}`);
+    },
+
+    applyToRealization(realization, athleteId) {
+        if (realization === "Нет данных") return "Нет данных";
+        
+        const state = this.getState(athleteId);
+        const adjusted = Math.round(realization * state.coefficient);
+        
+        console.log(`⚔️ КБГ применён: ${realization} × ${state.coefficient} = ${adjusted}`);
+        
+        return adjusted;
+    },
+
+    renderSelector(athleteId, onChangeCallback) {
+        const container = document.getElementById('combat-readiness-selector');
+        if (!container) return;
+
+        const currentState = this.getState(athleteId);
+        container.innerHTML = '';
+
+        this.states.forEach(state => {
+            const option = document.createElement('div');
+            option.className = `cr-option ${state.id === currentState.id ? 'active' : ''}`;
+            option.dataset.stateId = state.id;
+
+            option.innerHTML = `
+                <div class="cr-info-icon" data-state-id="${state.id}">ℹ️</div>
+                <div class="cr-emoji">${state.emoji}</div>
+                <div class="cr-name">${state.name}</div>
+                <div class="cr-coefficient">КБГ × ${state.coefficient}</div>
+            `;
+
+            option.onclick = (e) => {
+                // Если клик по иконке ℹ️ — не меняем состояние
+                if (e.target.classList.contains('cr-info-icon')) {
+                    this.showTooltip(state, e.target);
+                    return;
+                }
+
+                // Меняем активное состояние
+                container.querySelectorAll('.cr-option').forEach(o => o.classList.remove('active'));
+                option.classList.add('active');
+                
+                this.setState(athleteId, state.id);
+                
+                if (onChangeCallback) {
+                    onChangeCallback(state);
+                }
+            };
+
+            container.appendChild(option);
+        });
+
+        // Обработчик tooltip для иконок ℹ️
+        container.querySelectorAll('.cr-info-icon').forEach(icon => {
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const stateId = icon.dataset.stateId;
+                const state = this.states.find(s => s.id === stateId);
+                this.showTooltip(state, icon);
+            });
+        });
+    },
+
+    showTooltip(state, iconElement) {
+        // Удаляем предыдущий tooltip
+        const existing = document.querySelector('.cr-tooltip');
+        if (existing) existing.remove();
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'cr-tooltip show';
+        tooltip.innerHTML = `
+            <button class="cr-tooltip-close">×</button>
+            <div class="cr-tooltip-title">${state.emoji} ${state.name}</div>
+            <div>${state.description}</div>
+        `;
+
+        document.body.appendChild(tooltip);
+
+        // Позиционирование рядом с иконкой
+        const rect = iconElement.getBoundingClientRect();
+        tooltip.style.top = `${rect.bottom + 10}px`;
+        tooltip.style.left = `${Math.max(10, rect.left - 150)}px`;
+
+        // Закрытие по клику на крестик
+        tooltip.querySelector('.cr-tooltip-close').onclick = () => {
+            tooltip.remove();
+        };
+
+        // Закрытие по клику вне tooltip
+        setTimeout(() => {
+            document.addEventListener('click', function closeTooltip(e) {
+                if (!tooltip.contains(e.target) && !iconElement.contains(e.target)) {
+                    tooltip.remove();
+                    document.removeEventListener('click', closeTooltip);
+                }
+            });
+        }, 100);
+    }
+};
+
+// ============================================
 // ROUTER MODULE
 // ============================================
 const Router = {
@@ -1128,10 +1271,29 @@ const Router = {
             document.getElementById('ape-index-desc').textContent = apeIndex.description;
         }
 
+                // ✅ РЕНДЕР СЕЛЕКТОРА КБГ
+        CombatReadiness.renderSelector(athleteData.id, (newState) => {
+            console.log(`⚔️ КБГ изменён на: ${newState.name} (${newState.coefficient})`);
+            
+            // Пересчёт реализации без перезагрузки
+            updateRealizationDisplay(athleteData);
+        });
+
+        // ✅ ФУНКЦИЯ ОБНОВЛЕНИЯ РЕАЛИЗАЦИИ С КБГ
+        function updateRealizationDisplay(athlete) {
+            const realizationBase = athlete.metrics.realization;
+            const realizationWithKBG = CombatReadiness.applyToRealization(realizationBase, athlete.id);
+            
+            // Обновляем отображение в метриках (если они есть на странице студента)
+            // В текущем коде страница студента не показывает метрики, но можно добавить
+            console.log(`📊 Реализация с КБГ: ${realizationWithKBG}%`);
+        }
+
         document.getElementById('btn-contact-coach').onclick = () => {
             alert('Свяжитесь с вашим тренером для получения подробной информации.');
         };
     },
+
 
     navigate(page, params = {}) {
         let hash = `#${page}`;
@@ -1235,13 +1397,24 @@ const Router = {
                 card.className = 'athlete-card';
                 const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
                 
-                const realizationDisplay = realization === "Нет данных" ? "Нет данных" : `${realization}%`;
-                const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
+                                // ✅ ПРИМЕНЯЕМ КБГ К РЕАЛИЗАЦИИ
+                const realizationWithKBG = CombatReadiness.applyToRealization(realization, athlete.id);
+                const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
+                
+                const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
+                const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
+                
                 const weightCategoryDisplay = weightCategory || 'Нет данных';
                 
-                card.innerHTML = `
+                // ✅ ИКОНКА КБГ
+                const crState = CombatReadiness.getState(athlete.id);
+                const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
+
+                
+                                card.innerHTML = `
                     <div class="athlete-info">
-                        <h3>${athlete.firstName} ${athlete.lastName}</h3>
+                        <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
+
                         <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
                     </div>
                     <div class="athlete-metrics">

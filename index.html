@@ -5,6 +5,157 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Система оценки потенциала боксёра</title>
     <link rel="stylesheet" href="style.css">
+        <style>
+        .combat-readiness-section {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 32px;
+            margin: 32px 0;
+        }
+
+        .combat-readiness-section h2 {
+            margin-top: 0;
+            color: #1a1a2e;
+        }
+
+        .combat-readiness-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .cr-option {
+            position: relative;
+            background: #ffffff;
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .cr-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .cr-option.active {
+            border-color: #667eea;
+            border-width: 4px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+
+        .cr-emoji {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .cr-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .cr-coefficient {
+            font-size: 14px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .cr-info-icon {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 28px;
+            height: 28px;
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            transition: all 0.2s;
+        }
+
+        .cr-info-icon:hover {
+            background: rgba(102, 126, 234, 0.25);
+            transform: scale(1.1);
+        }
+
+        .cr-tooltip {
+            display: none;
+            position: fixed;
+            background: #1a1a2e;
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 400px;
+            z-index: 10000;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .cr-tooltip.show {
+            display: block;
+        }
+
+        .cr-tooltip-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+
+        .cr-tooltip-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: #ffffff;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .cr-tooltip-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .cr-badge {
+            font-size: 18px;
+            margin-left: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .combat-readiness-selector {
+                grid-template-columns: 1fr;
+            }
+            
+            .cr-tooltip {
+                max-width: 90vw;
+                left: 5vw !important;
+                right: 5vw !important;
+            }
+        }
+    </style>
+
 </head>
 <body>
     <!-- AUTH PAGE -->
@@ -259,6 +410,19 @@
                 <div class="section-button-subtitle">Навыки и тактика</div>
             </button>
         </div>
+
+        <!-- ✅ БЛОК БОЕВАЯ ГОТОВНОСТЬ -->
+        <section class="section combat-readiness-section">
+            <h2>⚔️ Боевая готовность</h2>
+            <p style="font-size: 14px; color: #6b7280; margin-bottom: 24px;">
+                Выберите психологическое состояние спортсмена для коррекции реализации
+            </p>
+            
+            <div class="combat-readiness-selector" id="combat-readiness-selector">
+                <!-- Генерируется JS -->
+            </div>
+        </section>
+
         <!-- В page-profile, после sections-grid -->
 <section class="section" id="psychology-section" style="display: none;">
     <h2>🧠 Психологический профиль</h2>
