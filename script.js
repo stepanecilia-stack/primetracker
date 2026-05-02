@@ -1238,61 +1238,83 @@ const Router = {
     },
 
     async showStudentView(token) {
-        const pageElement = document.getElementById('page-student-view');
-        pageElement.classList.remove('hidden');
-        document.getElementById('student-error').classList.add('hidden');
+    console.log('🎯 Загрузка страницы ученика, токен:', token?.substring(0, 10) + '...');
+    
+    const pageElement = document.getElementById('page-student-view');
+    pageElement.classList.remove('hidden');
+    document.getElementById('student-error').classList.add('hidden');
 
-        if (!token) {
-            document.getElementById('student-error').classList.remove('hidden');
-            return;
+    if (!token) {
+        console.error('❌ Токен не указан');
+        document.getElementById('student-error').classList.remove('hidden');
+        return;
+    }
+
+    const athleteData = await Share.getAthleteByToken(token);
+    if (!athleteData) {
+        console.error('❌ Спортсмен не найден по токену');
+        document.getElementById('student-error').classList.remove('hidden');
+        return;
+    }
+
+    console.log('✅ Данные спортсмена загружены:', athleteData);
+
+    const genderText = athleteData.gender === 'M' ? 'М' : 'Ж';
+    document.getElementById('student-athlete-name').textContent = `${athleteData.firstName} ${athleteData.lastName}`;
+    document.getElementById('student-athlete-meta').textContent = `${athleteData.birthYear} г.р., ${genderText}`;
+
+    // ✅ РЕНДЕР СИЛУЭТА
+    if (athleteData.anthropometry && athleteData.anthropometry.length > 0) {
+        console.log('📏 Рендеринг силуэта...');
+        const latest = athleteData.anthropometry[athleteData.anthropometry.length - 1];
+        const { svg, height: svgHeight } = SilhouetteRenderer.render(latest.height, latest.reach, athleteData.gender);
+        
+        const silhouetteFigure = document.getElementById('silhouette-figure');
+        if (silhouetteFigure) {
+            silhouetteFigure.innerHTML = '';
+            silhouetteFigure.appendChild(svg);
         }
+        
+        SilhouetteRenderer.renderRuler(svgHeight);
+        SilhouetteRenderer.renderReachLine(latest.reach);
+        
+        const heightValue = document.getElementById('height-value');
+        const reachValue = document.getElementById('reach-value');
+        if (heightValue) heightValue.textContent = `${latest.height} см`;
+        if (reachValue) reachValue.textContent = `${latest.reach} см`;
+        
+        const apeIndex = SilhouetteRenderer.calculateApeIndex(latest.height, latest.reach);
+        const apeIndexValue = document.getElementById('ape-index-value');
+        const apeIndexDesc = document.getElementById('ape-index-desc');
+        if (apeIndexValue) apeIndexValue.textContent = apeIndex.ratio;
+        if (apeIndexDesc) apeIndexDesc.textContent = apeIndex.description;
+        
+        console.log('✅ Силуэт отрендерен');
+    } else {
+        console.warn('⚠️ Нет данных антропометрии');
+    }
 
-        const athleteData = await Share.getAthleteByToken(token);
-        if (!athleteData) {
-            document.getElementById('student-error').classList.remove('hidden');
-            return;
+    // ✅ РЕНДЕР СЕЛЕКТОРА КБГ
+    console.log('⚔️ Рендеринг селектора КБГ...');
+    setTimeout(() => {
+        const container = document.getElementById('combat-readiness-selector');
+        console.log('📦 Контейнер КБГ:', container);
+        
+        if (container) {
+            CombatReadiness.renderSelector(athleteData.id, (newState) => {
+                console.log(`⚔️ КБГ изменён на: ${newState.name} (×${newState.coefficient})`);
+            });
+            console.log('✅ Селектор КБГ отрендерен');
+        } else {
+            console.error('❌ Элемент combat-readiness-selector не найден в DOM!');
         }
+    }, 100);
 
-        const genderText = athleteData.gender === 'M' ? 'М' : 'Ж';
-        document.getElementById('student-athlete-name').textContent = `${athleteData.firstName} ${athleteData.lastName}`;
-        document.getElementById('student-athlete-meta').textContent = `${athleteData.birthYear} г.р., ${genderText}`;
+    document.getElementById('btn-contact-coach').onclick = () => {
+        alert('Свяжитесь с вашим тренером для получения подробной информации.');
+    };
+},
 
-        if (athleteData.anthropometry && athleteData.anthropometry.length > 0) {
-            const latest = athleteData.anthropometry[athleteData.anthropometry.length - 1];
-            const { svg, height: svgHeight } = SilhouetteRenderer.render(latest.height, latest.reach, athleteData.gender);
-            document.getElementById('silhouette-figure').innerHTML = '';
-            document.getElementById('silhouette-figure').appendChild(svg);
-            SilhouetteRenderer.renderRuler(svgHeight);
-            SilhouetteRenderer.renderReachLine(latest.reach);
-            document.getElementById('height-value').textContent = `${latest.height} см`;
-            document.getElementById('reach-value').textContent = `${latest.reach} см`;
-            const apeIndex = SilhouetteRenderer.calculateApeIndex(latest.height, latest.reach);
-            document.getElementById('ape-index-value').textContent = apeIndex.ratio;
-            document.getElementById('ape-index-desc').textContent = apeIndex.description;
-        }
-
-                // ✅ РЕНДЕР СЕЛЕКТОРА КБГ
-        CombatReadiness.renderSelector(athleteData.id, (newState) => {
-            console.log(`⚔️ КБГ изменён на: ${newState.name} (${newState.coefficient})`);
-            
-            // Пересчёт реализации без перезагрузки
-            updateRealizationDisplay(athleteData);
-        });
-
-        // ✅ ФУНКЦИЯ ОБНОВЛЕНИЯ РЕАЛИЗАЦИИ С КБГ
-        function updateRealizationDisplay(athlete) {
-            const realizationBase = athlete.metrics.realization;
-            const realizationWithKBG = CombatReadiness.applyToRealization(realizationBase, athlete.id);
-            
-            // Обновляем отображение в метриках (если они есть на странице студента)
-            // В текущем коде страница студента не показывает метрики, но можно добавить
-            console.log(`📊 Реализация с КБГ: ${realizationWithKBG}%`);
-        }
-
-        document.getElementById('btn-contact-coach').onclick = () => {
-            alert('Свяжитесь с вашим тренером для получения подробной информации.');
-        };
-    },
 
 
     navigate(page, params = {}) {
