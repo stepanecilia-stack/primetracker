@@ -422,6 +422,7 @@ let currentNorms = [];
 let currentTest = null;
 
 async function loadNorms() {
+    async function loadNorms() {
     try {
         console.log('🔄 Загрузка нормативов из Google Sheets (functional.html)...');
         const response = await fetch(NORMS_SHEET_URL);
@@ -429,8 +430,31 @@ async function loadNorms() {
         
         console.log('CSV Raw Data:', csvText.substring(0, 500) + '...');
         
-        const rows = csvText.split('\n').map(row => row.split(','));
+        // ✅ ПРАВИЛЬНЫЙ ПАРСИНГ CSV С УЧЁТОМ КАВЫЧЕК
+        const rows = csvText.split('\n').map(row => {
+            const cells = [];
+            let current = '';
+            let insideQuotes = false;
+            
+            for (let i = 0; i < row.length; i++) {
+                const char = row[i];
+                
+                if (char === '"') {
+                    insideQuotes = !insideQuotes;
+                } else if (char === ',' && !insideQuotes) {
+                    cells.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            cells.push(current); // Последняя ячейка
+            
+            return cells;
+        });
+        
         console.log(`📊 Всего строк в CSV: ${rows.length}`);
+
         
         const dataRows = rows.slice(1);
         
