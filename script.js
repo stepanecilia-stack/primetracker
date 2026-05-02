@@ -38,13 +38,11 @@ const NormsLoader = {
             const response = await fetch(NORMS_SHEET_URL);
             const csvText = await response.text();
             
-            // ✅ ЛОГИРОВАНИЕ RAW DATA
             console.log('CSV Raw Data:', csvText.substring(0, 500) + '...');
             
             const rows = csvText.split('\n').map(row => row.split(','));
             console.log(`📊 Всего строк в CSV: ${rows.length}`);
             
-            // Пропускаем заголовок
             const dataRows = rows.slice(1);
             
             const norms = [];
@@ -82,7 +80,6 @@ const NormsLoader = {
         }
     },
     
-    // ✅ ЛОГИКА ВЕРХНЕЙ КРОМКИ
     async getNormsForAthlete(athlete, category) {
         const allNorms = await this.loadNorms();
         const age = new Date().getFullYear() - Number(athlete.birthYear);
@@ -93,7 +90,6 @@ const NormsLoader = {
             if (norm.category !== category) return false;
             if (norm.gender !== athlete.gender) return false;
             
-            // Парсинг возрастной группы
             const ageParts = norm.ageGroup.split('-');
             if (ageParts.length !== 2) {
                 console.warn(`⚠️ Некорректный формат возрастной группы: ${norm.ageGroup}`);
@@ -103,7 +99,6 @@ const NormsLoader = {
             const minAge = parseInt(ageParts[0]);
             const maxAge = parseInt(ageParts[1]);
             
-            // ✅ ВЕРХНЯЯ КРОМКА: Возраст должен попадать в диапазон
             const matches = age >= minAge && age <= maxAge;
             
             if (matches) {
@@ -131,7 +126,6 @@ const TestEvaluator = {
         let status, normalizedScore;
         
         if (measureType === 'MAX') {
-            // Больше = Лучше
             if (result >= gold) {
                 status = 'gold';
                 normalizedScore = 100 + ((result - gold) / gold) * 20;
@@ -146,7 +140,6 @@ const TestEvaluator = {
                 normalizedScore = (result / bronze) * 60;
             }
         } else {
-            // Меньше = Лучше (MIN)
             if (result <= gold) {
                 status = 'gold';
                 normalizedScore = 100 + ((gold - result) / gold) * 20;
@@ -176,10 +169,10 @@ const TestEvaluator = {
     
     getStatusColor(status) {
         const colors = {
-            gold: '#4caf50',    // Зеленый
-            silver: '#ffeb3b',  // Желтый
-            bronze: '#ff9800',  // Оранжевый
-            red: '#f44336'      // Красный
+            gold: '#4caf50',
+            silver: '#ffeb3b',
+            bronze: '#ff9800',
+            red: '#f44336'
         };
         return colors[status] || '#999';
     },
@@ -536,7 +529,7 @@ function findWeightCategory(gender, ageGroup, weight) {
 }
 
 // ============================================
-// CALCULATIONS MODULE (ОБНОВЛЕННАЯ ЛОГИКА КСР)
+// CALCULATIONS MODULE
 // ============================================
 const Calculations = {
     calculatePotential(athlete) {
@@ -570,78 +563,69 @@ const Calculations = {
         return Math.round(potential);
     },
 
-    // ✅ ВАРИАНТ А: Штраф за несданные тесты
-async calculateRealization(athlete) {
-    console.log('🧮 Расчет КСР для спортсмена:', athlete.firstName);
-    
-    let physicsScore = 0;
-    let functionalScore = 0;
-    let technicalScore = 0;
-    
-    // 1. Физика (33.3%) — с учетом всех доступных тестов
-    const physicalNorms = await NormsLoader.getNormsForAthlete(athlete, 'physical');
-    const totalPhysicalTests = physicalNorms.length;
-    
-    if (totalPhysicalTests > 0) {
-        let sumPhysics = 0;
-        physicalNorms.forEach(norm => {
-            const testResult = athlete.tests?.physical?.[norm.testId];
-            if (testResult) {
-                sumPhysics += testResult.normalizedScore || 0;
-            }
-            // Если тест не сдан, добавляем 0
-        });
+    async calculateRealization(athlete) {
+        console.log('🧮 Расчет КСР для спортсмена:', athlete.firstName);
         
-        const avgPhysics = sumPhysics / totalPhysicalTests;
-        physicsScore = avgPhysics * 0.333;
+        let physicsScore = 0;
+        let functionalScore = 0;
+        let technicalScore = 0;
         
-        const completedPhysics = Object.keys(athlete.tests?.physical || {}).length;
-        console.log(`  Физика: сдано ${completedPhysics} из ${totalPhysicalTests} тестов, средний балл=${avgPhysics.toFixed(1)}, вклад=${physicsScore.toFixed(1)}`);
-    }
-    
-    // 2. Функционал (33.3%) — с учетом всех доступных тестов
-    const functionalNorms = await NormsLoader.getNormsForAthlete(athlete, 'functional');
-    const totalFunctionalTests = functionalNorms.length;
-    
-    if (totalFunctionalTests > 0) {
-        let sumFunctional = 0;
-        functionalNorms.forEach(norm => {
-            const testResult = athlete.tests?.functional?.[norm.testId];
-            if (testResult) {
-                sumFunctional += testResult.normalizedScore || 0;
-            }
-        });
+        const physicalNorms = await NormsLoader.getNormsForAthlete(athlete, 'physical');
+        const totalPhysicalTests = physicalNorms.length;
         
-        const avgFunctional = sumFunctional / totalFunctionalTests;
-        functionalScore = avgFunctional * 0.333;
+        if (totalPhysicalTests > 0) {
+            let sumPhysics = 0;
+            physicalNorms.forEach(norm => {
+                const testResult = athlete.tests?.physical?.[norm.testId];
+                if (testResult) {
+                    sumPhysics += testResult.normalizedScore || 0;
+                }
+            });
+            
+            const avgPhysics = sumPhysics / totalPhysicalTests;
+            physicsScore = avgPhysics * 0.333;
+            
+            const completedPhysics = Object.keys(athlete.tests?.physical || {}).length;
+            console.log(`  Физика: сдано ${completedPhysics} из ${totalPhysicalTests} тестов, средний балл=${avgPhysics.toFixed(1)}, вклад=${physicsScore.toFixed(1)}`);
+        }
         
-        const completedFunctional = Object.keys(athlete.tests?.functional || {}).length;
-        console.log(`  Функционал: сдано ${completedFunctional} из ${totalFunctionalTests} тестов, средний балл=${avgFunctional.toFixed(1)}, вклад=${functionalScore.toFixed(1)}`);
-    }
-    
-    // 3. Техника (33.3%) — ИЗ НОВОЙ СИСТЕМЫ
-    if (athlete.technicalScore !== null && athlete.technicalScore !== undefined) {
-        // technicalScore теперь хранит среднее значение от 0 до 1
-        const technicalNormalized = athlete.technicalScore * 100; // Переводим в проценты
-        technicalScore = technicalNormalized * 0.333;
+        const functionalNorms = await NormsLoader.getNormsForAthlete(athlete, 'functional');
+        const totalFunctionalTests = functionalNorms.length;
         
-        console.log(`  Техника: средний КСР=${athlete.technicalScore.toFixed(2)}, нормализованный=${technicalNormalized.toFixed(1)}, вклад=${technicalScore.toFixed(1)}`);
-    }
-    
-    // ✅ ВЫЧИСЛЯЕМ ИТОГОВЫЙ БАЛЛ
-    const totalScore = physicsScore + functionalScore + technicalScore;
-    
-    console.log(`  📊 Итоговый КСР: ${totalScore.toFixed(1)} (физика=${physicsScore.toFixed(1)} + функционал=${functionalScore.toFixed(1)} + техника=${technicalScore.toFixed(1)})`);
-    
-    if (totalScore === 0) {
-        console.log('  ⚠️ КСР = "Нет данных" (все категории пустые)');
-        return "Нет данных";
-    }
-    
-    return Math.round(totalScore);
-},
-
-
+        if (totalFunctionalTests > 0) {
+            let sumFunctional = 0;
+            functionalNorms.forEach(norm => {
+                const testResult = athlete.tests?.functional?.[norm.testId];
+                if (testResult) {
+                    sumFunctional += testResult.normalizedScore || 0;
+                }
+            });
+            
+            const avgFunctional = sumFunctional / totalFunctionalTests;
+            functionalScore = avgFunctional * 0.333;
+            
+            const completedFunctional = Object.keys(athlete.tests?.functional || {}).length;
+            console.log(`  Функционал: сдано ${completedFunctional} из ${totalFunctionalTests} тестов, средний балл=${avgFunctional.toFixed(1)}, вклад=${functionalScore.toFixed(1)}`);
+        }
+        
+        if (athlete.technicalScore !== null && athlete.technicalScore !== undefined) {
+            const technicalNormalized = athlete.technicalScore * 100;
+            technicalScore = technicalNormalized * 0.333;
+            
+            console.log(`  Техника: средний КСР=${athlete.technicalScore.toFixed(2)}, нормализованный=${technicalNormalized.toFixed(1)}, вклад=${technicalScore.toFixed(1)}`);
+        }
+        
+        const totalScore = physicsScore + functionalScore + technicalScore;
+        
+        console.log(`  📊 Итоговый КСР: ${totalScore.toFixed(1)} (физика=${physicsScore.toFixed(1)} + функционал=${functionalScore.toFixed(1)} + техника=${technicalScore.toFixed(1)})`);
+        
+        if (totalScore === 0) {
+            console.log('  ⚠️ КСР = "Нет данных" (все категории пустые)');
+            return "Нет данных";
+        }
+        
+        return Math.round(totalScore);
+    },
 
     calculateGap(potential, realization) {
         if (realization === "Нет данных") {
@@ -651,18 +635,17 @@ async calculateRealization(athlete) {
     },
 
     async updateAthleteMetrics(athleteId) {
-    console.log(`🔄 Обновление метрик для спортсмена ${athleteId}`);
-    
-       const athlete = await Storage.getAthleteById(athleteId);
-       if (!athlete) {
-        console.error(`❌ Не удалось загрузить спортсмена для обновления метрик`);
-        return null;
+        console.log(`🔄 Обновление метрик для спортсмена ${athleteId}`);
+        
+        const athlete = await Storage.getAthleteById(athleteId);
+        if (!athlete) {
+            console.error(`❌ Не удалось загрузить спортсмена для обновления метрик`);
+            return null;
         }
-    
-       const potential = this.calculatePotential(athlete);
-       const realization = await this.calculateRealization(athlete); // ✅ Добавили await
-       const gap = this.calculateGap(potential, realization);
-
+        
+        const potential = this.calculatePotential(athlete);
+        const realization = await this.calculateRealization(athlete);
+        const gap = this.calculateGap(potential, realization);
         
         const metrics = { potential, realization, gap };
         
@@ -904,9 +887,9 @@ const Share = {
     async getAthleteByToken(token) {
         const athlete = await Storage.getAthleteByToken(token);
         if (!athlete) return null;
-    
+        
         const potential = Calculations.calculatePotential(athlete);
-        const realization = await Calculations.calculateRealization(athlete); // ✅ Добавили await
+        const realization = await Calculations.calculateRealization(athlete);
         const gap = Calculations.calculateGap(potential, realization);
 
         return {
@@ -1052,7 +1035,7 @@ const CombatReadiness = {
             const state = this.states.find(s => s.id === saved);
             if (state) return state;
         }
-        return this.states[0]; // Дефолт: Реактивный
+        return this.states[0];
     },
 
     setState(athleteId, stateId) {
@@ -1074,7 +1057,10 @@ const CombatReadiness = {
 
     renderSelector(athleteId, onChangeCallback) {
         const container = document.getElementById('combat-readiness-selector');
-        if (!container) return;
+        if (!container) {
+            console.warn('⚠️ Контейнер #combat-readiness-selector не найден');
+            return;
+        }
 
         const currentState = this.getState(athleteId);
         container.innerHTML = '';
@@ -1092,13 +1078,11 @@ const CombatReadiness = {
             `;
 
             option.onclick = (e) => {
-                // Если клик по иконке ℹ️ — не меняем состояние
                 if (e.target.classList.contains('cr-info-icon')) {
                     this.showTooltip(state, e.target);
                     return;
                 }
 
-                // Меняем активное состояние
                 container.querySelectorAll('.cr-option').forEach(o => o.classList.remove('active'));
                 option.classList.add('active');
                 
@@ -1112,7 +1096,6 @@ const CombatReadiness = {
             container.appendChild(option);
         });
 
-        // Обработчик tooltip для иконок ℹ️
         container.querySelectorAll('.cr-info-icon').forEach(icon => {
             icon.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1124,7 +1107,6 @@ const CombatReadiness = {
     },
 
     showTooltip(state, iconElement) {
-        // Удаляем предыдущий tooltip
         const existing = document.querySelector('.cr-tooltip');
         if (existing) existing.remove();
 
@@ -1138,17 +1120,14 @@ const CombatReadiness = {
 
         document.body.appendChild(tooltip);
 
-        // Позиционирование рядом с иконкой
         const rect = iconElement.getBoundingClientRect();
         tooltip.style.top = `${rect.bottom + 10}px`;
         tooltip.style.left = `${Math.max(10, rect.left - 150)}px`;
 
-        // Закрытие по клику на крестик
         tooltip.querySelector('.cr-tooltip-close').onclick = () => {
             tooltip.remove();
         };
 
-        // Закрытие по клику вне tooltip
         setTimeout(() => {
             document.addEventListener('click', function closeTooltip(e) {
                 if (!tooltip.contains(e.target) && !iconElement.contains(e.target)) {
@@ -1238,136 +1217,118 @@ const Router = {
     },
 
     async showStudentView(token) {
-    console.log('═══════════════════════════════════════');
-    console.log('🎯 ЗАГРУЗКА СТРАНИЦЫ УЧЕНИКА');
-    console.log('═══════════════════════════════════════');
-    console.log('📌 Токен:', token?.substring(0, 10) + '...');
-    
-    const pageElement = document.getElementById('page-student-view');
-    const errorElement = document.getElementById('student-error');
-    
-    // ✅ Показываем страницу
-    pageElement.classList.remove('hidden');
-    errorElement.classList.add('hidden');
-
-    if (!token) {
-        console.error('❌ Токен не указан в URL');
-        errorElement.classList.remove('hidden');
-        errorElement.textContent = '❌ Ссылка недействительна: токен отсутствует';
-        return;
-    }
-
-    try {
-        console.log('🔍 Поиск спортсмена по токену...');
+        console.log('═══════════════════════════════════════');
+        console.log('🎯 ЗАГРУЗКА СТРАНИЦЫ УЧЕНИКА');
+        console.log('═══════════════════════════════════════');
+        console.log('📌 Токен:', token?.substring(0, 10) + '...');
         
-        const athleteData = await Share.getAthleteByToken(token);
+        const pageElement = document.getElementById('page-student-view');
+        const errorElement = document.getElementById('student-error');
         
-        if (!athleteData) {
-            console.error('❌ Спортсмен не найден по токену');
+        pageElement.classList.remove('hidden');
+        errorElement.classList.add('hidden');
+
+        if (!token) {
+            console.error('❌ Токен не указан в URL');
             errorElement.classList.remove('hidden');
-            errorElement.textContent = '❌ Ссылка недействительна или срок действия истёк';
+            errorElement.textContent = '❌ Ссылка недействительна: токен отсутствует';
             return;
         }
 
-        console.log('✅ Спортсмен загружен:', athleteData.firstName, athleteData.lastName);
-        console.log('📊 Данные anthropometry:', athleteData.anthropometry);
-
-        // ✅ ОСНОВНАЯ ИНФОРМАЦИЯ
-        const genderText = athleteData.gender === 'M' ? 'М' : 'Ж';
-        document.getElementById('student-athlete-name').textContent = 
-            `${athleteData.firstName} ${athleteData.lastName}`;
-        document.getElementById('student-athlete-meta').textContent = 
-            `${athleteData.birthYear} г.р., ${genderText}`;
-
-        // ✅ РЕНДЕР СИЛУЭТА
-        if (athleteData.anthropometry && athleteData.anthropometry.length > 0) {
-            console.log('📏 РЕНДЕРИНГ СИЛУЭТА...');
-            const latest = athleteData.anthropometry[athleteData.anthropometry.length - 1];
+        try {
+            console.log('🔍 Поиск спортсмена по токену...');
             
-            console.log('  Последние данные:', {
-                height: latest.height,
-                reach: latest.reach,
-                weight: latest.weight,
-                date: latest.date
-            });
+            const athleteData = await Share.getAthleteByToken(token);
             
-            // СИЛУЭТ
-            try {
-                const { svg, height: svgHeight } = SilhouetteRenderer.render(
-                    latest.height, 
-                    latest.reach, 
-                    athleteData.gender
-                );
-                
-                const silhouetteFigure = document.getElementById('silhouette-figure');
-                if (silhouetteFigure) {
-                    silhouetteFigure.innerHTML = '';
-                    silhouetteFigure.appendChild(svg);
-                    console.log('  ✅ Силуэт добавлен в DOM');
-                } else {
-                    console.error('  ❌ Элемент #silhouette-figure не найден!');
-                }
-                
-                // ЛИНЕЙКА
-                SilhouetteRenderer.renderRuler(svgHeight);
-                
-                // РАЗМАХ РУК
-                SilhouetteRenderer.renderReachLine(latest.reach);
-                
-                // ЗНАЧЕНИЯ
-                const heightValue = document.getElementById('height-value');
-                const reachValue = document.getElementById('reach-value');
-                if (heightValue) heightValue.textContent = `${latest.height} см`;
-                if (reachValue) reachValue.textContent = `${latest.reach} см`;
-                
-                // APE INDEX
-                const apeIndex = SilhouetteRenderer.calculateApeIndex(latest.height, latest.reach);
-                const apeIndexValue = document.getElementById('ape-index-value');
-                const apeIndexDesc = document.getElementById('ape-index-desc');
-                if (apeIndexValue) apeIndexValue.textContent = apeIndex.ratio;
-                if (apeIndexDesc) apeIndexDesc.textContent = apeIndex.description;
-                
-                console.log('✅ СИЛУЭТ ПОЛНОСТЬЮ ОТРЕНДЕРЕН');
-            } catch (error) {
-                console.error('❌ Ошибка рендеринга силуэта:', error);
+            if (!athleteData) {
+                console.error('❌ Спортсмен не найден по токену');
+                errorElement.classList.remove('hidden');
+                errorElement.textContent = '❌ Ссылка недействительна или срок действия истёк';
+                return;
             }
-        } else {
-            console.warn('⚠️ Нет данных антропометрии!');
-            console.warn('   Возможно, данные не были сохранены в Firebase');
-            console.warn('   Или тренер ещё не внёс измерения');
+
+            console.log('✅ Спортсмен загружен:', athleteData.firstName, athleteData.lastName);
+            console.log('📊 Данные anthropometry:', athleteData.anthropometry);
+
+            const genderText = athleteData.gender === 'M' ? 'М' : 'Ж';
+            document.getElementById('student-athlete-name').textContent = 
+                `${athleteData.firstName} ${athleteData.lastName}`;
+            document.getElementById('student-athlete-meta').textContent = 
+                `${athleteData.birthYear} г.р., ${genderText}`;
+
+            // ✅ РЕНДЕР СИЛУЭТА
+            if (athleteData.anthropometry && athleteData.anthropometry.length > 0) {
+                console.log('📏 РЕНДЕРИНГ СИЛУЭТА...');
+                const latest = athleteData.anthropometry[athleteData.anthropometry.length - 1];
+                
+                console.log('  Последние данные:', {
+                    height: latest.height,
+                    reach: latest.reach,
+                    weight: latest.weight,
+                    date: latest.date
+                });
+                
+                try {
+                    const { svg, height: svgHeight } = SilhouetteRenderer.render(
+                        latest.height, 
+                        latest.reach, 
+                        athleteData.gender
+                    );
+                    
+                    const silhouetteFigure = document.getElementById('silhouette-figure');
+                    if (silhouetteFigure) {
+                        silhouetteFigure.innerHTML = '';
+                        silhouetteFigure.appendChild(svg);
+                        console.log('  ✅ Силуэт добавлен в DOM');
+                    } else {
+                        console.error('  ❌ Элемент #silhouette-figure не найден!');
+                    }
+                    
+                    SilhouetteRenderer.renderRuler(svgHeight);
+                    SilhouetteRenderer.renderReachLine(latest.reach);
+                    
+                    const heightValue = document.getElementById('height-value');
+                    const reachValue = document.getElementById('reach-value');
+                    if (heightValue) heightValue.textContent = `${latest.height} см`;
+                    if (reachValue) reachValue.textContent = `${latest.reach} см`;
+                    
+                    const apeIndex = SilhouetteRenderer.calculateApeIndex(latest.height, latest.reach);
+                    const apeIndexValue = document.getElementById('ape-index-value');
+                    const apeIndexDesc = document.getElementById('ape-index-desc');
+                    if (apeIndexValue) apeIndexValue.textContent = apeIndex.ratio;
+                    if (apeIndexDesc) apeIndexDesc.textContent = apeIndex.description;
+                    
+                    console.log('✅ СИЛУЭТ ПОЛНОСТЬЮ ОТРЕНДЕРЕН');
+                } catch (error) {
+                    console.error('❌ Ошибка рендеринга силуэта:', error);
+                }
+            } else {
+                console.warn('⚠️ Нет данных антропометрии!');
+            }
+
+            const contactBtn = document.getElementById('btn-contact-coach');
+            if (contactBtn) {
+                contactBtn.onclick = () => {
+                    alert('Свяжитесь с вашим тренером для получения подробной информации.');
+                };
+            }
+
+            console.log('═══════════════════════════════════════');
+            console.log('✅ СТРАНИЦА УЧЕНИКА ЗАГРУЖЕНА УСПЕШНО');
+            console.log('═══════════════════════════════════════');
+
+        } catch (error) {
+            console.error('❌ КРИТИЧЕСКАЯ ОШИБКА:', error);
+            errorElement.classList.remove('hidden');
+            errorElement.innerHTML = `
+                <strong>Ошибка загрузки данных</strong><br><br>
+                <small>${error.message}</small><br><br>
+                <small style="color: #999;">
+                    Откройте консоль (F12 → Console) для деталей
+                </small>
+            `;
         }
-
-          document.getElementById('btn-contact-coach').onclick = () => {
-
-        // ✅ КНОПКА "Обратиться к тренеру"
-        const contactBtn = document.getElementById('btn-contact-coach');
-        if (contactBtn) {
-            contactBtn.onclick = () => {        document.getElementById('btn-close-modal').onclick = () => {
-            document.getElementById('share-modal').classList.add('hidden');
-        };
-    }
-};
-
-                alert('Свяжитесь с вашим тренером для получения подробной информации.');
-            };
-        }
-
-        console.log('═══════════════════════════════════════');
-        console.log('✅ СТРАНИЦА УЧЕНИКА ЗАГРУЖЕНА УСПЕШНО');
-        console.log('═══════════════════════════════════════');
-
-    } catch (error) {
-        console.error('❌ КРИТИЧЕСКАЯ ОШИБКА:', error);
-        errorElement.classList.remove('hidden');
-        errorElement.innerHTML = `
-            <strong>Ошибка загрузки данных</strong><br><br>
-            <small>${error.message}</small><br><br>
-            <small style="color: #999;">
-                Откройте консоль (F12 → Console) для деталей
-            </small>
-        `;
-    }
-},
+    },
 
     navigate(page, params = {}) {
         let hash = `#${page}`;
@@ -1463,7 +1424,7 @@ const Router = {
             
             for (const athlete of athletes) {
                 const potential = Calculations.calculatePotential(athlete);
-                const realization = await Calculations.calculateRealization(athlete); // ✅ Добавили await
+                const realization = await Calculations.calculateRealization(athlete);
                 const gap = Calculations.calculateGap(potential, realization);
                 const weightCategory = Calculations.getWeightCategory(athlete);
                 
@@ -1471,7 +1432,6 @@ const Router = {
                 card.className = 'athlete-card';
                 const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
                 
-                                // ✅ ПРИМЕНЯЕМ КБГ К РЕАЛИЗАЦИИ
                 const realizationWithKBG = CombatReadiness.applyToRealization(realization, athlete.id);
                 const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
                 
@@ -1480,15 +1440,12 @@ const Router = {
                 
                 const weightCategoryDisplay = weightCategory || 'Нет данных';
                 
-                // ✅ ИКОНКА КБГ
                 const crState = CombatReadiness.getState(athlete.id);
                 const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
-
                 
-                                card.innerHTML = `
+                card.innerHTML = `
                     <div class="athlete-info">
                         <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
-
                         <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
                     </div>
                     <div class="athlete-metrics">
@@ -1638,10 +1595,9 @@ const Router = {
         document.getElementById('profile-athlete-meta').textContent = `${athlete.birthYear} г.р., ${genderText}`;
 
         const potential = Calculations.calculatePotential(athlete);
-        const realization = await Calculations.calculateRealization(athlete); // ✅ Добавили await
+        const realization = await Calculations.calculateRealization(athlete);
         const gap = Calculations.calculateGap(potential, realization);
 
-        
         const realizationDisplay = realization === "Нет данных" ? "Нет данных" : `${realization}%`;
         const gapDisplay = gap === "Нет данных" ? "Нет данных" : gap;
 
@@ -1699,6 +1655,7 @@ const Router = {
         }
 
         document.getElementById('btn-back-profile').onclick = () => this.navigate('dashboard');
+        
         document.getElementById('btn-share').onclick = async () => {
             const url = await Share.getShareUrl(athleteId);
             if (url) {
@@ -1714,7 +1671,7 @@ const Router = {
             alert('Ссылка скопирована!');
         };
 
-                document.getElementById('btn-close-modal').onclick = () => {
+        document.getElementById('btn-close-modal').onclick = () => {
             document.getElementById('share-modal').classList.add('hidden');
         };
 
@@ -1727,7 +1684,6 @@ const Router = {
                 CombatReadiness.renderSelector(athleteId, (newState) => {
                     console.log(`⚔️ КБГ изменён: ${newState.name} (×${newState.coefficient})`);
                     
-                    // Обновить метрики на странице
                     const currentRealization = athlete.metrics?.realization;
                     if (currentRealization !== "Нет данных") {
                         const adjusted = CombatReadiness.applyToRealization(currentRealization, athleteId);
@@ -1747,10 +1703,10 @@ const Router = {
     }
 };
 
-
 // ============================================
 // INIT
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
     Router.init();
 });
+
