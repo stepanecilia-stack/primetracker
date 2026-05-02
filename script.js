@@ -1337,29 +1337,17 @@ const Router = {
             console.warn('   Или тренер ещё не внёс измерения');
         }
 
-        // ✅ РЕНДЕР СЕЛЕКТОРА КБГ
-        console.log('⚔️ РЕНДЕРИНГ СЕЛЕКТОРА КБГ...');
-        
-        // Даём браузеру время на отрисовку DOM
-        setTimeout(() => {
-            const container = document.getElementById('combat-readiness-selector');
-            console.log('📦 Контейнер КБГ найден:', !!container);
-            
-            if (container) {
-                CombatReadiness.renderSelector(athleteData.id, (newState) => {
-                    console.log(`⚔️ КБГ изменён на: ${newState.name} (×${newState.coefficient})`);
-                });
-                console.log('✅ СЕЛЕКТОР КБГ ОТРЕНДЕРЕН');
-            } else {
-                console.error('❌ Элемент #combat-readiness-selector НЕ НАЙДЕН В DOM!');
-                console.error('   Проверьте HTML структуру index.html');
-            }
-        }, 200);
+          document.getElementById('btn-contact-coach').onclick = () => {
 
         // ✅ КНОПКА "Обратиться к тренеру"
         const contactBtn = document.getElementById('btn-contact-coach');
         if (contactBtn) {
-            contactBtn.onclick = () => {
+            contactBtn.onclick = () => {        document.getElementById('btn-close-modal').onclick = () => {
+            document.getElementById('share-modal').classList.add('hidden');
+        };
+    }
+};
+
                 alert('Свяжитесь с вашим тренером для получения подробной информации.');
             };
         }
@@ -1726,11 +1714,39 @@ const Router = {
             alert('Ссылка скопирована!');
         };
 
-        document.getElementById('btn-close-modal').onclick = () => {
+                document.getElementById('btn-close-modal').onclick = () => {
             document.getElementById('share-modal').classList.add('hidden');
         };
+
+        // ✅ РЕНДЕР СЕЛЕКТОРА КБГ (ДЛЯ ТРЕНЕРА)
+        setTimeout(() => {
+            const container = document.getElementById('combat-readiness-selector');
+            console.log('⚔️ Рендеринг КБГ для тренера, контейнер:', !!container);
+            
+            if (container) {
+                CombatReadiness.renderSelector(athleteId, (newState) => {
+                    console.log(`⚔️ КБГ изменён: ${newState.name} (×${newState.coefficient})`);
+                    
+                    // Обновить метрики на странице
+                    const currentRealization = athlete.metrics?.realization;
+                    if (currentRealization !== "Нет данных") {
+                        const adjusted = CombatReadiness.applyToRealization(currentRealization, athleteId);
+                        document.getElementById('profile-realization').textContent = 
+                            adjusted === "Нет данных" ? "Нет данных" : `${adjusted}%`;
+                        
+                        const currentPotential = athlete.metrics?.potential || 0;
+                        const newGap = adjusted === "Нет данных" ? "Нет данных" : (currentPotential - adjusted);
+                        document.getElementById('profile-gap').textContent = newGap;
+                    }
+                });
+                console.log('✅ КБГ отрендерен на странице профиля');
+            } else {
+                console.warn('⚠️ Контейнер КБГ не найден (возможно, ещё не загрузился)');
+            }
+        }, 200);
     }
 };
+
 
 // ============================================
 // INIT
