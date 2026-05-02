@@ -1028,41 +1028,59 @@ const CombatReadiness = {
         }
     ],
 
-    getState(athleteId) {
-        const key = `pbg_${athleteId}`;
-        const saved = localStorage.getItem(key);
-        if (saved) {
-            const state = this.states.find(s => s.id === saved);
-            if (state) return state;
+    async getState(athleteId) {
+        try {
+            const athlete = await Storage.getAthleteById(athleteId);
+            
+            if (athlete && athlete.combatReadinessState) {
+                const state = this.states.find(s => s.id === athlete.combatReadinessState);
+                if (state) {
+                    console.log(`✅ КБГ загружен из Firebase: ${state.name} для ${athleteId}`);
+                    return state;
+                }
+            }
+            
+            // По умолчанию - первое состояние (Реактивный)
+            console.log(`ℹ️ КБГ не найден, используется по умолчанию: ${this.states[0].name}`);
+            return this.states[0];
+        } catch (error) {
+            console.error('❌ Ошибка загрузки КБГ:', error);
+            return this.states[0];
         }
-        return this.states[0];
     },
 
-    setState(athleteId, stateId) {
-        const key = `pbg_${athleteId}`;
-        localStorage.setItem(key, stateId);
-        console.log(`💾 КБГ сохранён: ${stateId} для спортсмена ${athleteId}`);
+    async setState(athleteId, stateId) {
+        try {
+            await Storage.updateAthlete(athleteId, { 
+                combatReadinessState: stateId,
+                combatReadinessUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log(`💾 КБГ сохранён в Firebase: ${stateId} для спортсмена ${athleteId}`);
+            return true;
+        } catch (error) {
+            console.error('❌ Ошибка сохранения КБГ:', error);
+            return false;
+        }
     },
 
-    applyToRealization(realization, athleteId) {
+    applyToRealization(realization, currentState) {
         if (realization === "Нет данных") return "Нет данных";
         
-        const state = this.getState(athleteId);
-        const adjusted = Math.round(realization * state.coefficient);
+        const adjusted = Math.round(realization * currentState.coefficient);
         
-        console.log(`⚔️ КБГ применён: ${realization} × ${state.coefficient} = ${adjusted}`);
+        console.log(`⚔️ КБГ применён: ${realization} × ${currentState.coefficient} = ${adjusted}`);
         
         return adjusted;
     },
 
-    renderSelector(athleteId, onChangeCallback) {
+    async renderSelector(athleteId, onChangeCallback) {
         const container = document.getElementById('combat-readiness-selector');
         if (!container) {
             console.warn('⚠️ Контейнер #combat-readiness-selector не найден');
             return;
         }
 
-        const currentState = this.getState(athleteId);
+        const currentState = await this.getState(athleteId);
         container.innerHTML = '';
 
         this.states.forEach(state => {
@@ -1077,7 +1095,7 @@ const CombatReadiness = {
                 <div class="cr-coefficient">КБГ × ${state.coefficient}</div>
             `;
 
-            option.onclick = (e) => {
+            option.onclick = async (e) => {
                 if (e.target.classList.contains('cr-info-icon')) {
                     this.showTooltip(state, e.target);
                     return;
@@ -1086,9 +1104,9 @@ const CombatReadiness = {
                 container.querySelectorAll('.cr-option').forEach(o => o.classList.remove('active'));
                 option.classList.add('active');
                 
-                this.setState(athleteId, state.id);
+                const success = await this.setState(athleteId, state.id);
                 
-                if (onChangeCallback) {
+                if (success && onChangeCallback) {
                     onChangeCallback(state);
                 }
             };
@@ -1138,6 +1156,7 @@ const CombatReadiness = {
         }, 100);
     }
 };
+
 
 // ============================================
 // ROUTER MODULE
@@ -1423,40 +1442,43 @@ const Router = {
             athletesList.innerHTML = '';
             
             for (const athlete of athletes) {
-                const potential = Calculations.calculatePotential(athlete);
-                const realization = await Calculations.calculateRealization(athlete);
-                const gap = Calculations.calculateGap(potential, realization);
-                const weightCategory = Calculations.getWeightCategory(athlete);
-                
-                const card = document.createElement('div');
-                card.className = 'athlete-card';
-                const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
-                
-                const realizationWithKBG = CombatReadiness.applyToRealization(realization, athlete.id);
-                const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
-                
-                const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
-                const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
-                
-                const weightCategoryDisplay = weightCategory || 'Нет данных';
-                
-                const crState = CombatReadiness.getState(athlete.id);
-                const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
-                
-                card.innerHTML = `
-                    <div class="athlete-info">
-                        <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
-                        <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
-                    </div>
-                    <div class="athlete-metrics">
-                        <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
-                        <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
-                        <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
-                    </div>
-                `;
-                card.onclick = () => this.navigate('profile', { id: athlete.id });
-                athletesList.appendChild(card);
-            }
+    const potential = Calculations.calculatePotential(athlete);
+    const realization = await Calculations.calculateRealization(athlete);
+    
+    // ✅ Загружаем текущее состояние КБГ из базы
+    const crState = await CombatReadiness.getState(athlete.id);
+    const realizationWithKBG = CombatReadiness.applyToRealization(realization, crState);
+    
+    const gap = Calculations.calculateGap(potential, realization);
+    const weightCategory = Calculations.getWeightCategory(athlete);
+    
+    const card = document.createElement('div');
+    card.className = 'athlete-card';
+    const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+    
+    const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
+    
+    const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
+    const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
+    
+    const weightCategoryDisplay = weightCategory || 'Нет данных';
+    const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
+    
+    card.innerHTML = `
+        <div class="athlete-info">
+            <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
+            <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
+        </div>
+        <div class="athlete-metrics">
+            <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
+            <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
+            <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
+        </div>
+    `;
+    card.onclick = () => this.navigate('profile', { id: athlete.id });
+    athletesList.appendChild(card);
+}
+
         }
 
         document.getElementById('btn-add-athlete').onclick = () => this.navigate('athlete-add');
@@ -1676,30 +1698,34 @@ const Router = {
         };
 
         // ✅ РЕНДЕР СЕЛЕКТОРА КБГ (ДЛЯ ТРЕНЕРА)
-        setTimeout(() => {
-            const container = document.getElementById('combat-readiness-selector');
-            console.log('⚔️ Рендеринг КБГ для тренера, контейнер:', !!container);
+setTimeout(async () => {
+    const container = document.getElementById('combat-readiness-selector');
+    console.log('⚔️ Рендеринг КБГ для тренера, контейнер:', !!container);
+    
+    if (container) {
+        await CombatReadiness.renderSelector(athleteId, async (newState) => {
+            console.log(`⚔️ КБГ изменён: ${newState.name} (×${newState.coefficient})`);
             
-            if (container) {
-                CombatReadiness.renderSelector(athleteId, (newState) => {
-                    console.log(`⚔️ КБГ изменён: ${newState.name} (×${newState.coefficient})`);
-                    
-                    const currentRealization = athlete.metrics?.realization;
-                    if (currentRealization !== "Нет данных") {
-                        const adjusted = CombatReadiness.applyToRealization(currentRealization, athleteId);
-                        document.getElementById('profile-realization').textContent = 
-                            adjusted === "Нет данных" ? "Нет данных" : `${adjusted}%`;
-                        
-                        const currentPotential = athlete.metrics?.potential || 0;
-                        const newGap = adjusted === "Нет данных" ? "Нет данных" : (currentPotential - adjusted);
-                        document.getElementById('profile-gap').textContent = newGap;
-                    }
-                });
-                console.log('✅ КБГ отрендерен на странице профиля');
-            } else {
-                console.warn('⚠️ Контейнер КБГ не найден (возможно, ещё не загрузился)');
+            // Пересчитываем метрики с новым КБГ
+            const updatedAthlete = await Storage.getAthleteById(athleteId);
+            const currentRealization = await Calculations.calculateRealization(updatedAthlete);
+            
+            if (currentRealization !== "Нет данных") {
+                const adjusted = CombatReadiness.applyToRealization(currentRealization, newState);
+                document.getElementById('profile-realization').textContent = 
+                    adjusted === "Нет данных" ? "Нет данных" : `${adjusted}%`;
+                
+                const currentPotential = Calculations.calculatePotential(updatedAthlete);
+                const newGap = adjusted === "Нет данных" ? "Нет данных" : (currentPotential - adjusted);
+                document.getElementById('profile-gap').textContent = newGap;
             }
-        }, 200);
+        });
+        console.log('✅ КБГ отрендерен на странице профиля');
+    } else {
+        console.warn('⚠️ Контейнер КБГ не найден');
+    }
+}, 200);
+
     }
 };
 
