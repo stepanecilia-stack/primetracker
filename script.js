@@ -1,28 +1,12 @@
 'use strict';
 
-// ============================================
-// FIREBASE INITIALIZATION
-// ============================================
-const firebaseConfig = {
-    apiKey: "AIzaSyAxsNe0j6NxMwLDeWrFpvdqRbBHFg5gdiw",
-    authDomain: "cartel-academy.firebaseapp.com",
-    projectId: "cartel-academy",
-    storageBucket: "cartel-academy.firebasestorage.app",
-    messagingSenderId: "988659631950",
-    appId: "1:988659631950:web:ffb7ec4d4b5e0ec440401f"
-};
-
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
 
 // ============================================
 // GOOGLE SHEETS URL (Лист "Нормативы")
 // ============================================
-const NORMS_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSznwbE_UU03tW5O2ps783zQ_V6lXjGnx7IdqYCTfF7XRN6ioJ7EQ4kclNSyrok2Yu2CGXr4M4qGzcs/pub?gid=1658605285&single=true&output=csv';
 
 // ============================================
-// NORMS MODULE (ЗАГРУЗКА ИЗ GOOGLE SHEETS)
+// NORMS MODULE (использует loadNorms из norms-sheet.js)
 // ============================================
 const NormsLoader = {
     cache: null,
@@ -33,86 +17,18 @@ const NormsLoader = {
             return this.cache;
         }
         
-        try {
-            console.log('🔄 Загрузка нормативов из Google Sheets...');
-            const response = await fetch(NORMS_SHEET_URL);
-            const csvText = await response.text();
-            
-            console.log('CSV Raw Data:', csvText.substring(0, 500) + '...');
-            
-            const rows = csvText.split('\n').map(row => row.split(','));
-            console.log(`📊 Всего строк в CSV: ${rows.length}`);
-            
-            const dataRows = rows.slice(1);
-            
-            const norms = [];
-            dataRows.forEach((row, index) => {
-                if (row.length < 10) {
-                    console.warn(`⚠️ Строка ${index + 2} пропущена (недостаточно колонок): ${row.length}`);
-                    return;
-                }
-                
-                const [category, testId, testName, description, ageGroup, gender, gold, silver, bronze, unit, measureType] = row;
-                
-                norms.push({
-                    category: category.trim(),
-                    testId: testId.trim(),
-                    testName: testName.trim(),
-                    description: description.trim(),
-                    ageGroup: ageGroup.trim(),
-                    gender: gender.trim(),
-                    gold: parseFloat(gold),
-                    silver: parseFloat(silver),
-                    bronze: parseFloat(bronze),
-                    unit: unit.trim(),
-                    measureType: measureType.trim()
-                });
-            });
-            
-            console.log(`✅ Загружено нормативов: ${norms.length}`);
-            console.log('Пример норматива:', norms[0]);
-            
-            this.cache = norms;
-            return norms;
-        } catch (error) {
-            console.error('❌ Ошибка загрузки нормативов из Google Sheets:', error);
-            return [];
-        }
+        // ✅ Вызываем функцию из norms-sheet.js
+        this.cache = await loadNorms();
+        return this.cache;
     },
     
     async getNormsForAthlete(athlete, category) {
         const allNorms = await this.loadNorms();
-        const age = new Date().getFullYear() - Number(athlete.birthYear);
-        
-        console.log(`🔍 Поиск нормативов для: возраст=${age}, пол=${athlete.gender}, категория=${category}`);
-        
-        const filtered = allNorms.filter(norm => {
-            if (norm.category !== category) return false;
-            if (norm.gender !== athlete.gender) return false;
-            
-            const ageParts = norm.ageGroup.split('-');
-            if (ageParts.length !== 2) {
-                console.warn(`⚠️ Некорректный формат возрастной группы: ${norm.ageGroup}`);
-                return false;
-            }
-            
-            const minAge = parseInt(ageParts[0]);
-            const maxAge = parseInt(ageParts[1]);
-            
-            const matches = age >= minAge && age <= maxAge;
-            
-            if (matches) {
-                console.log(`✅ Найдено совпадение: ${norm.testName} (возраст ${norm.ageGroup})`);
-            }
-            
-            return matches;
-        });
-        
-        console.log(`📋 Найдено нормативов для спортсмена: ${filtered.length}`);
-        
-        return filtered;
+        // ✅ Вызываем функцию из norms-sheet.js
+        return getAthletNorms(allNorms, athlete, category);
     }
 };
+
 
 // ============================================
 // TEST EVALUATION MODULE

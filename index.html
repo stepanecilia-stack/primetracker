@@ -486,10 +486,15 @@
     </div>
 
     <!-- Firebase SDK v9 (compat mode) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-    <script src="script.js"></script>
+<!-- ✅ ОБЩИЕ МОДУЛИ (порядок важен!) -->
+<script src="js/firebase-init.js"></script>
+<script src="js/norms-sheet.js"></script>
+
+<script src="script.js"></script>
+
 </body>
 </html>
