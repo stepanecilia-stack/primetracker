@@ -532,7 +532,7 @@ const Calculations = {
         console.log(`  Техника: реализация=${technicalRealization.toFixed(3)}`);
     }
     
-    // ✅ ПРАВИЛЬНО: каждая категория вносит долю от потенциала
+// ✅ ПРАВИЛЬНО: каждая категория вносит долю от потенциала
 const physicsContribution = potential * 0.333 * physicsRealization;
 const functionalContribution = potential * 0.333 * functionalRealization;
 const technicalContribution = potential * 0.333 * technicalRealization;
@@ -551,14 +551,15 @@ if (finalKSR === 0) {
 }
 
 return finalKSR;
+},  // ✅ ВОТ ЭТА СТРОКА БЫЛА ПРОПУЩЕНА!
 
+calculateGap(potential, realization) {
+    if (realization === "Нет данных") {
+        return "Нет данных";
+    }
+    return potential - realization;
+},
 
-    calculateGap(potential, realization) {
-        if (realization === "Нет данных") {
-            return "Нет данных";
-        }
-        return potential - realization;
-    },
 
     async updateAthleteMetrics(athleteId) {
         console.log(`🔄 Обновление метрик для спортсмена ${athleteId}`);

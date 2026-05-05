@@ -13,6 +13,7 @@
 
 <!-- ✅ ОБЩИЕ МОДУЛИ -->
 <script src="js/firebase-init.js"></script>
+<script src="js/calculations.js"></script>
 <script src="js/norms-sheet.js"></script>
 
 </head>
@@ -285,26 +286,15 @@ function calculatePotentialLocally(athlete) {
     const latest = athlete.anthropometry[athlete.anthropometry.length - 1];
     const { height, weight, reach } = latest;
     
-    const ageGroup = getAgeGroup(athlete.birthYear);
+    const ageGroup = SharedCalculations.getAgeGroup(athlete.birthYear);
     if (!ageGroup) return 0;
     
-    const category = findWeightCategory(athlete.gender, ageGroup, weight);
+    const category = SharedCalculations.findWeightCategory(athlete.gender, ageGroup, weight);
     if (!category) return 0;
     
-    let potential = 100;
-    
-    const heightDiff = category.idealHeight - height;
-    if (heightDiff > 0) {
-        potential -= heightDiff * 5;
-    }
-    
-    const apeIndex = reach - height;
-    if (apeIndex < 0) {
-        potential -= Math.abs(apeIndex) * 4;
-    }
-    
-    return Math.max(10, Math.round(potential));
+    return SharedCalculations.calculateBiometricPotential(height, reach, category.idealHeight);
 }
+
 
 
 document.getElementById('testForm').addEventListener('submit', async function(e) {
