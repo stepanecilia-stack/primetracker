@@ -388,15 +388,17 @@ async function init() {
         
         currentAthlete = { id: doc.id, ...doc.data() };
         
-        if (currentAthlete.coachId !== user.uid) {
-            console.error('❌ У вас нет прав доступа к этому спортсмену');
-            document.getElementById('tests-container').innerHTML = `
-                <div class="error-message">
-                    ❌ У вас нет прав доступа к этому спортсмену
-                </div>
-            `;
-            return;
+        // ✅ НОВАЯ ПРОВЕРКА: тренер должен быть в массиве coachIds
+        if (!currentAthlete.coachIds || !currentAthlete.coachIds.includes(user.uid)) {
+        console.error('❌ У вас нет прав доступа к этому спортсмену');
+        document.getElementById('tests-container').innerHTML = `
+        <div class="error-message">
+            ❌ У вас нет прав доступа к этому спортсмену
+        </div>
+        `;
+        return;
         }
+
         
         console.log(`✅ Спортсмен найден: ${currentAthlete.firstName} ${currentAthlete.lastName}`);
         console.log('📊 Данные спортсмена:', currentAthlete);

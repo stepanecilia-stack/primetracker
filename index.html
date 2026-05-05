@@ -211,9 +211,11 @@
                 <p class="text-secondary" id="coach-name"></p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-primary" id="btn-add-athlete">+ Добавить спортсмена</button>
-                <button class="btn btn-secondary" id="btn-logout">Выйти</button>
+        <button class="btn btn-secondary" id="btn-add-existing-athlete">➕ Добавить существующего</button>
+        <button class="btn btn-primary" id="btn-add-athlete">+ Добавить нового</button>
+        <button class="btn btn-secondary" id="btn-logout">Выйти</button>
             </div>
+
         </header>
         
         <div class="athletes-list" id="athletes-list"></div>
@@ -223,6 +225,34 @@
             <button class="btn btn-primary" id="btn-add-first">Добавить первого</button>
         </div>
     </div>
+
+    <!-- ADD EXISTING ATHLETE MODAL -->
+<div id="add-existing-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Добавить существующего ученика</h3>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+            Введите код доступа, который вам предоставил другой тренер или родитель ученика
+        </p>
+        
+        <div class="form-group">
+            <label for="access-code-input">Код доступа</label>
+            <input 
+                type="text" 
+                id="access-code-input" 
+                placeholder="Например: ABC12345"
+                style="text-transform: uppercase;"
+                maxlength="8"
+            >
+        </div>
+        
+        <div id="add-existing-error" class="error-message hidden"></div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button class="btn btn-secondary" id="btn-close-add-existing">Отмена</button>
+            <button class="btn btn-primary" id="btn-submit-add-existing">Добавить ученика</button>
+        </div>
+    </div>
+</div>
 
     <!-- ADD ATHLETE PAGE -->
     <div id="page-athlete-add" class="form-container hidden">
@@ -315,14 +345,18 @@
 
     <!-- PROFILE PAGE -->
     <div id="page-profile" class="profile-container hidden">
-        <header class="profile-header">
-            <button class="btn btn-back" id="btn-back-profile">← Дашборд</button>
-            <div class="header-title">
-                <h1 id="profile-athlete-name"></h1>
-                <p id="profile-athlete-meta"></p>
-            </div>
-            <button class="btn btn-secondary" id="btn-share">Поделиться</button>
-        </header>
+    <header class="profile-header">
+        <button class="btn btn-back" id="btn-back-profile">← Дашборд</button>
+        <div class="header-title">
+        <h1 id="profile-athlete-name"></h1>
+        <p id="profile-athlete-meta"></p>
+        </div>
+        <div style="display: flex; gap: 12px;">
+        <button class="btn btn-secondary" id="btn-access-code">🔑 Код доступа</button>
+        <button class="btn btn-secondary" id="btn-share">Поделиться</button>
+        </div>
+    </header>
+
         
         <section class="section">
             <h2>Показатели</h2>

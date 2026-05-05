@@ -137,20 +137,22 @@ const Storage = {
 
     async getCoachAthletes() {
         if (!auth.currentUser) return [];
-        
+    
         console.log('🔍 Загрузка спортсменов из коллекции students...');
-        
+    
+        // ✅ НОВАЯ ЛОГИКА: поиск по массиву coachIds
         const snapshot = await db.collection('students')
-            .where('coachId', '==', auth.currentUser.uid)
-            .get();
-        
+        .where('coachIds', 'array-contains', auth.currentUser.uid)
+        .get();
+    
         console.log(`✅ Найдено спортсменов: ${snapshot.docs.length}`);
-        
+    
         return snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
+        id: doc.id,
+        ...doc.data()
         }));
     },
+
 
     async getAthleteById(id) {
         console.log(`🔍 Поиск спортсмена в коллекции 'students' с ID: ${id}`);
@@ -705,27 +707,71 @@ const AuthModule = {
 // ============================================
 const Athletes = {
     async create(data) {
-        if (!auth.currentUser) return null;
+    if (!auth.currentUser) return null;
+    
+    const athlete = {
+        coachIds: [auth.currentUser.uid], // ✅ МАССИВ вместо одного ID
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
+        birthYear: parseInt(data.birthYear),
+        gender: data.gender,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        anthropometry: [],
+        tests: {
+            physical: {},
+            functional: {}
+        },
+        technicalScore: null,
+        psychologicalProfile: null,
+        metrics: { potential: 0, realization: "Нет данных", gap: "Нет данных" },
+        shareToken: null,
+        accessCode: Utils.generateToken(8) // ✅ Код доступа для других тренеров
+    };
+    
+    return await Storage.addAthlete(athlete);
+    },
+
+async addExistingAthlete(accessCode) {
+    if (!auth.currentUser) return { success: false, error: 'Не авторизован' };
+    
+    console.log(`🔍 Поиск ученика по коду доступа: ${accessCode}`);
+    
+    try {
+        const snapshot = await db.collection('students')
+            .where('accessCode', '==', accessCode.trim().toUpperCase())
+            .limit(1)
+            .get();
         
-        const athlete = {
-            coachId: auth.currentUser.uid,
-            firstName: data.firstName.trim(),
-            lastName: data.lastName.trim(),
-            birthYear: parseInt(data.birthYear),
-            gender: data.gender,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            anthropometry: [],
-            tests: {
-                physical: {},
-                functional: {}
-            },
-            technicalScore: null,
-            psychologicalProfile: null,
-            metrics: { potential: 0, realization: "Нет данных", gap: "Нет данных" },
-            shareToken: null
+        if (snapshot.empty) {
+            return { success: false, error: 'Ученик с таким кодом не найден' };
+        }
+        
+        const doc = snapshot.docs[0];
+        const athleteData = doc.data();
+        
+        // Проверка: тренер уже добавлен?
+        if (athleteData.coachIds && athleteData.coachIds.includes(auth.currentUser.uid)) {
+            return { success: false, error: 'Вы уже добавлены к этому ученику' };
+        }
+        
+        // Добавляем текущего тренера в массив
+        const updatedCoachIds = [...(athleteData.coachIds || []), auth.currentUser.uid];
+        
+        await db.collection('students').doc(doc.id).update({
+            coachIds: updatedCoachIds
+        });
+        
+        console.log(`✅ Тренер добавлен к ученику ${doc.id}`);
+        
+        return { 
+            success: true, 
+            athlete: { id: doc.id, ...athleteData, coachIds: updatedCoachIds }
         };
         
-        return await Storage.addAthlete(athlete);
+    } catch (error) {
+        console.error('❌ Ошибка добавления ученика:', error);
+        return { success: false, error: 'Ошибка подключения к ученику' };
+    }
     },
 
     async addAnthropometry(athleteId, data) {
@@ -1337,76 +1383,111 @@ const Router = {
     },
 
     async initDashboardPage() {
+    Utils.showLoader();
+    
+    const currentUser = await Storage.getCurrentUser();
+    const displayName = currentUser.firstName && currentUser.lastName 
+        ? `${currentUser.firstName} ${currentUser.lastName}` 
+        : currentUser.email;
+    
+    document.getElementById('coach-name').textContent = `Тренер: ${displayName}`;
+    
+    const athletesList = document.getElementById('athletes-list');
+    const emptyState = document.getElementById('empty-state');
+    const athletes = await Athletes.getCoachAthletes();
+
+    if (athletes.length === 0) {
+        emptyState.classList.remove('hidden');
+        athletesList.innerHTML = '';
+    } else {
+        emptyState.classList.add('hidden');
+        athletesList.innerHTML = '';
+        
+        for (const athlete of athletes) {
+            const potential = Calculations.calculatePotential(athlete);
+            const realization = await Calculations.calculateRealization(athlete);
+            
+            const crState = await CombatReadiness.getState(athlete.id);
+            const realizationWithKBG = CombatReadiness.applyToRealization(realization, crState);
+            
+            const gap = Calculations.calculateGap(potential, realization);
+            const weightCategory = Calculations.getWeightCategory(athlete);
+            
+            const card = document.createElement('div');
+            card.className = 'athlete-card';
+            const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+            
+            const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
+            
+            const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
+            const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
+            
+            const weightCategoryDisplay = weightCategory || 'Нет данных';
+            const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
+            
+            card.innerHTML = `
+                <div class="athlete-info">
+                    <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
+                    <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
+                </div>
+                <div class="athlete-metrics">
+                    <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
+                    <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
+                    <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
+                </div>
+            `;
+            card.onclick = () => this.navigate('profile', { id: athlete.id });
+            athletesList.appendChild(card);
+        }
+    }
+
+    // ✅ ИСПРАВЛЕНО: обработчики ВЫНЕСЕНЫ ЗА ПРЕДЕЛЫ цикла
+    document.getElementById('btn-add-existing-athlete').onclick = () => {
+        document.getElementById('add-existing-modal').classList.remove('hidden');
+        document.getElementById('access-code-input').value = '';
+        document.getElementById('add-existing-error').classList.add('hidden');
+    };
+
+    document.getElementById('btn-close-add-existing').onclick = () => {
+        document.getElementById('add-existing-modal').classList.add('hidden');
+    };
+
+    document.getElementById('btn-submit-add-existing').onclick = async () => {
+        const accessCode = document.getElementById('access-code-input').value.trim();
+        
+        if (!accessCode) {
+            alert('Введите код доступа');
+            return;
+        }
+        
         Utils.showLoader();
         
-        const currentUser = await Storage.getCurrentUser();
-        const displayName = currentUser.firstName && currentUser.lastName 
-            ? `${currentUser.firstName} ${currentUser.lastName}` 
-            : currentUser.email;
-        
-        document.getElementById('coach-name').textContent = `Тренер: ${displayName}`;
-        
-        const athletesList = document.getElementById('athletes-list');
-        const emptyState = document.getElementById('empty-state');
-        const athletes = await Athletes.getCoachAthletes();
-
-        if (athletes.length === 0) {
-            emptyState.classList.remove('hidden');
-            athletesList.innerHTML = '';
-        } else {
-            emptyState.classList.add('hidden');
-            athletesList.innerHTML = '';
-            
-            for (const athlete of athletes) {
-    const potential = Calculations.calculatePotential(athlete);
-    const realization = await Calculations.calculateRealization(athlete);
-    
-    // ✅ Загружаем текущее состояние КБГ из базы
-    const crState = await CombatReadiness.getState(athlete.id);
-    const realizationWithKBG = CombatReadiness.applyToRealization(realization, crState);
-    
-    const gap = Calculations.calculateGap(potential, realization);
-    const weightCategory = Calculations.getWeightCategory(athlete);
-    
-    const card = document.createElement('div');
-    card.className = 'athlete-card';
-    const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
-    
-    const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
-    
-    const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
-    const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
-    
-    const weightCategoryDisplay = weightCategory || 'Нет данных';
-    const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
-    
-    card.innerHTML = `
-        <div class="athlete-info">
-            <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
-            <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
-        </div>
-        <div class="athlete-metrics">
-            <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
-            <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
-            <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
-        </div>
-    `;
-    card.onclick = () => this.navigate('profile', { id: athlete.id });
-    athletesList.appendChild(card);
-}
-
-        }
-
-        document.getElementById('btn-add-athlete').onclick = () => this.navigate('athlete-add');
-        document.getElementById('btn-add-first').onclick = () => this.navigate('athlete-add');
-        document.getElementById('btn-logout').onclick = async () => {
-            if (confirm('Вы уверены, что хотите выйти?')) {
-                await AuthModule.logout();
-            }
-        };
+        const result = await Athletes.addExistingAthlete(accessCode);
         
         Utils.hideLoader();
+        
+        if (result.success) {
+            document.getElementById('add-existing-modal').classList.add('hidden');
+            alert(`✅ Ученик "${result.athlete.firstName} ${result.athlete.lastName}" успешно добавлен!`);
+            Router.route(); // Перезагружаем дашборд
+        } else {
+            const errorDiv = document.getElementById('add-existing-error');
+            errorDiv.textContent = result.error;
+            errorDiv.classList.remove('hidden');
+        }
+    };
+
+    document.getElementById('btn-add-athlete').onclick = () => this.navigate('athlete-add');
+    document.getElementById('btn-add-first').onclick = () => this.navigate('athlete-add');
+    document.getElementById('btn-logout').onclick = async () => {
+        if (confirm('Вы уверены, что хотите выйти?')) {
+            await AuthModule.logout();
+        }
+    };
+    
+    Utils.hideLoader();
     },
+
 
     initAddAthletePage() {
         const form = document.getElementById('form-add-athlete');
@@ -1607,6 +1688,12 @@ const Router = {
             linkInput.select();
             document.execCommand('copy');
             alert('Ссылка скопирована!');
+        };
+        document.getElementById('btn-access-code').onclick = () => {
+        const code = athlete.accessCode || 'НЕ СОЗДАН';
+        const message = `📋 Код доступа для других тренеров:\n\n${code}\n\n` +
+                   `Передайте этот код коллеге-тренеру, чтобы он мог добавить ученика "${athlete.firstName} ${athlete.lastName}" в свою систему.`;
+        alert(message);
         };
 
         document.getElementById('btn-close-modal').onclick = () => {
