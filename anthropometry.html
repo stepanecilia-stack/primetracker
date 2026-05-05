@@ -644,40 +644,62 @@ function getArchetype(height, idealHeight, weight, gender, ageGroup) {
     };
 }
 
-// ✅ ИСПРАВЛЕНО: Проверка наличия данных
-function calculateKSR(athleteSkills) {
-    if (!athleteSkills) return null;
+async function calculateKSR(athlete, potential) {
+    if (!athlete || potential === 0) return null;
     
-    let atomsSum = 0, atomsCount = 0;
-    let ofpSum = 0, ofpCount = 0;
+    console.log('🧮 Расчет КСР для anthropometry.html');
     
-    ['technique', 'defense', 'tactics'].forEach(cat => {
-        if (athleteSkills[cat]) {
-            Object.values(athleteSkills[cat]).forEach(rating => {
-                atomsSum += rating;
-                atomsCount++;
-            });
+    let physicsRealization = 0;
+    let functionalRealization = 0;
+    let technicalRealization = 0;
+    
+    // Пытаемся загрузить нормативы (может быть недоступно на странице антропометрии)
+    try {
+        if (typeof loadNorms === 'function') {
+            const allNorms = await loadNorms();
+            const physicalNorms = getAthletNorms(allNorms, athlete, 'physical');
+            const functionalNorms = getAthletNorms(allNorms, athlete, 'functional');
+            
+            if (physicalNorms.length > 0) {
+                let sumPhysics = 0;
+                physicalNorms.forEach(norm => {
+                    const testResult = athlete.tests?.physical?.[norm.testId];
+                    sumPhysics += testResult ? (testResult.normalizedScore || 0) : 0;
+                });
+                physicsRealization = (sumPhysics / physicalNorms.length) / 100;
+            }
+            
+            if (functionalNorms.length > 0) {
+                let sumFunctional = 0;
+                functionalNorms.forEach(norm => {
+                    const testResult = athlete.tests?.functional?.[norm.testId];
+                    sumFunctional += testResult ? (testResult.normalizedScore || 0) : 0;
+                });
+                functionalRealization = (sumFunctional / functionalNorms.length) / 100;
+            }
         }
-    });
-    
-    if (athleteSkills.physical) {
-        Object.values(athleteSkills.physical).forEach(rating => {
-            ofpSum += rating;
-            ofpCount++;
-        });
+    } catch (error) {
+        console.warn('⚠️ Не удалось загрузить нормативы на странице антропометрии');
     }
     
-    // ✅ СТРОГАЯ ПРОВЕРКА: Если нет ОФП ИЛИ атомов → null
-    if (atomsCount === 0 || ofpCount === 0) return null;
+    // Техника
+    if (athlete.technicalScore !== null && athlete.technicalScore !== undefined) {
+        technicalRealization = athlete.technicalScore;
+    }
     
-    const avgAtoms = atomsSum / atomsCount;
-    const avgOFP = ofpSum / ofpCount;
-    const realization = Math.round(((avgAtoms + avgOFP) / 2 / 10) * 100);
+    // ✅ ПРАВИЛЬНАЯ ФОРМУЛА
+    const physicsContribution = potential * 0.333 * physicsRealization;
+    const functionalContribution = potential * 0.333 * functionalRealization;
+    const technicalContribution = potential * 0.333 * technicalRealization;
     
-    return realization;
+    const ksr = physicsContribution + functionalContribution + technicalContribution;
+    const finalKSR = Math.min(Math.round(ksr), potential);
+    
+    console.log(`  КСР = ${finalKSR}% (из ${potential}% потенциала)`);
+    
+    return finalKSR === 0 ? null : finalKSR;
 }
 
-let weightChart, ratioChart;
 
 function loadAthlete() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -769,7 +791,7 @@ function renderAthletePage(athlete) {
             const archetype = getArchetype(height, category.idealHeight, weight, athlete.gender, ageGroup);
             
             // ✅ ИСПРАВЛЕНО: КСР вычисляется БЕЗ потенциала в параметрах
-            const ksr = calculateKSR(athlete.skills);
+            const ksr = await calculateKSR(athlete, potential);
             
             // ✅ ИСПРАВЛЕНО: Показываем КСР только если есть данные
             const ksrBlockHTML = ksr !== null ? `

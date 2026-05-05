@@ -250,19 +250,22 @@ async function recalculateKSR(athleteId) {
             console.log(`🥊 ТЕХНИКА: реализация=${technicalRealization.toFixed(3)}`);
         }
         
-        // ✅ ИСПРАВЛЕНО: КСР = Потенциал × средняя_реализация
-        const avgRealization = (physicsRealization + functionalRealization + technicalRealization) / 3;
-        const ksr = potential * avgRealization;
-        
-        const realization = ksr === 0 ? "Нет данных" : Math.round(ksr);
+        // ✅ ИСПРАВЛЕНО: КСР = сумма вкладов категорий
+        const physicsContribution = potential * 0.333 * physicsRealization;
+        const functionalContribution = potential * 0.333 * functionalRealization;
+        const technicalContribution = potential * 0.333 * technicalRealization;
+
+        const ksr = physicsContribution + functionalContribution + technicalContribution;
+        const finalKSR = Math.min(Math.round(ksr), potential);
+
+        const realization = finalKSR === 0 ? "Нет данных" : finalKSR;
         const gap = realization === "Нет данных" ? "Нет данных" : potential - realization;
-        
+
         console.log(`\n🎯 Потенциал: ${potential}%`);
-        console.log(`🎯 Средняя реализация: ${(avgRealization * 100).toFixed(1)}%`);
-        console.log(`🎯 КСР: ${realization}%`);
+        console.log(`🎯 Вклады: физика=${physicsContribution.toFixed(1)}, функционал=${functionalContribution.toFixed(1)}, техника=${technicalContribution.toFixed(1)}`);
+        console.log(`🎯 КСР: ${realization}% (защита: мин из ${ksr.toFixed(1)} и ${potential})`);
         console.log(`📊 Разрыв: ${gap}`);
-        console.log('═══════════════════════════════════════');
-        
+
         await db.collection('students').doc(athleteId).update({
             'metrics.realization': realization,
             'metrics.gap': gap

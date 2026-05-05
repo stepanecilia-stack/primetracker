@@ -532,20 +532,25 @@ const Calculations = {
         console.log(`  Техника: реализация=${technicalRealization.toFixed(3)}`);
     }
     
-    // ✅ ИСПРАВЛЕНО: КСР = Потенциал × средневзвешенная_реализация
-    const avgRealization = (physicsRealization + functionalRealization + technicalRealization) / 3;
-    const ksr = potential * avgRealization;
-    
-    console.log(`  📊 Потенциал: ${potential}%`);
-    console.log(`  📊 Средняя реализация: ${(avgRealization * 100).toFixed(1)}%`);
-    console.log(`  📊 КСР: ${potential} × ${avgRealization.toFixed(3)} = ${ksr.toFixed(1)}%`);
-    
-    if (ksr === 0) {
-        return "Нет данных";
-    }
-    
-    return Math.round(ksr);
-    }
+    // ✅ ПРАВИЛЬНО: каждая категория вносит долю от потенциала
+const physicsContribution = potential * 0.333 * physicsRealization;
+const functionalContribution = potential * 0.333 * functionalRealization;
+const technicalContribution = potential * 0.333 * technicalRealization;
+
+const ksr = physicsContribution + functionalContribution + technicalContribution;
+
+// ✅ ЗАЩИТА: КСР не может превышать потенциал
+const finalKSR = Math.min(Math.round(ksr), potential);
+
+console.log(`  📊 Потенциал: ${potential}%`);
+console.log(`  📊 Вклады: физика=${physicsContribution.toFixed(1)}, функционал=${functionalContribution.toFixed(1)}, техника=${technicalContribution.toFixed(1)}`);
+console.log(`  📊 КСР: ${finalKSR}% (сумма вкладов: ${ksr.toFixed(1)})`);
+
+if (finalKSR === 0) {
+    return "Нет данных";
+}
+
+return finalKSR;
 
 
     calculateGap(potential, realization) {
