@@ -134,26 +134,22 @@ const Storage = {
         return auth.signOut();
     },
 
-    // ✅ ЗАМЕНИТЕ НА:
     async getCoachAthletes() {
-    if (!auth.currentUser) return [];
+        if (!auth.currentUser) return [];
 
-    console.log('🔍 Загрузка спортсменов из коллекции students...');
+        console.log('🔍 Загрузка спортсменов из коллекции students...');
 
-    const snapshot = await db.collection('students')
-        .where('coachIds', 'array-contains', auth.currentUser.uid)
-        .get();
+        const snapshot = await db.collection('students')
+            .where('coachIds', 'array-contains', auth.currentUser.uid)
+            .get();
 
-    console.log(`✅ Найдено спортсменов: ${snapshot.docs.length}`);
+        console.log(`✅ Найдено спортсменов: ${snapshot.docs.length}`);
 
-    return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-    }));
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
     },
-
-
-
 
     async getAthleteById(id) {
         console.log(`🔍 Поиск спортсмена в коллекции 'students' с ID: ${id}`);
@@ -171,37 +167,26 @@ const Storage = {
     },
 
     async getAthleteByToken(token) {
-    console.log(`🔍 Поиск спортсмена по shareToken в коллекции 'students'`);
+        console.log(`🔍 Поиск спортсмена по shareToken в коллекции 'students'`);
 
-    const snapshot = await db.collection('students')
-        .where('shareToken', '==', token.trim())
-        .limit(1)
-        .get();
+        const snapshot = await db.collection('students')
+            .where('shareToken', '==', token.trim())
+            .limit(1)
+            .get();
 
-    if (snapshot.empty) {
-        console.error(`❌ Student with token not found in 'students' collection`);
-        return null;
-    }
+        if (snapshot.empty) {
+            console.error(`❌ Student with token not found in 'students' collection`);
+            return null;
+        }
 
-    const doc = snapshot.docs[0];
+        const doc = snapshot.docs[0];
 
-    console.log(`✅ Спортсмен найден по токену: ${doc.data().firstName}`);
+        console.log(`✅ Спортсмен найден по токену: ${doc.data().firstName}`);
 
-    return {
-        id: doc.id,
-        ...doc.data()
-    };
-},
-
-
-    async addAthlete(athlete) {
-        console.log('➕ Создание нового спортсмена в коллекции students...');
-        
-        const docRef = await db.collection('students').add(athlete);
-        
-        console.log(`✅ Спортсмен создан с ID: ${docRef.id}`);
-        
-        return { id: docRef.id, ...athlete };
+        return {
+            id: doc.id,
+            ...doc.data()
+        };
     },
 
     async updateAthlete(id, updates) {
@@ -225,6 +210,7 @@ const Storage = {
     }
 };
 
+
 // ============================================
 // UTILITIES MODULE
 // ============================================
@@ -234,7 +220,7 @@ const Utils = {
     },
 
     generateToken(length = 8) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // Только заглавные
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let token = '';
     for (let i = 0; i < length; i++) {
         token += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -722,158 +708,205 @@ const AuthModule = {
 // ============================================
 const Athletes = {
     async create(data) {
-    if (!auth.currentUser) return null;
+        if (!auth.currentUser) {
+            console.error('❌ Невозможно создать ученика: пользователь не авторизован');
+            return null;
+        }
 
-    const studentRef = db.collection('students').doc(); // Создаём ID заранее
-    const accessCode = Utils.generateToken(8);
+        try {
+            const studentRef = db.collection('students').doc();
+            const accessCode = Utils.generateToken(8);
 
-    const athlete = {
-        coachIds: [auth.currentUser.uid],
-        firstName: data.firstName.trim(),
-        lastName: data.lastName.trim(),
-        birthYear: parseInt(data.birthYear),
-        gender: data.gender,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        anthropometry: [],
-        tests: {
-            physical: {},
-            functional: {}
-        },
-        technicalScore: null,
-        psychologicalProfile: null,
-        metrics: {
-            potential: 0,
-            realization: "Нет данных",
-            gap: "Нет данных"
-        },
-        shareToken: null,
-        accessCode: accessCode
-    };
+            console.log('📝 Создание ученика:', {
+                studentId: studentRef.id,
+                accessCode: accessCode,
+                name: `${data.firstName} ${data.lastName}`
+            });
 
-    const batch = db.batch();
+            const athlete = {
+                coachIds: [auth.currentUser.uid],
+                firstName: data.firstName.trim(),
+                lastName: data.lastName.trim(),
+                birthYear: parseInt(data.birthYear),
+                gender: data.gender,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                anthropometry: [],
+                tests: {
+                    physical: {},
+                    functional: {}
+                },
+                technicalScore: null,
+                psychologicalProfile: null,
+                metrics: {
+                    potential: 0,
+                    realization: "Нет данных",
+                    gap: "Нет данных"
+                },
+                shareToken: null,
+                accessCode: accessCode
+            };
 
-    // 1. Создаём ученика
-    batch.set(studentRef, athlete);
+            const batch = db.batch();
 
-    // 2. Создаём код доступа
-    batch.set(db.collection('accessCodes').doc(accessCode), {
-        studentId: studentRef.id,
-        createdBy: auth.currentUser.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+            batch.set(studentRef, athlete);
+            console.log(`📄 Добавлен в batch: students/${studentRef.id}`);
 
-    await batch.commit();
+            const accessCodeRef = db.collection('accessCodes').doc(accessCode);
+            batch.set(accessCodeRef, {
+                studentId: studentRef.id,
+                createdBy: auth.currentUser.uid,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log(`🔑 Добавлен в batch: accessCodes/${accessCode}`);
 
-    console.log(`✅ Спортсмен создан с ID: ${studentRef.id}`);
-    console.log(`🔑 Код доступа создан: ${accessCode}`);
-    
-    // ✅ ИСПРАВЛЕНО: Возвращаем объект без повторного добавления в БД
+            console.log('💾 Выполнение batch.commit()...');
+            await batch.commit();
 
-    
-    return await Storage.addAthlete(athlete);
+            console.log('✅ Batch успешно выполнен');
+            console.log(`✅ Спортсмен создан с ID: ${studentRef.id}`);
+            console.log(`🔑 Код доступа создан: ${accessCode}`);
+
+            return {
+                id: studentRef.id,
+                ...athlete
+            };
+
+        } catch (error) {
+            console.error('❌ Ошибка создания ученика:', error);
+            console.error('Детали:', {
+                code: error.code,
+                message: error.message,
+                stack: error.stack
+            });
+            return null;
+        }
     },
 
-async addExistingAthlete(accessCode) {
-    if (!auth.currentUser) {
-        return {
-            success: false,
-            error: 'Не авторизован'
-        };
-    }
-
-    const code = accessCode.trim().toUpperCase(); // Нормализация кода
-
-    console.log(`🔍 Поиск ученика по коду доступа: ${code}`);
-
-    try {
-        // 1. Проверяем существование кода доступа
-        const codeDoc = await db.collection('accessCodes').doc(code).get();
-
-        if (!codeDoc.exists) {
-            console.error(`❌ Код ${code} не найден в коллекции accessCodes`);
+    async addExistingAthlete(accessCode) {
+        if (!auth.currentUser) {
             return {
                 success: false,
-                error: 'Неверный код доступа'
+                error: 'Не авторизован'
             };
         }
 
-        const { studentId, createdBy } = codeDoc.data();
+        const code = accessCode.trim().toUpperCase();
 
-        if (!studentId) {
-            console.error('❌ В документе accessCode отсутствует studentId');
-            return {
-                success: false,
-                error: 'Код доступа поврежден'
-            };
-        }
+        console.log('═══════════════════════════════════════');
+        console.log('🔍 ПОИСК УЧЕНИКА ПО КОДУ ДОСТУПА');
+        console.log('═══════════════════════════════════════');
+        console.log('Введённый код:', code);
+        console.log('Длина кода:', code.length);
+        console.log('Символы:', code.split('').join(' '));
 
-        console.log(`✅ Код найден, studentId: ${studentId}`);
+        try {
+            console.log('📡 Запрос к коллекции accessCodes...');
+            const codeDoc = await db.collection('accessCodes').doc(code).get();
 
-        // 2. Проверяем, не добавлен ли тренер уже
-        const studentDoc = await db.collection('students').doc(studentId).get();
-        
-        if (!studentDoc.exists) {
-            console.error(`❌ Ученик ${studentId} не существует`);
-            return {
-                success: false,
-                error: 'Ученик не найден'
-            };
-        }
+            console.log('Результат запроса:', {
+                exists: codeDoc.exists,
+                id: codeDoc.id,
+                data: codeDoc.exists ? codeDoc.data() : null
+            });
 
-        const studentData = studentDoc.data();
-        
-        if (studentData.coachIds && studentData.coachIds.includes(auth.currentUser.uid)) {
-            console.warn('⚠️ Тренер уже добавлен к этому ученику');
-            return {
-                success: false,
-                error: 'Вы уже имеете доступ к этому ученику'
-            };
-        }
-
-        console.log(`📝 Добавляем тренера ${auth.currentUser.uid} к ученику ${studentId}`);
-
-        // 3. Добавляем тренера в coachIds
-        await db.collection('students').doc(studentId).update({
-            coachIds: firebase.firestore.FieldValue.arrayUnion(auth.currentUser.uid),
-            lastJoinAccessCode: code,
-            lastJoinedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        console.log(`✅ Тренер успешно добавлен`);
-
-        // 4. Загружаем обновленные данные
-        const updatedDoc = await db.collection('students').doc(studentId).get();
-
-        return {
-            success: true,
-            athlete: {
-                id: updatedDoc.id,
-                ...updatedDoc.data()
+            if (!codeDoc.exists) {
+                console.error(`❌ Код ${code} не найден в коллекции accessCodes`);
+                
+                const allCodes = await db.collection('accessCodes').limit(10).get();
+                console.log(`📋 Существующие коды (первые 10):`, 
+                    allCodes.docs.map(doc => ({ id: doc.id, data: doc.data() }))
+                );
+                
+                return {
+                    success: false,
+                    error: 'Неверный код доступа. Проверьте правильность ввода.'
+                };
             }
-        };
 
-    } catch (error) {
-        console.error('❌ Ошибка добавления ученика:', error);
-        console.error('Детали ошибки:', {
-            code: error.code,
-            message: error.message,
-            stack: error.stack
-        });
+            const { studentId, createdBy } = codeDoc.data();
 
-        if (error.code === 'permission-denied') {
+            if (!studentId) {
+                console.error('❌ В документе accessCode отсутствует studentId');
+                return {
+                    success: false,
+                    error: 'Код доступа поврежден'
+                };
+            }
+
+            console.log(`✅ Код найден, studentId: ${studentId}`);
+
+            console.log(`📡 Запрос к коллекции students/${studentId}...`);
+            const studentDoc = await db.collection('students').doc(studentId).get();
+
+            if (!studentDoc.exists) {
+                console.error(`❌ Ученик ${studentId} не существует`);
+                return {
+                    success: false,
+                    error: 'Ученик не найден в базе данных'
+                };
+            }
+
+            const studentData = studentDoc.data();
+            console.log('Данные ученика:', {
+                id: studentId,
+                name: `${studentData.firstName} ${studentData.lastName}`,
+                currentCoaches: studentData.coachIds
+            });
+
+            if (studentData.coachIds && studentData.coachIds.includes(auth.currentUser.uid)) {
+                console.warn('⚠️ Тренер уже добавлен к этому ученику');
+                return {
+                    success: false,
+                    error: 'Вы уже имеете доступ к этому ученику'
+                };
+            }
+
+            console.log(`📝 Добавляем тренера ${auth.currentUser.uid} к ученику ${studentId}`);
+            
+            await db.collection('students').doc(studentId).update({
+                coachIds: firebase.firestore.FieldValue.arrayUnion(auth.currentUser.uid),
+                lastJoinAccessCode: code,
+                lastJoinedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            console.log(`✅ Тренер успешно добавлен`);
+
+            const updatedDoc = await db.collection('students').doc(studentId).get();
+
+            console.log('═══════════════════════════════════════');
+            console.log('✅ УЧЕНИК УСПЕШНО ДОБАВЛЕН');
+            console.log('═══════════════════════════════════════');
+
+            return {
+                success: true,
+                athlete: {
+                    id: updatedDoc.id,
+                    ...updatedDoc.data()
+                }
+            };
+
+        } catch (error) {
+            console.error('═══════════════════════════════════════');
+            console.error('❌ КРИТИЧЕСКАЯ ОШИБКА');
+            console.error('═══════════════════════════════════════');
+            console.error('Тип ошибки:', error.constructor.name);
+            console.error('Код ошибки:', error.code);
+            console.error('Сообщение:', error.message);
+            console.error('Stack trace:', error.stack);
+
+            if (error.code === 'permission-denied') {
+                return {
+                    success: false,
+                    error: 'Недостаточно прав. Проверьте правила безопасности Firestore.'
+                };
+            }
+
             return {
                 success: false,
-                error: 'Недостаточно прав. Проверьте правила безопасности Firestore'
+                error: `Ошибка: ${error.message}`
             };
         }
-
-        return {
-            success: false,
-            error: `Ошибка: ${error.message}`
-        };
-    }
-},
-
+    },
 
     async addAnthropometry(athleteId, data) {
         const athlete = await Storage.getAthleteById(athleteId);
@@ -926,6 +959,7 @@ async addExistingAthlete(accessCode) {
         return await Storage.getCoachAthletes();
     }
 };
+
 
 // ============================================
 // SHARE MODULE
