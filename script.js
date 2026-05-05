@@ -142,10 +142,8 @@ const Storage = {
     console.log('🔍 Загрузка спортсменов из коллекции students...');
 
     const snapshot = await db.collection('students')
-    .where('accessCode', '==', accessCode.trim())
-    .limit(1)
-    .get();
-
+        .where('coachIds', 'array-contains', auth.currentUser.uid)
+        .get();
 
     console.log(`✅ Найдено спортсменов: ${snapshot.docs.length}`);
 
@@ -153,7 +151,8 @@ const Storage = {
         id: doc.id,
         ...doc.data()
     }));
-},
+    },
+
 
 
 
@@ -176,9 +175,9 @@ const Storage = {
         console.log(`🔍 Поиск спортсмена по токену в коллекции 'students'`);
         
         const snapshot = await db.collection('students')
-            .where('shareToken', '==', token)
-            .limit(1)
-            .get();
+        .where('accessCode', '==', accessCode.trim())
+        .limit(1)
+        .get();
         
         if (snapshot.empty) {
             console.error(`❌ Student with token not found in 'students' collection`);
@@ -750,7 +749,7 @@ async addExistingAthlete(accessCode) {
     
     try {
         const snapshot = await db.collection('students')
-            .where('accessCode', '==', accessCode.trim().toUpperCase())
+            .where('accessCode', '==', accessCode.trim())
             .limit(1)
             .get();
         
