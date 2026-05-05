@@ -906,12 +906,25 @@ function closeModal() {
 document.getElementById('measurementForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    const athleteId = localStorage.getItem('currentAthleteId');
+    const height = parseFloat(document.getElementById('height').value);
+    const weight = parseFloat(document.getElementById('weight').value);
+    const reach = parseFloat(document.getElementById('armspan').value);
     
-    const newMeasurement = {
-        height: parseFloat(document.getElementById('height').value),
-        weight: parseFloat(document.getElementById('weight').value),
-        reach: parseFloat(document.getElementById('armspan').value),
+    // ✅ Валидация
+    if (height < 100 || height > 250) {
+        alert('Рост должен быть между 100 и 250 см');
+        return;
+    }
+    if (weight < 20 || weight > 200) {
+        alert('Вес должен быть между 20 и 200 кг');
+        return;
+    }
+    if (reach < 100 || reach > 300) {
+        alert('Размах рук должен быть между 100 и 300 см');
+        return;
+    
+    
+    const newMeasurement = { height, weight, reach, date: document.getElementById('date').value };
         date: document.getElementById('date').value
     };
 

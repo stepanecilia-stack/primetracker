@@ -29,6 +29,27 @@ const NormsLoader = {
     }
 };
 
+let normsCache = null;
+
+async function loadNorms() {
+    if (normsCache) {
+        console.log('✅ Нормативы загружены из кэша');
+        return normsCache;
+    }
+    
+    try {
+        console.log('🔄 Загрузка нормативов из Google Sheets...');
+        const response = await fetch(NORMS_SHEET_URL);
+        const csvText = await response.text();
+        normsCache = parseNormsCsv(csvText);
+        return normsCache;
+    } catch (error) {
+        console.error('❌ Ошибка загрузки:', error);
+        return [];
+    }
+}
+
+
 
 // ============================================
 // TEST EVALUATION MODULE
@@ -1517,6 +1538,11 @@ const Router = {
             
             const weightCategoryDisplay = weightCategory || 'Нет данных';
             const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
+             } catch (error) {
+        console.error(`❌ Ошибка обработки спортсмена ${athlete.id}:`, error);
+        continue; // Пропускаем проблемного спортсмена
+    }
+}
             
             card.innerHTML = `
                 <div class="athlete-info">
