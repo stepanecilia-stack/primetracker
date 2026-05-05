@@ -135,23 +135,26 @@ const Storage = {
         return auth.signOut();
     },
 
+    // ✅ ЗАМЕНИТЕ НА:
     async getCoachAthletes() {
-        if (!auth.currentUser) return [];
-    
-        console.log('🔍 Загрузка спортсменов из коллекции students...');
-    
-        // ✅ НОВАЯ ЛОГИКА: поиск по массиву coachIds
-        const snapshot = await db.collection('students')
-        .where('coachIds', 'array-contains', auth.currentUser.uid)
-        .get();
-    
-        console.log(`✅ Найдено спортсменов: ${snapshot.docs.length}`);
-    
-        return snapshot.docs.map(doc => ({
+    if (!auth.currentUser) return [];
+
+    console.log('🔍 Загрузка спортсменов из коллекции students...');
+
+    const snapshot = await db.collection('students')
+    .where('accessCode', '==', accessCode.trim())
+    .limit(1)
+    .get();
+
+
+    console.log(`✅ Найдено спортсменов: ${snapshot.docs.length}`);
+
+    return snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-        }));
-    },
+    }));
+},
+
 
 
     async getAthleteById(id) {
@@ -228,13 +231,13 @@ const Utils = {
     },
 
     generateToken(length = 32) {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let token = '';
-        for (let i = 0; i < length; i++) {
-            token += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return token;
-    },
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let token = '';
+    for (let i = 0; i < length; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+},  // ✅ ЗАПЯТАЯ ОБЯЗАТЕЛЬНА
 
     formatDate(dateString) {
         const date = new Date(dateString);
@@ -1296,12 +1299,6 @@ const Router = {
                 console.warn('⚠️ Нет данных антропометрии!');
             }
 
-            const contactBtn = document.getElementById('btn-contact-coach');
-            if (contactBtn) {
-                contactBtn.onclick = () => {
-                    alert('Свяжитесь с вашим тренером для получения подробной информации.');
-                };
-            }
 
             console.log('═══════════════════════════════════════');
             console.log('✅ СТРАНИЦА УЧЕНИКА ЗАГРУЖЕНА УСПЕШНО');
@@ -1698,16 +1695,34 @@ const Router = {
             document.execCommand('copy');
             alert('Ссылка скопирована!');
         };
+        // ✅ ВСТАВЬТЕ НОВЫЙ КОД:
         document.getElementById('btn-access-code').onclick = () => {
-        const code = athlete.accessCode || 'НЕ СОЗДАН';
-        const message = `📋 Код доступа для других тренеров:\n\n${code}\n\n` +
-                   `Передайте этот код коллеге-тренеру, чтобы он мог добавить ученика "${athlete.firstName} ${athlete.lastName}" в свою систему.`;
-        alert(message);
-        };
+    const code = athlete.accessCode || 'НЕ СОЗДАН';
+    document.getElementById('access-code-display').value = code;
+    document.getElementById('access-code-modal').classList.remove('hidden');
+};
+
 
         document.getElementById('btn-close-modal').onclick = () => {
             document.getElementById('share-modal').classList.add('hidden');
         };
+         // ✅ ДОБАВЬТЕ СЮДА:
+    document.getElementById('btn-copy-access-code').onclick = () => {
+        const input = document.getElementById('access-code-display');
+        input.select();
+        document.execCommand('copy');
+        
+        const btn = document.getElementById('btn-copy-access-code');
+        const oldText = btn.textContent;
+        btn.textContent = '✅ Скопировано!';
+        setTimeout(() => {
+            btn.textContent = oldText;
+        }, 2000);
+    };
+
+    document.getElementById('btn-close-access-code').onclick = () => {
+        document.getElementById('access-code-modal').classList.add('hidden');
+    };
 
         // ✅ РЕНДЕР СЕЛЕКТОРА КБГ (ДЛЯ ТРЕНЕРА)
 setTimeout(async () => {

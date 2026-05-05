@@ -237,11 +237,10 @@
         <div class="form-group">
             <label for="access-code-input">Код доступа</label>
             <input 
-                type="text" 
-                id="access-code-input" 
-                placeholder="Например: ABC12345"
-                style="text-transform: uppercase;"
-                maxlength="8"
+                    type="text" 
+                    id="access-code-input" 
+                    placeholder="Например: ABC12345"
+                    maxlength="8"
             >
         </div>
         
@@ -250,6 +249,30 @@
         <div style="display: flex; gap: 12px; margin-top: 24px;">
             <button class="btn btn-secondary" id="btn-close-add-existing">Отмена</button>
             <button class="btn btn-primary" id="btn-submit-add-existing">Добавить ученика</button>
+        </div>
+    </div>
+</div>
+<!-- ACCESS CODE MODAL -->
+<div id="access-code-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>🔑 Код доступа для коллег</h3>
+        <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+            Передайте этот код другому тренеру, чтобы он мог добавить ученика в свою систему
+        </p>
+        
+        <div class="form-group">
+            <label>Код доступа</label>
+            <input 
+                type="text" 
+                id="access-code-display" 
+                readonly
+                style="font-size: 24px; font-weight: 700; text-align: center; letter-spacing: 2px;"
+            >
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button class="btn btn-primary" id="btn-copy-access-code">📋 Копировать</button>
+            <button class="btn btn-secondary" id="btn-close-access-code">Закрыть</button>
         </div>
     </div>
 </div>
