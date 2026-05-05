@@ -448,37 +448,52 @@ async function init() {
         let errorDetails = error.message;
         if (error.code === 'permission-denied') {
             errorDetails = `
-                <strong>Ошибка прав доступа Firebase</strong>
-                <br><br>
-                <strong>Решение:</strong>
-                <ol style="margin-top: 12px; text-align: left;">
-                    <li>Откройте <a href="https://console.firebase.google.com/project/cartel-academy/firestore/rules" target="_blank">Firebase Console → Firestore → Правила</a></li>
-                    <li>Скопируйте правила из инструкции ниже</li>
-                    <li>Нажмите "Опубликовать"</li>
-                </ol>
-                <br>
-                <details style="margin-top: 12px;">
-                    <summary style="cursor: pointer; font-weight: 600;">Показать правила безопасности</summary>
-                    <pre style="background: #1a1a2e; color: #4caf50; padding: 12px; border-radius: 8px; overflow-x: auto; margin-top: 8px; font-size: 12px;">
+    <strong>Ошибка прав доступа Firebase</strong>
+    <br><br>
+    <strong>Решение:</strong>
+    <ol style="margin-top: 12px; text-align: left;">
+        <li>Откройте <a href="https://console.firebase.google.com/project/cartel-academy/firestore/rules" target="_blank">Firebase Console → Firestore → Правила</a></li>
+        <li>Скопируйте правила из инструкции ниже</li>
+        <li>Нажмите "Опубликовать"</li>
+    </ol>
+    <br>
+    <details style="margin-top: 12px;">
+        <summary style="cursor: pointer; font-weight: 600;">Показать правила безопасности</summary>
+        <pre style="background: #1a1a2e; color: #4caf50; padding: 12px; border-radius: 8px; overflow-x: auto; margin-top: 8px; font-size: 12px;">
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /coaches/{coachId} {
       allow read, write: if request.auth != null && request.auth.uid == coachId;
     }
+    
     match /students/{studentId} {
+      // ✅ ИСПРАВЛЕНО: используем coachIds (массив)
       allow read: if request.auth != null && 
-                     (resource.data.coachId == request.auth.uid || 
+                     (resource.data.coachIds.hasAny([request.auth.uid]) || 
                       resource.data.shareToken != null);
+      
       allow create: if request.auth != null && 
-                       request.resource.data.coachId == request.auth.uid;
-      allow update, delete: if request.auth != null && 
-                               resource.data.coachId == request.auth.uid;
+                       request.resource.data.coachIds.hasAny([request.auth.uid]);
+      
+      allow update: if request.auth != null && 
+                      (resource.data.coachIds.hasAny([request.auth.uid]) ||
+                       (exists(/databases/$(database)/documents/accessCodes/$(request.resource.data.lastJoinAccessCode)) &&
+                        get(/databases/$(database)/documents/accessCodes/$(request.resource.data.lastJoinAccessCode)).data.studentId == studentId));
+      
+      allow delete: if request.auth != null && 
+                       resource.data.coachIds.hasAny([request.auth.uid]);
+    }
+    
+    match /accessCodes/{code} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
   }
 }</pre>
-                </details>
-            `;
+    </details>
+`;
+
         }
         
         document.getElementById('tests-container').innerHTML = `

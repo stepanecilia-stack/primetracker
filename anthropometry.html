@@ -920,12 +920,20 @@ document.getElementById('measurementForm').addEventListener('submit', async func
         return;
     }
     if (reach < 100 || reach > 300) {
-        alert('Размах рук должен быть между 100 и 300 см');
-        return;
-    
-    
-    const newMeasurement = { height, weight, reach, date: document.getElementById('date').value };
-        date: document.getElementById('date').value
+    alert('Размах рук должен быть между 100 и 300 см');
+    return;
+}
+
+const newMeasurement = {
+    height, 
+    weight, 
+    reach, 
+    date: document.getElementById('date').value
+};
+
+const athleteId = localStorage.getItem('currentAthleteId');
+
+if (firebase.apps.length > 0 && firebase.auth().currentUser) {
     };
 
     if (firebase.apps.length > 0 && firebase.auth().currentUser) {

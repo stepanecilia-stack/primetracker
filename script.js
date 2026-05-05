@@ -29,28 +29,6 @@ const NormsLoader = {
     }
 };
 
-let normsCache = null;
-
-async function loadNorms() {
-    if (normsCache) {
-        console.log('✅ Нормативы загружены из кэша');
-        return normsCache;
-    }
-    
-    try {
-        console.log('🔄 Загрузка нормативов из Google Sheets...');
-        const response = await fetch(NORMS_SHEET_URL);
-        const csvText = await response.text();
-        normsCache = parseNormsCsv(csvText);
-        return normsCache;
-    } catch (error) {
-        console.error('❌ Ошибка загрузки:', error);
-        return [];
-    }
-}
-
-
-
 // ============================================
 // TEST EVALUATION MODULE
 // ============================================
@@ -1518,30 +1496,46 @@ const Router = {
         athletesList.innerHTML = '';
         
         for (const athlete of athletes) {
-            const potential = Calculations.calculatePotential(athlete);
-            const realization = await Calculations.calculateRealization(athlete);
-            
-            const crState = await CombatReadiness.getState(athlete.id);
-            const realizationWithKBG = CombatReadiness.applyToRealization(realization, crState);
-            
-            const gap = Calculations.calculateGap(potential, realization);
-            const weightCategory = Calculations.getWeightCategory(athlete);
-            
-            const card = document.createElement('div');
-            card.className = 'athlete-card';
-            const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
-            
-            const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
-            
-            const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
-            const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
-            
-            const weightCategoryDisplay = weightCategory || 'Нет данных';
-            const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
-             } catch (error) {
+    try {
+        const potential = Calculations.calculatePotential(athlete);
+        const realization = await Calculations.calculateRealization(athlete);
+        
+        const crState = await CombatReadiness.getState(athlete.id);
+        const realizationWithKBG = CombatReadiness.applyToRealization(realization, crState);
+        
+        const gap = Calculations.calculateGap(potential, realization);
+        const weightCategory = Calculations.getWeightCategory(athlete);
+        
+        const card = document.createElement('div');
+        card.className = 'athlete-card';
+        const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+        
+        const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
+        
+        const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
+        const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
+        
+        const weightCategoryDisplay = weightCategory || 'Нет данных';
+        const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
+        
+        card.innerHTML = `
+            <div class="athlete-info">
+                <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
+                <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
+            </div>
+            <div class="athlete-metrics">
+                <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
+                <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
+                <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
+            </div>
+        `;
+        card.onclick = () => this.navigate('profile', { id: athlete.id });
+        athletesList.appendChild(card);
+        
+    } catch (error) {
         console.error(`❌ Ошибка обработки спортсмена ${athlete.id}:`, error);
-        continue; // Пропускаем проблемного спортсмена
-    }
+        continue;
+
 }
             
             card.innerHTML = `
