@@ -233,8 +233,8 @@ const Utils = {
         return db.collection('_').doc().id;
     },
 
-    generateToken(length = 32) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    generateToken(length = 8) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // Только заглавные
     let token = '';
     for (let i = 0; i < length; i++) {
         token += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -724,7 +724,7 @@ const Athletes = {
     async create(data) {
     if (!auth.currentUser) return null;
 
-    const studentRef = db.collection('students').doc();
+    const studentRef = db.collection('students').doc(); // Создаём ID заранее
     const accessCode = Utils.generateToken(8);
 
     const athlete = {
@@ -752,8 +752,10 @@ const Athletes = {
 
     const batch = db.batch();
 
+    // 1. Создаём ученика
     batch.set(studentRef, athlete);
 
+    // 2. Создаём код доступа
     batch.set(db.collection('accessCodes').doc(accessCode), {
         studentId: studentRef.id,
         createdBy: auth.currentUser.uid,
@@ -764,6 +766,9 @@ const Athletes = {
 
     console.log(`✅ Спортсмен создан с ID: ${studentRef.id}`);
     console.log(`🔑 Код доступа создан: ${accessCode}`);
+    
+    // ✅ ИСПРАВЛЕНО: Возвращаем объект без повторного добавления в БД
+
     
     return await Storage.addAthlete(athlete);
     },
@@ -776,75 +781,95 @@ async addExistingAthlete(accessCode) {
         };
     }
 
-    const code = accessCode.trim();
+    const code = accessCode.trim().toUpperCase(); // Нормализация кода
 
     console.log(`🔍 Поиск ученика по коду доступа: ${code}`);
 
     try {
-        // 1. Ищем не в students, а в accessCodes
+        // 1. Проверяем существование кода доступа
         const codeDoc = await db.collection('accessCodes').doc(code).get();
 
         if (!codeDoc.exists) {
+            console.error(`❌ Код ${code} не найден в коллекции accessCodes`);
             return {
                 success: false,
-                error: 'Ученик с таким кодом не найден'
+                error: 'Неверный код доступа'
             };
         }
 
-        const { studentId } = codeDoc.data();
+        const { studentId, createdBy } = codeDoc.data();
 
         if (!studentId) {
+            console.error('❌ В документе accessCode отсутствует studentId');
             return {
                 success: false,
-                error: 'Код доступа повреждён: отсутствует studentId'
+                error: 'Код доступа поврежден'
             };
         }
 
         console.log(`✅ Код найден, studentId: ${studentId}`);
 
-        // 2. Добавляем тренера в coachIds.
-        // Важно: lastJoinAccessCode нужен для проверки в Security Rules.
+        // 2. Проверяем, не добавлен ли тренер уже
+        const studentDoc = await db.collection('students').doc(studentId).get();
+        
+        if (!studentDoc.exists) {
+            console.error(`❌ Ученик ${studentId} не существует`);
+            return {
+                success: false,
+                error: 'Ученик не найден'
+            };
+        }
+
+        const studentData = studentDoc.data();
+        
+        if (studentData.coachIds && studentData.coachIds.includes(auth.currentUser.uid)) {
+            console.warn('⚠️ Тренер уже добавлен к этому ученику');
+            return {
+                success: false,
+                error: 'Вы уже имеете доступ к этому ученику'
+            };
+        }
+
+        console.log(`📝 Добавляем тренера ${auth.currentUser.uid} к ученику ${studentId}`);
+
+        // 3. Добавляем тренера в coachIds
         await db.collection('students').doc(studentId).update({
             coachIds: firebase.firestore.FieldValue.arrayUnion(auth.currentUser.uid),
             lastJoinAccessCode: code,
             lastJoinedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log(`✅ Тренер добавлен к ученику ${studentId}`);
+        console.log(`✅ Тренер успешно добавлен`);
 
-        // 3. Теперь тренер уже в coachIds, значит читать students можно
-        const athleteDoc = await db.collection('students').doc(studentId).get();
-
-        if (!athleteDoc.exists) {
-            return {
-                success: false,
-                error: 'Ученик не найден после подключения'
-            };
-        }
-
-        const athleteData = athleteDoc.data();
+        // 4. Загружаем обновленные данные
+        const updatedDoc = await db.collection('students').doc(studentId).get();
 
         return {
             success: true,
             athlete: {
-                id: athleteDoc.id,
-                ...athleteData
+                id: updatedDoc.id,
+                ...updatedDoc.data()
             }
         };
 
     } catch (error) {
         console.error('❌ Ошибка добавления ученика:', error);
+        console.error('Детали ошибки:', {
+            code: error.code,
+            message: error.message,
+            stack: error.stack
+        });
 
         if (error.code === 'permission-denied') {
             return {
                 success: false,
-                error: 'Недостаточно прав. Проверьте Firestore Rules и наличие accessCodes'
+                error: 'Недостаточно прав. Проверьте правила безопасности Firestore'
             };
         }
 
         return {
             success: false,
-            error: 'Ошибка подключения к ученику'
+            error: `Ошибка: ${error.message}`
         };
     }
 },
