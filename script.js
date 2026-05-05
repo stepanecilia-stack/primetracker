@@ -1495,66 +1495,50 @@ const Router = {
         emptyState.classList.add('hidden');
         athletesList.innerHTML = '';
         
+        // ✅ ЦИКЛ БЕЗ ДУБЛИРОВАНИЯ
         for (const athlete of athletes) {
-    try {
-        const potential = Calculations.calculatePotential(athlete);
-        const realization = await Calculations.calculateRealization(athlete);
-        
-        const crState = await CombatReadiness.getState(athlete.id);
-        const realizationWithKBG = CombatReadiness.applyToRealization(realization, crState);
-        
-        const gap = Calculations.calculateGap(potential, realization);
-        const weightCategory = Calculations.getWeightCategory(athlete);
-        
-        const card = document.createElement('div');
-        card.className = 'athlete-card';
-        const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
-        
-        const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
-        
-        const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
-        const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
-        
-        const weightCategoryDisplay = weightCategory || 'Нет данных';
-        const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
-        
-        card.innerHTML = `
-            <div class="athlete-info">
-                <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
-                <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
-            </div>
-            <div class="athlete-metrics">
-                <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
-                <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
-                <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
-            </div>
-        `;
-        card.onclick = () => this.navigate('profile', { id: athlete.id });
-        athletesList.appendChild(card);
-        
-    } catch (error) {
-        console.error(`❌ Ошибка обработки спортсмена ${athlete.id}:`, error);
-        continue;
-
-}
-            
-            card.innerHTML = `
-                <div class="athlete-info">
-                    <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
-                    <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
-                </div>
-                <div class="athlete-metrics">
-                    <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
-                    <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
-                    <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
-                </div>
-            `;
-            card.onclick = () => this.navigate('profile', { id: athlete.id });
-            athletesList.appendChild(card);
+            try {
+                const potential = Calculations.calculatePotential(athlete);
+                const realization = await Calculations.calculateRealization(athlete);
+                
+                const crState = await CombatReadiness.getState(athlete.id);
+                const realizationWithKBG = CombatReadiness.applyToRealization(realization, crState);
+                
+                const gap = Calculations.calculateGap(potential, realization);
+                const weightCategory = Calculations.getWeightCategory(athlete);
+                
+                const card = document.createElement('div');
+                card.className = 'athlete-card';
+                const genderText = athlete.gender === 'M' ? 'М' : 'Ж';
+                
+                const realizationDisplay = realizationWithKBG === "Нет данных" ? "Нет данных" : `${realizationWithKBG}%`;
+                const gapWithKBG = realizationWithKBG === "Нет данных" ? "Нет данных" : (potential - realizationWithKBG);
+                const gapDisplay = gapWithKBG === "Нет данных" ? "Нет данных" : gapWithKBG;
+                const weightCategoryDisplay = weightCategory || 'Нет данных';
+                const crBadge = `<span class="cr-badge" title="${crState.name} (×${crState.coefficient})">${crState.emoji}</span>`;
+                
+                card.innerHTML = `
+                    <div class="athlete-info">
+                        <h3>${athlete.firstName} ${athlete.lastName} ${crBadge}</h3>
+                        <p class="athlete-meta">${athlete.birthYear} г.р., ${genderText} | Категория: ${weightCategoryDisplay}</p>
+                    </div>
+                    <div class="athlete-metrics">
+                        <div class="metric"><span class="metric-label">Потенциал</span><span class="metric-value">${potential}%</span></div>
+                        <div class="metric"><span class="metric-label">Реализация</span><span class="metric-value">${realizationDisplay}</span></div>
+                        <div class="metric"><span class="metric-label">Разрыв</span><span class="metric-value">${gapDisplay}</span></div>
+                    </div>
+                `;
+                card.onclick = () => this.navigate('profile', { id: athlete.id });
+                athletesList.appendChild(card);
+                
+            } catch (error) {
+                console.error(`❌ Ошибка обработки спортсмена ${athlete.id}:`, error);
+                continue;
+            }
         }
     }
 
-    // ✅ ИСПРАВЛЕНО: обработчики ВЫНЕСЕНЫ ЗА ПРЕДЕЛЫ цикла
+    // ✅ ОБРАБОТЧИКИ ЗА ПРЕДЕЛАМИ ЦИКЛА
     document.getElementById('btn-add-existing-athlete').onclick = () => {
         document.getElementById('add-existing-modal').classList.remove('hidden');
         document.getElementById('access-code-input').value = '';
@@ -1574,15 +1558,13 @@ const Router = {
         }
         
         Utils.showLoader();
-        
         const result = await Athletes.addExistingAthlete(accessCode);
-        
         Utils.hideLoader();
         
         if (result.success) {
             document.getElementById('add-existing-modal').classList.add('hidden');
             alert(`✅ Ученик "${result.athlete.firstName} ${result.athlete.lastName}" успешно добавлен!`);
-            Router.route(); // Перезагружаем дашборд
+            Router.route();
         } else {
             const errorDiv = document.getElementById('add-existing-error');
             errorDiv.textContent = result.error;
@@ -1599,7 +1581,7 @@ const Router = {
     };
     
     Utils.hideLoader();
-    },
+},
 
 
     initAddAthletePage() {

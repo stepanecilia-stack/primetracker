@@ -910,16 +910,16 @@ document.getElementById('measurementForm').addEventListener('submit', async func
     const weight = parseFloat(document.getElementById('weight').value);
     const reach = parseFloat(document.getElementById('armspan').value);
     
-    // ✅ Валидация
-    if (height < 100 || height > 250) {
-        alert('Рост должен быть между 100 и 250 см');
-        return;
-    }
-    if (weight < 20 || weight > 200) {
-        alert('Вес должен быть между 20 и 200 кг');
-        return;
-    }
-    if (reach < 100 || reach > 300) {
+    // ✅ ПРАВИЛЬНЫЙ КОД:
+if (height < 100 || height > 250) {
+    alert('Рост должен быть между 100 и 250 см');
+    return;
+}
+if (weight < 20 || weight > 200) {
+    alert('Вес должен быть между 20 и 200 кг');
+    return;
+}
+if (reach < 100 || reach > 300) {
     alert('Размах рук должен быть между 100 и 300 см');
     return;
 }
@@ -934,22 +934,20 @@ const newMeasurement = {
 const athleteId = localStorage.getItem('currentAthleteId');
 
 if (firebase.apps.length > 0 && firebase.auth().currentUser) {
-    };
-
-    if (firebase.apps.length > 0 && firebase.auth().currentUser) {
-        try {
-            const athleteRef = firebase.firestore().collection('students').doc(athleteId);
-            const doc = await athleteRef.get();
-            
-            if (doc.exists) {
-                const currentAnthro = doc.data().anthropometry || [];
-                currentAnthro.push(newMeasurement);
-                await athleteRef.update({ anthropometry: currentAnthro });
-            }
-        } catch (error) {
-            console.error('Ошибка сохранения в Firebase:', error);
+    try {
+        const athleteRef = firebase.firestore().collection('students').doc(athleteId);
+        const doc = await athleteRef.get();
+        
+        if (doc.exists) {
+            const currentAnthro = doc.data().anthropometry || [];
+            currentAnthro.push(newMeasurement);
+            await athleteRef.update({ anthropometry: currentAnthro });
         }
+    } catch (error) {
+        console.error('Ошибка сохранения в Firebase:', error);
     }
+}
+
     
     const athletes = JSON.parse(localStorage.getItem('boxing_athletes') || '[]');
     const athleteIndex = athletes.findIndex(a => a.id === athleteId);
