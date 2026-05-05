@@ -172,23 +172,28 @@ const Storage = {
     },
 
     async getAthleteByToken(token) {
-        console.log(`🔍 Поиск спортсмена по токену в коллекции 'students'`);
-        
-        const snapshot = await db.collection('students')
-        .where('accessCode', '==', accessCode.trim())
+    console.log(`🔍 Поиск спортсмена по shareToken в коллекции 'students'`);
+
+    const snapshot = await db.collection('students')
+        .where('shareToken', '==', token.trim())
         .limit(1)
         .get();
-        
-        if (snapshot.empty) {
-            console.error(`❌ Student with token not found in 'students' collection`);
-            return null;
-        }
-        
-        const doc = snapshot.docs[0];
-        console.log(`✅ Спортсмен найден по токену: ${doc.data().firstName}`);
-        
-        return { id: doc.id, ...doc.data() };
-    },
+
+    if (snapshot.empty) {
+        console.error(`❌ Student with token not found in 'students' collection`);
+        return null;
+    }
+
+    const doc = snapshot.docs[0];
+
+    console.log(`✅ Спортсмен найден по токену: ${doc.data().firstName}`);
+
+    return {
+        id: doc.id,
+        ...doc.data()
+    };
+},
+
 
     async addAthlete(athlete) {
         console.log('➕ Создание нового спортсмена в коллекции students...');
@@ -719,9 +724,12 @@ const AuthModule = {
 const Athletes = {
     async create(data) {
     if (!auth.currentUser) return null;
-    
+
+    const studentRef = db.collection('students').doc();
+    const accessCode = Utils.generateToken(8);
+
     const athlete = {
-        coachIds: [auth.currentUser.uid], // ✅ МАССИВ вместо одного ID
+        coachIds: [auth.currentUser.uid],
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),
         birthYear: parseInt(data.birthYear),
@@ -734,56 +742,114 @@ const Athletes = {
         },
         technicalScore: null,
         psychologicalProfile: null,
-        metrics: { potential: 0, realization: "Нет данных", gap: "Нет данных" },
+        metrics: {
+            potential: 0,
+            realization: "Нет данных",
+            gap: "Нет данных"
+        },
         shareToken: null,
-        accessCode: Utils.generateToken(8) // ✅ Код доступа для других тренеров
+        accessCode: accessCode
     };
+
+    const batch = db.batch();
+
+    batch.set(studentRef, athlete);
+
+    batch.set(db.collection('accessCodes').doc(accessCode), {
+        studentId: studentRef.id,
+        createdBy: auth.currentUser.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await batch.commit();
+
+    console.log(`✅ Спортсмен создан с ID: ${studentRef.id}`);
+    console.log(`🔑 Код доступа создан: ${accessCode}`);
     
     return await Storage.addAthlete(athlete);
     },
 
 async addExistingAthlete(accessCode) {
-    if (!auth.currentUser) return { success: false, error: 'Не авторизован' };
-    
-    console.log(`🔍 Поиск ученика по коду доступа: ${accessCode}`);
-    
-    try {
-        const snapshot = await db.collection('students')
-            .where('accessCode', '==', accessCode.trim())
-            .limit(1)
-            .get();
-        
-        if (snapshot.empty) {
-            return { success: false, error: 'Ученик с таким кодом не найден' };
-        }
-        
-        const doc = snapshot.docs[0];
-        const athleteData = doc.data();
-        
-        // Проверка: тренер уже добавлен?
-        if (athleteData.coachIds && athleteData.coachIds.includes(auth.currentUser.uid)) {
-            return { success: false, error: 'Вы уже добавлены к этому ученику' };
-        }
-        
-        // Добавляем текущего тренера в массив
-        const updatedCoachIds = [...(athleteData.coachIds || []), auth.currentUser.uid];
-        
-        await db.collection('students').doc(doc.id).update({
-            coachIds: updatedCoachIds
-        });
-        
-        console.log(`✅ Тренер добавлен к ученику ${doc.id}`);
-        
-        return { 
-            success: true, 
-            athlete: { id: doc.id, ...athleteData, coachIds: updatedCoachIds }
+    if (!auth.currentUser) {
+        return {
+            success: false,
+            error: 'Не авторизован'
         };
-        
+    }
+
+    const code = accessCode.trim();
+
+    console.log(`🔍 Поиск ученика по коду доступа: ${code}`);
+
+    try {
+        // 1. Ищем не в students, а в accessCodes
+        const codeDoc = await db.collection('accessCodes').doc(code).get();
+
+        if (!codeDoc.exists) {
+            return {
+                success: false,
+                error: 'Ученик с таким кодом не найден'
+            };
+        }
+
+        const { studentId } = codeDoc.data();
+
+        if (!studentId) {
+            return {
+                success: false,
+                error: 'Код доступа повреждён: отсутствует studentId'
+            };
+        }
+
+        console.log(`✅ Код найден, studentId: ${studentId}`);
+
+        // 2. Добавляем тренера в coachIds.
+        // Важно: lastJoinAccessCode нужен для проверки в Security Rules.
+        await db.collection('students').doc(studentId).update({
+            coachIds: firebase.firestore.FieldValue.arrayUnion(auth.currentUser.uid),
+            lastJoinAccessCode: code,
+            lastJoinedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        console.log(`✅ Тренер добавлен к ученику ${studentId}`);
+
+        // 3. Теперь тренер уже в coachIds, значит читать students можно
+        const athleteDoc = await db.collection('students').doc(studentId).get();
+
+        if (!athleteDoc.exists) {
+            return {
+                success: false,
+                error: 'Ученик не найден после подключения'
+            };
+        }
+
+        const athleteData = athleteDoc.data();
+
+        return {
+            success: true,
+            athlete: {
+                id: athleteDoc.id,
+                ...athleteData
+            }
+        };
+
     } catch (error) {
         console.error('❌ Ошибка добавления ученика:', error);
-        return { success: false, error: 'Ошибка подключения к ученику' };
+
+        if (error.code === 'permission-denied') {
+            return {
+                success: false,
+                error: 'Недостаточно прав. Проверьте Firestore Rules и наличие accessCodes'
+            };
+        }
+
+        return {
+            success: false,
+            error: 'Ошибка подключения к ученику'
+        };
     }
-    },
+},
+
 
     async addAnthropometry(athleteId, data) {
         const athlete = await Storage.getAthleteById(athleteId);
@@ -858,26 +924,48 @@ const Share = {
     },
 
     async getAthleteByToken(token) {
-        const athlete = await Storage.getAthleteByToken(token);
-        if (!athlete) return null;
-        
-        const potential = Calculations.calculatePotential(athlete);
-        const realization = await Calculations.calculateRealization(athlete);
-        const gap = Calculations.calculateGap(potential, realization);
+    console.log(`🔍 Поиск спортсмена по shareToken в коллекции 'students'`);
 
-        return {
-            id: athlete.id,
-            firstName: athlete.firstName,
-            lastName: athlete.lastName,
-            birthYear: athlete.birthYear,
-            gender: athlete.gender,
-            metrics: { potential, realization, gap },
-            anthropometry: athlete.anthropometry,
-            tests: athlete.tests,
-            technicalScore: athlete.technicalScore,
-            psychologicalProfile: athlete.psychologicalProfile
-        };
+    const snapshot = await db.collection('students')
+        .where('shareToken', '==', token.trim())
+        .limit(1)
+        .get();
+
+    if (snapshot.empty) {
+        console.error(`❌ Student with token not found in 'students' collection`);
+        return null;
     }
+
+    const doc = snapshot.docs[0];
+    const athlete = {
+        id: doc.id,
+        ...doc.data()
+    };
+
+    console.log(`✅ Спортсмен найден по токену: ${athlete.firstName}`);
+
+    const potential = Calculations.calculatePotential(athlete);
+    const realization = await Calculations.calculateRealization(athlete);
+    const gap = Calculations.calculateGap(potential, realization);
+
+    return {
+        id: athlete.id,
+        firstName: athlete.firstName,
+        lastName: athlete.lastName,
+        birthYear: athlete.birthYear,
+        gender: athlete.gender,
+        metrics: {
+            potential,
+            realization,
+            gap
+        },
+        anthropometry: athlete.anthropometry,
+        tests: athlete.tests,
+        technicalScore: athlete.technicalScore,
+        psychologicalProfile: athlete.psychologicalProfile
+    };
+}
+
 };
 
 // ============================================
