@@ -199,75 +199,67 @@ async function recalculateKSR(athleteId) {
         
         const athlete = { id: doc.id, ...doc.data() };
         
-        let physicsScore = 0;
-        let functionalScore = 0;
-        let technicalScore = 0;
+        // ✅ НОВОЕ: Получаем потенциал
+        const potential = Calculations ? Calculations.calculatePotential(athlete) : 
+                         calculatePotentialLocally(athlete); // fallback
+        
+        if (potential === 0) {
+            console.log('⚠️ Потенциал = 0, КСР = "Нет данных"');
+            await db.collection('students').doc(athleteId).update({
+                'metrics.realization': "Нет данных",
+                'metrics.gap': "Нет данных"
+            });
+            return;
+        }
+        
+        let physicsRealization = 0;
+        let functionalRealization = 0;
+        let technicalRealization = 0;
         
         const allNorms = await loadNorms();
         const physicalNorms = getAthletNorms(allNorms, athlete, 'physical');
         const functionalNorms = getAthletNorms(allNorms, athlete, 'functional');
         
-        const totalPhysicalTests = physicalNorms.length;
-        const totalFunctionalTests = functionalNorms.length;
-        
-        if (totalPhysicalTests > 0) {
+        // Физика
+        if (physicalNorms.length > 0) {
             let sumPhysics = 0;
-            let completedPhysics = 0;
-            
             physicalNorms.forEach(norm => {
                 const testResult = athlete.tests?.physical?.[norm.testId];
-                if (testResult) {
-                    sumPhysics += testResult.normalizedScore || 0;
-                    completedPhysics++;
-                }
+                sumPhysics += testResult ? (testResult.normalizedScore || 0) : 0;
             });
             
-            const avgPhysics = sumPhysics / totalPhysicalTests;
-            physicsScore = avgPhysics * 0.333;
-            
-            console.log(`💪 ФИЗИКА:`);
-            console.log(`  Сдано: ${completedPhysics} из ${totalPhysicalTests} тестов`);
-            console.log(`  Сумма баллов: ${sumPhysics}`);
-            console.log(`  Средний балл: ${avgPhysics.toFixed(2)} (штраф за ${totalPhysicalTests - completedPhysics} несданных)`);
-            console.log(`  Вклад в КСР: ${physicsScore.toFixed(2)}`);
+            physicsRealization = (sumPhysics / physicalNorms.length) / 100;
+            console.log(`💪 ФИЗИКА: ${physicalNorms.length} тестов, реализация=${physicsRealization.toFixed(3)}`);
         }
         
-        if (totalFunctionalTests > 0) {
+        // Функционал
+        if (functionalNorms.length > 0) {
             let sumFunctional = 0;
-            let completedFunctional = 0;
-            
             functionalNorms.forEach(norm => {
                 const testResult = athlete.tests?.functional?.[norm.testId];
-                if (testResult) {
-                    sumFunctional += testResult.normalizedScore || 0;
-                    completedFunctional++;
-                }
+                sumFunctional += testResult ? (testResult.normalizedScore || 0) : 0;
             });
             
-            const avgFunctional = sumFunctional / totalFunctionalTests;
-            functionalScore = avgFunctional * 0.333;
-            
-            console.log(`⚡ ФУНКЦИОНАЛ:`);
-            console.log(`  Сдано: ${completedFunctional} из ${totalFunctionalTests} тестов`);
-            console.log(`  Сумма баллов: ${sumFunctional}`);
-            console.log(`  Средний балл: ${avgFunctional.toFixed(2)} (штраф за ${totalFunctionalTests - completedFunctional} несданных)`);
-            console.log(`  Вклад в КСР: ${functionalScore.toFixed(2)}`);
+            functionalRealization = (sumFunctional / functionalNorms.length) / 100;
+            console.log(`⚡ ФУНКЦИОНАЛ: ${functionalNorms.length} тестов, реализация=${functionalRealization.toFixed(3)}`);
         }
         
-        if (athlete.technicalScore && typeof athlete.technicalScore === 'number') {
-            technicalScore = athlete.technicalScore * 100 * 0.333;
-            console.log(`🥊 ТЕХНИКА:`);
-            console.log(`  Оценка: ${(athlete.technicalScore * 100).toFixed(0)}%`);
-            console.log(`  Вклад в КСР: ${technicalScore.toFixed(2)}`);
+        // Техника
+        if (athlete.technicalScore !== null && athlete.technicalScore !== undefined) {
+            technicalRealization = athlete.technicalScore;
+            console.log(`🥊 ТЕХНИКА: реализация=${technicalRealization.toFixed(3)}`);
         }
         
-        const totalScore = physicsScore + functionalScore + technicalScore;
-        const realization = totalScore === 0 ? "Нет данных" : Math.round(totalScore);
+        // ✅ ИСПРАВЛЕНО: КСР = Потенциал × средняя_реализация
+        const avgRealization = (physicsRealization + functionalRealization + technicalRealization) / 3;
+        const ksr = potential * avgRealization;
         
-        const potential = athlete.metrics?.potential || 0;
+        const realization = ksr === 0 ? "Нет данных" : Math.round(ksr);
         const gap = realization === "Нет данных" ? "Нет данных" : potential - realization;
         
-        console.log(`\n🎯 ИТОГОВЫЙ КСР: ${realization}%`);
+        console.log(`\n🎯 Потенциал: ${potential}%`);
+        console.log(`🎯 Средняя реализация: ${(avgRealization * 100).toFixed(1)}%`);
+        console.log(`🎯 КСР: ${realization}%`);
         console.log(`📊 Разрыв: ${gap}`);
         console.log('═══════════════════════════════════════');
         
@@ -282,6 +274,35 @@ async function recalculateKSR(athleteId) {
         console.error('❌ Ошибка пересчета КСР:', error);
     }
 }
+
+// ✅ НОВОЕ: fallback функция для расчета потенциала локально
+function calculatePotentialLocally(athlete) {
+    if (!athlete.anthropometry || athlete.anthropometry.length === 0) return 0;
+    
+    const latest = athlete.anthropometry[athlete.anthropometry.length - 1];
+    const { height, weight, reach } = latest;
+    
+    const ageGroup = getAgeGroup(athlete.birthYear);
+    if (!ageGroup) return 0;
+    
+    const category = findWeightCategory(athlete.gender, ageGroup, weight);
+    if (!category) return 0;
+    
+    let potential = 100;
+    
+    const heightDiff = category.idealHeight - height;
+    if (heightDiff > 0) {
+        potential -= heightDiff * 5;
+    }
+    
+    const apeIndex = reach - height;
+    if (apeIndex < 0) {
+        potential -= Math.abs(apeIndex) * 4;
+    }
+    
+    return Math.max(10, Math.round(potential));
+}
+
 
 document.getElementById('testForm').addEventListener('submit', async function(e) {
     e.preventDefault();

@@ -482,68 +482,71 @@ const Calculations = {
     },
 
     async calculateRealization(athlete) {
-        console.log('🧮 Расчет КСР для спортсмена:', athlete.firstName);
+    console.log('🧮 Расчет КСР для спортсмена:', athlete.firstName);
+    
+    // ✅ НОВОЕ: Получаем потенциал
+    const potential = this.calculatePotential(athlete);
+    if (potential === 0) {
+        console.log('⚠️ Потенциал = 0, КСР невозможно рассчитать');
+        return "Нет данных";
+    }
+    
+    let physicsRealization = 0;
+    let functionalRealization = 0;
+    let technicalRealization = 0;
+    
+    // Физика
+    const physicalNorms = await NormsLoader.getNormsForAthlete(athlete, 'physical');
+    if (physicalNorms.length > 0) {
+        let sumPhysics = 0;
+        physicalNorms.forEach(norm => {
+            const testResult = athlete.tests?.physical?.[norm.testId];
+            sumPhysics += testResult ? (testResult.normalizedScore || 0) : 0;
+        });
         
-        let physicsScore = 0;
-        let functionalScore = 0;
-        let technicalScore = 0;
+        // ✅ ИСПРАВЛЕНО: делим на общее количество тестов (штраф за несданные)
+        const avgPhysics = sumPhysics / physicalNorms.length;
+        physicsRealization = avgPhysics / 100; // Нормализуем 0..1.2
         
-        const physicalNorms = await NormsLoader.getNormsForAthlete(athlete, 'physical');
-        const totalPhysicalTests = physicalNorms.length;
+        console.log(`  Физика: средний балл=${avgPhysics.toFixed(1)}, реализация=${physicsRealization.toFixed(3)}`);
+    }
+    
+    // Функционал
+    const functionalNorms = await NormsLoader.getNormsForAthlete(athlete, 'functional');
+    if (functionalNorms.length > 0) {
+        let sumFunctional = 0;
+        functionalNorms.forEach(norm => {
+            const testResult = athlete.tests?.functional?.[norm.testId];
+            sumFunctional += testResult ? (testResult.normalizedScore || 0) : 0;
+        });
         
-        if (totalPhysicalTests > 0) {
-            let sumPhysics = 0;
-            physicalNorms.forEach(norm => {
-                const testResult = athlete.tests?.physical?.[norm.testId];
-                if (testResult) {
-                    sumPhysics += testResult.normalizedScore || 0;
-                }
-            });
-            
-            const avgPhysics = sumPhysics / totalPhysicalTests;
-            physicsScore = avgPhysics * 0.333;
-            
-            const completedPhysics = Object.keys(athlete.tests?.physical || {}).length;
-            console.log(`  Физика: сдано ${completedPhysics} из ${totalPhysicalTests} тестов, средний балл=${avgPhysics.toFixed(1)}, вклад=${physicsScore.toFixed(1)}`);
-        }
+        const avgFunctional = sumFunctional / functionalNorms.length;
+        functionalRealization = avgFunctional / 100;
         
-        const functionalNorms = await NormsLoader.getNormsForAthlete(athlete, 'functional');
-        const totalFunctionalTests = functionalNorms.length;
-        
-        if (totalFunctionalTests > 0) {
-            let sumFunctional = 0;
-            functionalNorms.forEach(norm => {
-                const testResult = athlete.tests?.functional?.[norm.testId];
-                if (testResult) {
-                    sumFunctional += testResult.normalizedScore || 0;
-                }
-            });
-            
-            const avgFunctional = sumFunctional / totalFunctionalTests;
-            functionalScore = avgFunctional * 0.333;
-            
-            const completedFunctional = Object.keys(athlete.tests?.functional || {}).length;
-            console.log(`  Функционал: сдано ${completedFunctional} из ${totalFunctionalTests} тестов, средний балл=${avgFunctional.toFixed(1)}, вклад=${functionalScore.toFixed(1)}`);
-        }
-        
-        if (athlete.technicalScore !== null && athlete.technicalScore !== undefined) {
-            const technicalNormalized = athlete.technicalScore * 100;
-            technicalScore = technicalNormalized * 0.333;
-            
-            console.log(`  Техника: средний КСР=${athlete.technicalScore.toFixed(2)}, нормализованный=${technicalNormalized.toFixed(1)}, вклад=${technicalScore.toFixed(1)}`);
-        }
-        
-        const totalScore = physicsScore + functionalScore + technicalScore;
-        
-        console.log(`  📊 Итоговый КСР: ${totalScore.toFixed(1)} (физика=${physicsScore.toFixed(1)} + функционал=${functionalScore.toFixed(1)} + техника=${technicalScore.toFixed(1)})`);
-        
-        if (totalScore === 0) {
-            console.log('  ⚠️ КСР = "Нет данных" (все категории пустые)');
-            return "Нет данных";
-        }
-        
-        return Math.round(totalScore);
-    },
+        console.log(`  Функционал: средний балл=${avgFunctional.toFixed(1)}, реализация=${functionalRealization.toFixed(3)}`);
+    }
+    
+    // Техника
+    if (athlete.technicalScore !== null && athlete.technicalScore !== undefined) {
+        technicalRealization = athlete.technicalScore; // уже 0..1
+        console.log(`  Техника: реализация=${technicalRealization.toFixed(3)}`);
+    }
+    
+    // ✅ ИСПРАВЛЕНО: КСР = Потенциал × средневзвешенная_реализация
+    const avgRealization = (physicsRealization + functionalRealization + technicalRealization) / 3;
+    const ksr = potential * avgRealization;
+    
+    console.log(`  📊 Потенциал: ${potential}%`);
+    console.log(`  📊 Средняя реализация: ${(avgRealization * 100).toFixed(1)}%`);
+    console.log(`  📊 КСР: ${potential} × ${avgRealization.toFixed(3)} = ${ksr.toFixed(1)}%`);
+    
+    if (ksr === 0) {
+        return "Нет данных";
+    }
+    
+    return Math.round(ksr);
+    }
+
 
     calculateGap(potential, realization) {
         if (realization === "Нет данных") {
